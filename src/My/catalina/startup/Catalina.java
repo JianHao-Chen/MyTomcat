@@ -50,6 +50,29 @@ public class Catalina extends Embedded{
     
     
     
+    
+ // ------------------------------------------------------ Protected Methods
+    
+    protected void initDirs() {
+    	/* just make sure :
+    		"catalina.home" and "catalina.base" is is absolute path.
+    	*/
+    }
+    
+    
+    /**
+     * Create and configure the Digester we will be using for startup.
+     */
+    protected Digester createStartDigester() {
+    	
+    }
+    
+    
+    
+    public void load() {
+    	
+    	 initDirs();
+    }
 
     
 }

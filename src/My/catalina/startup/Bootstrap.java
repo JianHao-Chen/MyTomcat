@@ -136,7 +136,7 @@ public final class Bootstrap {
         
         Class startupClass =
             catalinaLoader.loadClass
-            ("org.apache.catalina.startup.Catalina");
+            ("My.catalina.startup.Catalina");
         
         Object startupInstance = startupClass.newInstance();
         
@@ -163,10 +163,62 @@ public final class Bootstrap {
     	
     	try {
             daemon.init();
+            
+            daemon.setAwait(true);
+            daemon.load(args);
+            daemon.start();
+            
         } catch (Throwable t) {
             t.printStackTrace();
             return;
         }
+    }
+    
+    
+    /**
+     * Set flag.
+     */
+    public void setAwait(boolean await)
+        throws Exception {
+    	
+    	 Class paramTypes[] = new Class[1];
+         paramTypes[0] = Boolean.TYPE;
+         Object paramValues[] = new Object[1];
+         paramValues[0] = new Boolean(await);
+         Method method = 
+             catalinaDaemon.getClass().getMethod("setAwait", paramTypes);
+         method.invoke(catalinaDaemon, paramValues);
+    }
+    
+    
+    /**
+     * Load daemon.
+     */
+    private void load(String[] arguments)
+        throws Exception {
+    	
+    	 // Call the load() method
+        String methodName = "load";
+        Object param[] = null;
+        Class paramTypes[] = null;
+
+        Method method = 
+            catalinaDaemon.getClass().getMethod(methodName, paramTypes);
+        
+        method.invoke(catalinaDaemon, param);
+    }
+    
+    
+    /**
+     * Start the Catalina daemon.
+     */
+    public void start()
+        throws Exception {
+    	
+    	Method method = catalinaDaemon.getClass().
+    						getMethod("start", (Class [] )null);
+    	
+        method.invoke(catalinaDaemon, (Object [])null);
     }
     
     
