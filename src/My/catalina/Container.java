@@ -83,6 +83,44 @@ public interface Container {
     // ------------------------------------------------------------- Properties
 
     
+    /**
+     * Return the Container for which this Container is a child, if there is
+     * one.  If there is no defined parent, return <code>null</code>.
+     */
+    public Container getParent();
+
+
+    /**
+     * Set the parent Container to which this Container is being added as a
+     * child.  This Container may refuse to become attached to the specified
+     * Container by throwing an exception.
+     *
+     * @param container Container to which this Container is being added
+     *  as a child
+     *
+     * @exception IllegalArgumentException if this Container refuses to become
+     *  attached to the specified Container
+     */
+    public void setParent(Container container);
+    
+    
+    
+    /**
+     * Return the parent class loader (if any) for web applications.
+     */
+    public ClassLoader getParentClassLoader();
+
+
+    /**
+     * Set the parent class loader (if any) for web applications.
+     * This call is meaningful only <strong>before</strong> a Loader has
+     * been configured, and the specified value (if non-null) should be
+     * passed as an argument to the class loader constructor.
+     *
+     * @param parent The new parent class loader
+     */
+    public void setParentClassLoader(ClassLoader parent);
+    
     
     
 }
