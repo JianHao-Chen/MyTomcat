@@ -16,7 +16,7 @@
  */ 
 
 
-package My.catalina.juli.logging;
+package My.juli.logging;
 
 /**
  * <p>A simple logging interface abstracting logging APIs.  In order to be

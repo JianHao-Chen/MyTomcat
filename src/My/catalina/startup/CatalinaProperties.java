@@ -6,8 +6,8 @@ import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.Properties;
 
-import My.catalina.juli.logging.Log;
-import My.catalina.juli.logging.LogFactory;
+import My.juli.logging.Log;
+import My.juli.logging.LogFactory;
 
 public class CatalinaProperties {
 

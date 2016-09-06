@@ -15,7 +15,7 @@
  * limitations under the License.
  */ 
 
-package My.catalina.juli.logging;
+package My.juli.logging;
 
 
 import java.util.Properties;

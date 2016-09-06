@@ -6,8 +6,8 @@ import java.net.URL;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import My.catalina.juli.logging.Log;
-import My.catalina.juli.logging.LogFactory;
+import My.juli.logging.Log;
+import My.juli.logging.LogFactory;
 import My.catalina.loader.StandardClassLoader;
 
 /**

@@ -4,8 +4,8 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
-import My.catalina.juli.logging.Log;
-import My.catalina.juli.logging.LogFactory;
+import My.juli.logging.Log;
+import My.juli.logging.LogFactory;
 
 public final class Bootstrap {
 

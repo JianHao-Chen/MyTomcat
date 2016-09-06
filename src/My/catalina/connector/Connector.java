@@ -5,8 +5,8 @@ import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
 import My.catalina.Service;
-import My.catalina.juli.logging.Log;
-import My.catalina.juli.logging.LogFactory;
+import My.juli.logging.Log;
+import My.juli.logging.LogFactory;
 import My.catalina.util.LifecycleSupport;
 
 /**

@@ -10,8 +10,8 @@ import My.catalina.LifecycleListener;
 import My.catalina.Server;
 import My.catalina.Service;
 import My.catalina.connector.Connector;
-import My.catalina.juli.logging.Log;
-import My.catalina.juli.logging.LogFactory;
+import My.juli.logging.Log;
+import My.juli.logging.LogFactory;
 import My.catalina.util.LifecycleSupport;
 
 /**

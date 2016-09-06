@@ -3,8 +3,8 @@ package My.catalina.startup;
 import My.catalina.Engine;
 import My.catalina.Lifecycle;
 import My.catalina.core.StandardService;
-import My.catalina.juli.logging.Log;
-import My.catalina.juli.logging.LogFactory;
+import My.juli.logging.Log;
+import My.juli.logging.LogFactory;
 import My.catalina.util.LifecycleSupport;
 
 /**
