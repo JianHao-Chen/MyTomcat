@@ -82,6 +82,28 @@ public interface Container {
 
     // ------------------------------------------------------------- Properties
 
+    /**
+     * Return a name string (suitable for use by humans) that describes this
+     * Container.  Within the set of child containers belonging to a particular
+     * parent, Container names must be unique.
+     */
+    public String getName();
+
+
+    /**
+     * Set a name string (suitable for use by humans) that describes this
+     * Container.  Within the set of child containers belonging to a particular
+     * parent, Container names must be unique.
+     *
+     * @param name New name of this container
+     *
+     * @exception IllegalStateException if this Container has already been
+     *  added to the children of a parent Container (after which the name
+     *  may not be changed)
+     */
+    public void setName(String name);
+    
+    
     
     /**
      * Return the Container for which this Container is a child, if there is
@@ -121,6 +143,38 @@ public interface Container {
      */
     public void setParentClassLoader(ClassLoader parent);
     
+    
+    
+    /**
+     * Return the Loader with which this Container is associated.  If there is
+     * no associated Loader, return the Loader associated with our parent
+     * Container (if any); otherwise, return <code>null</code>.
+     */
+    public Loader getLoader();
+
+
+    /**
+     * Set the Loader with which this Container is associated.
+     *
+     * @param loader The newly associated loader
+     */
+    public void setLoader(Loader loader);
+    
+    
+    /**
+     * Return the Manager with which this Container is associated.  If there is
+     * no associated Manager, return the Manager associated with our parent
+     * Container (if any); otherwise return <code>null</code>.
+     */
+    public Manager getManager();
+
+
+    /**
+     * Set the Manager with which this Container is associated.
+     *
+     * @param manager The newly associated Manager
+     */
+    public void setManager(Manager manager);
     
     
 }

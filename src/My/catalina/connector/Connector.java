@@ -8,6 +8,7 @@ import My.catalina.Service;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.catalina.util.LifecycleSupport;
+import My.coyote.ProtocolHandler;
 
 /**
  * Implementation of a Coyote connector for Tomcat 5.x.
@@ -25,6 +26,17 @@ public class Connector implements Lifecycle
 	}
 	
 	public Connector(String protocol) throws Exception {
+		
+		setProtocol(protocol);
+		
+		// Instantiate protocol handler
+		try{
+			Class clazz = Class.forName(protocolHandlerClassName);
+			this.protocolHandler = (ProtocolHandler) clazz.newInstance();
+		}catch (Exception e) {
+			 log.error
+              ("coyoteConnector.protocolHandlerInstantiationFailed", e);
+		}
 		
 	}
 	
@@ -72,6 +84,20 @@ public class Connector implements Lifecycle
      */
     protected int port = 0;
     
+    
+    
+    /**
+     * Coyote protocol handler.
+     */
+    protected ProtocolHandler protocolHandler = null;
+    
+    
+    /**
+     * Coyote Protocol handler class name.
+     * Defaults to the Coyote HTTP/1.1 protocolHandler.
+     */
+    protected String protocolHandlerClassName =
+        "My.coyote.http11.Http11Protocol";
     
     /**
      * Has this component been initialized yet?
@@ -138,6 +164,31 @@ public class Connector implements Lifecycle
         this.container = container;
     }
     
+    
+    /**
+     * Set the Coyote protocol which will be used by the connector.
+     *
+     * @param protocol The Coyote protocol name
+     */
+    public void setProtocol(String protocol) {
+    	
+    	// currently, just implements NIO protocol
+    	setProtocolHandlerClassName(protocol);
+    }
+    
+    
+    
+    /**
+     * Set the class name of the Coyote protocol handler which will be used
+     * by the connector.
+     *
+     * @param protocolHandlerClassName The new class name
+     */
+    public void setProtocolHandlerClassName(String protocolHandlerClassName) {
+
+        this.protocolHandlerClassName = protocolHandlerClassName;
+
+    }
     
 
 

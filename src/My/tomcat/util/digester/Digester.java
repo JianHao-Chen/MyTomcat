@@ -734,6 +734,19 @@ public class Digester extends DefaultHandler{
                 new SetNextRule(methodName, paramType));
 
     }
+    
+    
+    
+    /**
+     * Register a set of Rule instances defined in a RuleSet.
+     *
+     * @param ruleSet The RuleSet instance to configure from
+     */
+    public void addRuleSet(RuleSet ruleSet) {
+
+        ruleSet.addRuleInstances(this);
+
+    }
 
     
     /**
@@ -762,6 +775,17 @@ public class Digester extends DefaultHandler{
     public void startElement(String namespaceURI, String localName,
             String qName, Attributes list)
     	throws SAXException {
+    	
+    	
+    	if(qName.equals("Service")){
+    		System.out.println("Service");
+    	}
+    	
+    	if(qName.equals("Engine")){
+    		System.out.println("Engine");
+    	}
+    	
+    	
     	
     	 // the actual element name is either in localName or qName, depending 
         // on whether the parser is namespace aware
@@ -793,6 +817,7 @@ public class Digester extends DefaultHandler{
                     rule.begin(namespaceURI, name, list);
         		}
         		catch (Exception e) {
+        			e.printStackTrace();
         		}
         	}
         }else{
@@ -822,20 +847,28 @@ public class Digester extends DefaultHandler{
         	for (int i = 0; i < rules.size(); i++) {
                 int j = (rules.size() - i) - 1;
                 try {
+                	
                     Rule rule = (Rule) rules.get(j);
+                    
+                    rule.end(namespaceURI, name);
                 }catch (Exception e) {
                 	
                 }
         	}
         }
+        
+        
+        // Recover the previous match expression
+        int slash = match.lastIndexOf('/');
+        if (slash >= 0) {
+            match = match.substring(0, slash);
+        } else {
+            match = "";
+        }
+        
     }
     
-    
-    
-    
-    
-    
-    
+ 
     
     
     // ----------------------- Package Methods -----------------------
