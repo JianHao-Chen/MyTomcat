@@ -770,6 +770,25 @@ public class Digester extends DefaultHandler{
     
     
     
+    /**
+     * Add an "call method" rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param methodName Method name to be called
+     * @param paramCount Number of expected parameters (or zero
+     *  for a single parameter from the body of this element)
+     * @see CallMethodRule
+     */
+    public void addCallMethod(String pattern, String methodName,
+                              int paramCount) {
+
+       /* addRule(pattern,
+                new CallMethodRule(methodName, paramCount));*/
+
+    }
+    
+    
+    
     
     
     public void startElement(String namespaceURI, String localName,
@@ -785,6 +804,10 @@ public class Digester extends DefaultHandler{
     		System.out.println("Engine");
     	}
     	
+    	
+    	if(qName.equals("Host")){
+    		System.out.println("Host");
+    	}
     	
     	
     	 // the actual element name is either in localName or qName, depending 

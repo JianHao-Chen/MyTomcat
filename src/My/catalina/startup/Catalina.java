@@ -186,7 +186,7 @@ public class Catalina extends Embedded{
         // Add RuleSets for nested elements
         digester.addRuleSet(new NamingRuleSet("Server/GlobalNamingResources/"));
         digester.addRuleSet(new EngineRuleSet("Server/Service/"));
-    //    digester.addRuleSet(new HostRuleSet("Server/Service/Engine/"));
+        digester.addRuleSet(new HostRuleSet("Server/Service/Engine/"));
     //    digester.addRuleSet(new ContextRuleSet("Server/Service/Engine/Host/"));
     //    digester.addRuleSet(ClusterRuleSetFactory.getClusterRuleSet("Server/Service/Engine/Host/Cluster/"));
         digester.addRuleSet(new NamingRuleSet("Server/Service/Engine/Host/Context/"));

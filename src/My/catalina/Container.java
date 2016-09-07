@@ -1,5 +1,10 @@
 package My.catalina;
 
+import java.io.IOException;
+import javax.servlet.ServletException;
+import My.catalina.connector.Request;
+import My.catalina.connector.Response;
+
 /**
  * A <b>Container</b> is an object that can execute requests received from
  * a client, and return responses based on those requests. A Container may
@@ -175,6 +180,24 @@ public interface Container {
      * @param manager The newly associated Manager
      */
     public void setManager(Manager manager);
+    
+    
+    
+    
+    /**
+     * Process the specified Request, and generate the corresponding Response,
+     * according to the design of this particular Container.
+     *
+     * @param request Request to be processed
+     * @param response Response to be produced
+     *
+     * @exception IOException if an input/output error occurred while
+     *  processing
+     * @exception ServletException if a ServletException was thrown
+     *  while processing this request
+     */
+    public void invoke(Request request, Response response)
+        throws IOException, ServletException;
     
     
 }

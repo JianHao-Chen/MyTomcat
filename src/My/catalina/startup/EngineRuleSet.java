@@ -58,7 +58,7 @@ public class EngineRuleSet extends RuleSetBase {
                             "setContainer",
                             "My.catalina.Container");
 
-        //Cluster configuration start
+   /*     //Cluster configuration start
         digester.addObjectCreate(prefix + "Engine/Cluster",
                                  null, // MUST be specified in the element
                                  "className");
@@ -67,7 +67,7 @@ public class EngineRuleSet extends RuleSetBase {
                             "setCluster",
                             "My.catalina.Cluster");
         //Cluster configuration end
-
+*/
         digester.addObjectCreate(prefix + "Engine/Listener",
                                  null, // MUST be specified in the element
                                  "className");

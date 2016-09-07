@@ -1,16 +1,24 @@
 package My.catalina.core;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.servlet.ServletException;
+
 import My.catalina.Container;
+import My.catalina.ContainerEvent;
 import My.catalina.ContainerListener;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
+import My.catalina.LifecycleListener;
 import My.catalina.Loader;
 import My.catalina.Manager;
 import My.catalina.Pipeline;
+import My.catalina.Valve;
+import My.catalina.connector.Request;
+import My.catalina.connector.Response;
 import My.catalina.util.LifecycleSupport;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
@@ -56,6 +64,12 @@ public abstract class ContainerBase
     
     
     /**
+     * The human-readable name of this Container.
+     */
+    protected String name = null;
+    
+    
+    /**
      * The Manager implementation with which this Container is associated.
      */
     protected Manager manager = null;
@@ -76,8 +90,7 @@ public abstract class ContainerBase
     /**
      * The Pipeline object with which this Container is associated.
      */
-    // implements this latter.
-    //  protected Pipeline pipeline = new StandardPipeline(this);
+      protected Pipeline pipeline = new StandardPipeline(this);
     
     
     
@@ -209,6 +222,38 @@ public abstract class ContainerBase
         return (null);
 
     }
+    
+    
+    /**
+     * Return a name string (suitable for use by humans) that describes this
+     * Container.  Within the set of child containers belonging to a particular
+     * parent, Container names must be unique.
+     */
+    public String getName() {
+
+        return (name);
+
+    }
+
+
+    /**
+     * Set a name string (suitable for use by humans) that describes this
+     * Container.  Within the set of child containers belonging to a particular
+     * parent, Container names must be unique.
+     *
+     * @param name New name of this container
+     *
+     * @exception IllegalStateException if this Container has already been
+     *  added to the children of a parent Container (after which the name
+     *  may not be changed)
+     */
+    public void setName(String name) {
+
+        String oldName = this.name;
+        this.name = name;
+    }
+    
+    
     
     /**
      * Set the Manager with which this Container is associated.
@@ -430,6 +475,214 @@ public abstract class ContainerBase
     
     
     
+    /**
+     * Process the specified Request, to produce the corresponding Response,
+     * by invoking the first Valve in our pipeline (if any), or the basic
+     * Valve otherwise.
+     */
+    public void invoke(Request request, Response response)
+    throws IOException, ServletException {
+    	
+    }
+    
+    
+    
+    /**
+     * Remove an existing child Container from association with this parent
+     * Container.
+     */
+    public void removeChild(Container child) {
+
+        if (child == null) {
+            return;
+        }
+        
+        synchronized(children) {
+            if (children.get(child.getName()) == null)
+                return;
+            children.remove(child.getName());
+        }
+        
+        if (started && (child instanceof Lifecycle)) {
+            try {
+                if( child instanceof ContainerBase ) {
+                    if( ((ContainerBase)child).started ) {
+                        ((Lifecycle) child).stop();
+                    }
+                } else {
+                    ((Lifecycle) child).stop();
+                }
+            } catch (LifecycleException e) {
+                log.error("ContainerBase.removeChild: stop: ", e);
+            }
+        }
+    
+    }
+    
+    
+    
+    /**
+     * Remove a container event listener from this component.
+     *
+     * @param listener The listener to remove
+     */
+    public void removeContainerListener(ContainerListener listener) {
+
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
+
+    }
+    
+    
+    
+    
+	// --------------------- Lifecycle Methods ---------------------
+    
+    /**
+     * Add a lifecycle event listener to this component.
+     */
+    public void addLifecycleListener(LifecycleListener listener) {
+
+        lifecycle.addLifecycleListener(listener);
+
+    }
+    
+    
+    
+    /**
+     * Get the lifecycle listeners associated with this lifecycle. If this 
+     * Lifecycle has no listeners registered, a zero-length array is returned.
+     */
+    public LifecycleListener[] findLifecycleListeners() {
+    	return lifecycle.findLifecycleListeners();
+    }
+    
+    
+    /**
+     * Remove a lifecycle event listener from this component.
+     *
+     * @param listener The listener to remove
+     */
+    public void removeLifecycleListener(LifecycleListener listener) {
+
+        lifecycle.removeLifecycleListener(listener);
+
+    }
+    
+    
+    
+    /**
+     * Prepare for active use of the public methods of this Component.
+     */
+    public synchronized void start() throws LifecycleException {
+    	
+    }
+     
+    /**
+     * Gracefully shut down active use of the public methods of this Component.
+     */
+    public synchronized void stop() throws LifecycleException {
+    	
+    }
+     
+    
+    
+    
+    
+    // ---------------------- Pipeline Methods ----------------------
+    
+    /**
+     * <p>Return the Valve instance that has been distinguished as the basic
+     * Valve for this Pipeline (if any).
+     */
+    public Valve getBasic() {
+
+        return (pipeline.getBasic());
+
+    }
+    
+    
+    /**
+     * <p>Set the Valve instance that has been distinguished as the basic
+     * Valve for this Pipeline (if any).  Prioer to setting the basic Valve,
+     * the Valve's <code>setContainer()</code> will be called, if it
+     * implements <code>Contained</code>, with the owning Container as an
+     * argument.  The method may throw an <code>IllegalArgumentException</code>
+     * if this Valve chooses not to be associated with this Container, or
+     * <code>IllegalStateException</code> if it is already associated with
+     * a different Container.</p>
+     *
+     * @param valve Valve to be distinguished as the basic Valve
+     */
+    public void setBasic(Valve valve) {
+
+        pipeline.setBasic(valve);
+
+    }
+    
+    
+    /**
+     * Add a new Valve to the end of the pipeline associated with this
+     * Container.  Prior to adding the Valve, the Valve's
+     * <code>setContainer</code> method must be called, with this Container
+     * as an argument.  The method may throw an
+     * <code>IllegalArgumentException</code> if this Valve chooses not to
+     * be associated with this Container, or <code>IllegalStateException</code>
+     * if it is already associated with a different Container.
+     *
+     * @param valve Valve to be added
+     *
+     * @exception IllegalArgumentException if this Container refused to
+     *  accept the specified Valve
+     * @exception IllegalArgumentException if the specifie Valve refuses to be
+     *  associated with this Container
+     * @exception IllegalStateException if the specified Valve is already
+     *  associated with a different Container
+     */
+    public synchronized void addValve(Valve valve) {
+
+        pipeline.addValve(valve);
+        fireContainerEvent(ADD_VALVE_EVENT, valve);
+    }
+    
+    
+    /**
+     * Return the set of Valves in the pipeline associated with this
+     * Container, including the basic Valve (if any).  If there are no
+     * such Valves, a zero-length array is returned.
+     */
+    public Valve[] getValves() {
+
+        return (pipeline.getValves());
+
+    }
+    
+    
+    /**
+     * Remove the specified Valve from the pipeline associated with this
+     * Container, if it is found; otherwise, do nothing.
+     *
+     * @param valve Valve to be removed
+     */
+    public synchronized void removeValve(Valve valve) {
+
+        pipeline.removeValve(valve);
+        fireContainerEvent(REMOVE_VALVE_EVENT, valve);
+    }
+    
+    
+    /**
+     * Return the first valve in the pipeline.
+     */
+    public Valve getFirst() {
+
+        return (pipeline.getFirst());
+
+    }
+    
+    
+    
     
     
     
@@ -442,9 +695,47 @@ public abstract class ContainerBase
      */
     public void fireContainerEvent(String type, Object data) {
     	
-    	 // implements latter!
+    	 if (listeners.size() < 1)
+             return;
+         ContainerEvent event = new ContainerEvent(this, type, data);
+         ContainerListener list[] = new ContainerListener[0];
+         synchronized (listeners) {
+             list = (ContainerListener[]) listeners.toArray(list);
+         }
+         for (int i = 0; i < list.length; i++)
+             ((ContainerListener) list[i]).containerEvent(event);
+
     }
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+ // -------------- ContainerExecuteDelay Inner Class --------------
+    /**
+     * Private thread class to invoke the backgroundProcess method 
+     * of this container and its children after a fixed delay.
+     */
+    protected class ContainerBackgroundProcessor implements Runnable {
+    	
+    	public void run() {
+    		while (!threadDone) {
+    			try {
+                    Thread.sleep(backgroundProcessorDelay * 1000L);
+    			}catch (InterruptedException e) {;}
+    			
+    			if (!threadDone) {
+    				//XXX 
+    				//do this latter
+    			}
+    		}
+    	}
+    }
     
     
     
