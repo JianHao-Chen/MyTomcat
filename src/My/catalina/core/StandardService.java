@@ -3,6 +3,7 @@ package My.catalina.core;
 import java.util.ArrayList;
 
 import My.catalina.Container;
+import My.catalina.Engine;
 import My.catalina.Executor;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
@@ -93,6 +94,42 @@ public class StandardService implements Lifecycle , Service{
     	
     	 Container oldContainer = this.container;
     	 
+    	 if ((oldContainer != null) && (oldContainer instanceof Engine))
+             ((Engine) oldContainer).setService(null);
+    	 
+    	 this.container = container;
+         if ((this.container != null) && (this.container instanceof Engine))
+             ((Engine) this.container).setService(this);
+    	 
+         
+         if (started && (this.container != null) &&
+                 (this.container instanceof Lifecycle)) {
+                 try {
+                     ((Lifecycle) this.container).start();
+                 } catch (LifecycleException e) {
+                     ;
+                 }
+          }
+         
+         
+         synchronized (connectors) {
+             for (int i = 0; i < connectors.length; i++)
+                 connectors[i].setContainer(this.container);
+         }
+         
+         
+         
+         if (started && (oldContainer != null) &&
+                 (oldContainer instanceof Lifecycle)) {
+                 try {
+                     ((Lifecycle) oldContainer).stop();
+                 } catch (LifecycleException e) {
+                     ;
+                 }
+        }
+         
+         
+         
     }
     
 
@@ -113,6 +150,7 @@ public class StandardService implements Lifecycle , Service{
     public Server getServer() {
         return (this.server);
     }
+    
     public void setServer(Server server) {
         this.server = server;
     }
@@ -256,6 +294,22 @@ public class StandardService implements Lifecycle , Service{
         }
     	
     	initialized = true;
+    	
+    	
+    	// Initialize our defined Connectors
+    	synchronized (connectors) {
+    		for (int i = 0; i < connectors.length; i++) {
+    			try {
+                    connectors[i].initialize();
+    			}
+    			catch (Exception e) {
+    				String message = 
+                            "standardService.connector.initFailed";
+                    log.error(message, e);
+    			}
+    		}
+    	}
+    	
     	
     }
     

@@ -300,6 +300,22 @@ public final class StandardServer
         throws LifecycleException 
     {
     	
+    	if (initialized) {
+            log.info("standardServer.initialize.initialized");
+            return;
+    	}
+    	
+    	lifecycle.fireLifecycleEvent(INIT_EVENT, null);
+    	
+    	initialized = true;
+    	
+    	
+    	// Initialize our defined Services
+        for (int i = 0; i < services.length; i++) {
+            services[i].initialize();
+        }
+    	
+    	
     }
 
 

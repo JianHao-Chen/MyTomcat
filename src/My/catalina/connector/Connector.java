@@ -8,6 +8,7 @@ import My.catalina.Service;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.catalina.util.LifecycleSupport;
+import My.coyote.Adapter;
 import My.coyote.ProtocolHandler;
 
 /**
@@ -123,6 +124,12 @@ public class Connector implements Lifecycle
     protected Thread thread = null;
     
     
+    /**
+     * Coyote adapter.
+     */
+    protected Adapter adapter = null;
+    
+    
  // ----------------------- Properties -----------------------
     /**
      * the <code>Service</code> with which we are associated (if any).
@@ -236,7 +243,19 @@ public class Connector implements Lifecycle
     	 
     	 this.initialized = true;
     	 
+    	 
+    	// Initializa adapter
+    	adapter = new CoyoteAdapter(this);
     	
+    	protocolHandler.setAdapter(adapter);
+    	
+    	
+    	 try {
+             protocolHandler.init();
+         } catch (Exception e) {
+             throw new LifecycleException
+                ("coyoteConnector.protocolHandlerInitializationFailed");
+         }
     }
     
     

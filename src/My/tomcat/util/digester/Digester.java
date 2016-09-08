@@ -805,8 +805,12 @@ public class Digester extends DefaultHandler{
     	}
     	
     	
-    	if(qName.equals("Host")){
-    		System.out.println("Host");
+    	if(qName.equals("Connector")){
+    		System.out.println("Connector");
+    	}
+    	
+    	if(qName.equals("Context")){
+    		System.out.println("Context");
     	}
     	
     	

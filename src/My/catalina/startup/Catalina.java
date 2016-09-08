@@ -11,6 +11,8 @@ import org.xml.sax.Attributes;
 import org.xml.sax.InputSource;
 
 import My.catalina.Container;
+import My.catalina.Lifecycle;
+import My.catalina.LifecycleException;
 import My.tomcat.util.digester.ConnectorCreateRule;
 import My.tomcat.util.digester.Digester;
 import My.tomcat.util.digester.Rule;
@@ -164,8 +166,8 @@ public class Catalina extends Embedded{
         digester.addRule("Server/Service/Connector",
                          new ConnectorCreateRule());
         
-  //      digester.addRule("Server/Service/Connector", 
-   //                      new SetAllPropertiesRule(new String[]{"executor"}));
+        digester.addRule("Server/Service/Connector", 
+                         new SetAllPropertiesRule(new String[]{"executor"}));
        
         digester.addSetNext("Server/Service/Connector",
                             "addConnector",
@@ -187,7 +189,7 @@ public class Catalina extends Embedded{
         digester.addRuleSet(new NamingRuleSet("Server/GlobalNamingResources/"));
         digester.addRuleSet(new EngineRuleSet("Server/Service/"));
         digester.addRuleSet(new HostRuleSet("Server/Service/Engine/"));
-    //    digester.addRuleSet(new ContextRuleSet("Server/Service/Engine/Host/"));
+        digester.addRuleSet(new ContextRuleSet("Server/Service/Engine/Host/"));
     //    digester.addRuleSet(ClusterRuleSetFactory.getClusterRuleSet("Server/Service/Engine/Host/Cluster/"));
         digester.addRuleSet(new NamingRuleSet("Server/Service/Engine/Host/Context/"));
         
@@ -238,9 +240,48 @@ public class Catalina extends Embedded{
          
          
          
+         // Start the new server
+         if (getServer() instanceof Lifecycle) {
+        	 try {
+                 getServer().initialize();
+                 
+        	 }catch (LifecycleException e) {
+        		 
+        		 log.error("Catalina.start", e);
+        	 }
+         }
          
     }
     
+    
+    
+    
+    /**
+     * Start a new server instance.
+     */
+    public void start() {
+    	
+    	 if (getServer() == null) {
+             load();
+         }
+
+         if (getServer() == null) {
+             log.fatal("Cannot start server. Server instance is not configured.");
+             return;
+         }
+         
+         
+      // Start the new server
+         if (getServer() instanceof Lifecycle) {
+             try {
+                 ((Lifecycle) getServer()).start();
+             } catch (LifecycleException e) {
+                 log.error("Catalina.start: ", e);
+             }
+         }
+         
+         
+    }
     
     
     
