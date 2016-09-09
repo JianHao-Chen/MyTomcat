@@ -89,7 +89,14 @@ public class Http11NioProtocol implements ProtocolHandler{
     
     
     public void start() throws Exception {
-    	
+    	 try {
+             ep.start();
+         } catch (Exception ex) {
+             log.error("http11protocol.endpoint.starterror");
+             throw ex;
+         }
+         if(log.isInfoEnabled())
+             log.info("http11protocol.start");
     }
     
     

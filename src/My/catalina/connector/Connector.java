@@ -197,6 +197,9 @@ public class Connector implements Lifecycle
 
     }
     
+    
+    
+	// ----------------- Lifecycle Methods -----------------
 
 
 	@Override
@@ -219,8 +222,27 @@ public class Connector implements Lifecycle
 
 	@Override
 	public void start() throws LifecycleException {
-		// TODO Auto-generated method stub
+		if( !initialized )
+            initialize();
 		
+		 // Validate and update our current state
+        if (started ) {
+            if(log.isInfoEnabled())
+                log.info("coyoteConnector.alreadyStarted");
+            return;
+        }
+        
+        lifecycle.fireLifecycleEvent(START_EVENT, null);
+        started = true;
+        
+        try {
+            protocolHandler.start();
+        }catch (Exception e) {
+        	String msg = "Connector.protocolHandler Start Failed";
+        	throw new LifecycleException(msg);
+        }
+        
+        
 	}
 
 	@Override
