@@ -1,7 +1,10 @@
 package My.catalina.core;
 
 
+import java.io.IOException;
+import java.net.InetAddress;
 import java.net.ServerSocket;
+import java.net.Socket;
 
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
@@ -362,7 +365,58 @@ public final class StandardServer
 
 	@Override
 	public void await() {
-		// TODO Auto-generated method stub
+		
+		// Set up a server socket to wait on
+		try {
+			awaitSocket =
+                new ServerSocket(port, 1,
+                                 InetAddress.getByName("localhost"));
+		}catch (IOException e) {
+			
+		}
+		
+		 try {
+			 awaitThread = Thread.currentThread();
+			 
+			 while (!stopAwait) {
+				 ServerSocket serverSocket = awaitSocket;
+				 if (serverSocket == null) 
+	                    break;
+				 
+				// Wait for the next connection
+	             Socket socket = null;
+	             try {
+	            	 socket = serverSocket.accept();
+	             }catch (IOException e) {
+	            	 
+	             }
+	             finally {
+	                    // Close the socket now that we are done with it
+	                    try {
+	                        if (socket != null) {
+	                            socket.close();
+	                        }
+	                    } catch (IOException e) {
+	                        // Ignore
+	                    }
+	                }
+	             
+			 }
+			 
+		 }finally {
+	            ServerSocket serverSocket = awaitSocket;
+	            awaitThread = null;
+	            awaitSocket = null;
+
+	            // Close the server socket and return
+	            if (serverSocket != null) {
+	                try {
+	                    serverSocket.close();
+	                } catch (IOException e) {
+	                    // Ignore
+	                }
+	            }
+	        }
 		
 	}
 

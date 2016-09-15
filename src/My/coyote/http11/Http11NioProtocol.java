@@ -3,6 +3,9 @@ package My.coyote.http11;
 import java.net.InetAddress;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import My.coyote.Adapter;
 import My.coyote.ProtocolHandler;
@@ -39,6 +42,10 @@ public class Http11NioProtocol implements ProtocolHandler{
 	
 	private int maxHttpHeaderSize = 8 * 1024;
 	
+	private int maxKeepAliveRequests=100; // as in Apache HTTPD server
+	private int timeout = 300000;   // 5 minutes as in Apache HTTPD server
+	
+	private int socketBuffer = 9000;
 	
 	// ------------------ properties -------------------------
 	
@@ -175,6 +182,17 @@ public class Http11NioProtocol implements ProtocolHandler{
 		 protected Http11NioProtocol proto;
 		 protected static int count = 0;
 		 
+		 protected ConcurrentHashMap<NioChannel, Http11NioProcessor> connections =
+	            new ConcurrentHashMap<NioChannel, Http11NioProcessor>();
+		 
+		 
+		 protected ConcurrentLinkedQueue<Http11NioProcessor> recycledProcessors = new ConcurrentLinkedQueue<Http11NioProcessor>() {
+			 
+			 protected AtomicInteger size = new AtomicInteger(0);
+			 
+			 
+		 };
+		 
 		 
 		 Http11ConnectionHandler(Http11NioProtocol proto) {
 			 this.proto = proto;
@@ -182,9 +200,64 @@ public class Http11NioProtocol implements ProtocolHandler{
 		 
 		@Override
 		public SocketState process(NioChannel socket) {
-			// TODO Auto-generated method stub
-			return null;
+			Http11NioProcessor processor = null;
+			try {
+				processor = connections.remove(socket);
+				
+				if (processor == null) {
+					// get from recycledProcessors
+				}
+				
+				if (processor == null) {
+					processor = createProcessor();
+				}
+				
+				
+				SocketState state = processor.process(socket);
+				
+				if (state == SocketState.LONG) {
+					
+				}
+				else if (state == SocketState.OPEN) {
+					
+				}
+				else {
+					
+				}
+				
+			}catch (java.net.SocketException e) {
+				
+			}catch (java.io.IOException e) {
+				
+			}
+			
+			
+			return SocketState.CLOSED;
 		}
+		
+		
+		public Http11NioProcessor createProcessor() {
+			
+			Http11NioProcessor processor = new Http11NioProcessor(
+		              proto.ep.getSocketProperties().getRxBufSize(),
+		              proto.ep.getSocketProperties().getTxBufSize(), 
+		              proto.maxHttpHeaderSize,
+		              proto.ep);
+			
+			processor.setAdapter(proto.adapter);
+			
+			processor.setMaxKeepAliveRequests(proto.maxKeepAliveRequests);
+			processor.setTimeout(proto.timeout);
+			
+			processor.setSocketBuffer(proto.socketBuffer);
+			
+			return processor;
+			
+		}
+		
+		
+		
+		
 		@Override
 		public SocketState event(NioChannel socket, SocketStatus status) {
 			// TODO Auto-generated method stub

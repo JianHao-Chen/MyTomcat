@@ -203,6 +203,30 @@ public class Catalina extends Embedded{
     }
     
     
+    /**
+     * Await and shutdown.
+     */
+    public void await() {
+
+        getServer().await();
+
+    }
+    
+    /**
+     * Stop an existing server instance.
+     */
+    public void stop() {
+    	
+    	 // Shut down the server
+        if (getServer() instanceof Lifecycle) {
+            try {
+                ((Lifecycle) getServer()).stop();
+            } catch (LifecycleException e) {
+                log.error("Catalina.stop", e);
+            }
+        }
+    }
+    
     
     public void load() {
     	
@@ -278,6 +302,11 @@ public class Catalina extends Embedded{
              } catch (LifecycleException e) {
                  log.error("Catalina.start: ", e);
              }
+         }
+         
+         if (await) {
+        	 await();
+             stop();
          }
          
          

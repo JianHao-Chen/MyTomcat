@@ -7,6 +7,7 @@ import My.catalina.LifecycleListener;
 import My.catalina.Service;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
+import My.tomcat.util.IntrospectionUtils;
 import My.catalina.util.LifecycleSupport;
 import My.coyote.Adapter;
 import My.coyote.ProtocolHandler;
@@ -170,6 +171,36 @@ public class Connector implements Lifecycle
     public void setContainer(Container container) {
         this.container = container;
     }
+    
+    
+    /**
+     * Return the port number on which we listen for requests.
+     */
+    public int getPort() {
+        return (this.port);
+    }
+    
+    /**
+     * Set the port number on which we listen for requests.
+     *
+     * @param port The new port number
+     */
+    public void setPort(int port) {
+        this.port = port;
+        setProperty("port", String.valueOf(port));
+    }
+    
+    
+    
+    /**
+     * Set a configured property.
+     */
+    public boolean setProperty(String name, String value) {
+    	
+    	return IntrospectionUtils.setProperty(protocolHandler, name, value);
+    }
+
+    
     
     
     /**

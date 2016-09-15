@@ -1,5 +1,5 @@
 package My.catalina.connector;
 
-public class Request {
+public final class Request {
 
 }
