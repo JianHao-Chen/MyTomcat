@@ -90,22 +90,44 @@ public class NioChannel implements ByteChannel{
 		return o;
 	}
 	
+	
+	/**
+     * Reads a sequence of bytes from this channel into the given buffer.
+     *
+     * @param dst The buffer into which bytes are to be transferred
+     * @return The number of bytes read, possibly zero, 
+     * 			or <tt>-1</tt> if the channel has reached end-of-stream
+     * @throws IOException If some other I/O error occurs
+     * @todo Implement this java.nio.channels.ReadableByteChannel method
+     */
 	@Override
 	public int read(ByteBuffer dst) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		return sc.read(dst);
 	}
 
+	
+	 /**
+     * Tells whether or not this channel is open.
+     *
+     * @return <tt>true</tt> if, and only if, this channel is open
+     * @todo Implement this java.nio.channels.Channel method
+     */
 	@Override
 	public boolean isOpen() {
-		// TODO Auto-generated method stub
-		return false;
+		return sc.isOpen();
 	}
 
+	
+	/**
+     * Closes this channel.
+     *
+     * @throws IOException If an I/O error occurs
+     * @todo Implement this java.nio.channels.Channel method
+     */
 	@Override
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
-		
+		sc.socket().close();
+		sc.close();
 	}
 
 	@Override

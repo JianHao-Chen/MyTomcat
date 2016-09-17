@@ -3,6 +3,7 @@ package My.coyote;
 import java.io.IOException;
 
 import My.tomcat.util.buf.ByteChunk;
+import My.tomcat.util.buf.MessageBytes;
 import My.tomcat.util.http.MimeHeaders;
 
 public final class Request {
@@ -15,9 +16,16 @@ public final class Request {
 	
 	
 	// ----------------- Instance Variables -----------------
-	
+	private MessageBytes methodMB = MessageBytes.newInstance();
+	private MessageBytes unparsedURIMB = MessageBytes.newInstance();
+	private MessageBytes uriMB = MessageBytes.newInstance();
+	private MessageBytes protoMB = MessageBytes.newInstance();
 	
 	private MimeHeaders headers = new MimeHeaders();
+	
+	
+	// Time of the request - usefull to avoid repeated calls to System.currentTime
+    private long startTime = 0L;
 	
 	
 	 /**
@@ -32,11 +40,33 @@ public final class Request {
 	
 	// ------------------- Properties --------------------
 	
+	public MessageBytes method() {
+        return methodMB;
+    }
+	
+	public MessageBytes unparsedURI() {
+        return unparsedURIMB;
+    }
+	
+	public MessageBytes requestURI() {
+        return uriMB;
+    }
+	
+	public MessageBytes protocol() {
+	        return protoMB;
+	}
+	
 	public MimeHeaders getMimeHeaders() {
         return headers;
     }
 	
-	
+	public long getStartTime() {
+        return startTime;
+    }
+
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
 	
 	
 	

@@ -213,7 +213,19 @@ public class MimeHeaders {
     	mh.getName().setString(name);
     	return mh.getValue();
     }
+   
     
+    /** Create a new named header using un-translated byte[].
+    The conversion to chars can be delayed until
+    encoding is known.
+ */
+    public MessageBytes addValue(byte b[], int startN, int len)
+    {
+    	MimeHeaderField mhf=createHeader();
+    	mhf.getName().setBytes(b, startN, len);
+    	return mhf.getValue();
+    }
+
     
   //-------------------- Getting headers --------------------
     /**

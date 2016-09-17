@@ -239,6 +239,61 @@ public class Http11NioProcessor {
         error = false;
         keepAlive = true;
         
+        boolean keptAlive = false;
+        
+        while (!error && keepAlive ) {
+        	
+        	// Parsing the request header
+        	try {
+        		
+        		if(!inputBuffer.parseRequestLine(keepAlive)){
+        			//no data available yet, since we might have read part
+                    //of the request line, we can't recycle the processor
+        			
+        			/*
+        			openSocket = true;
+                    recycle = false;
+                    break;
+                    */
+        		}
+        		
+        		keptAlive = true;
+        		
+        		if ( !inputBuffer.parseHeaders() ) {
+        			//we've read part of the request, don't recycle it
+                    //instead associate it with the socket
+        			
+        			/*
+        			openSocket = true;
+                    recycle = false;
+                    break;
+                    */
+        		}
+        		
+        		request.setStartTime(System.currentTimeMillis());
+        		
+        	}catch (IOException e) {
+        		error = true;
+                break;
+        	}
+        	catch (Throwable t) {
+        		// 400 - Bad Request
+        		
+        		/*
+        		 * server don't understand the request
+                response.setStatus(400);
+                adapter.log(request, response, 0);
+                error = true;
+                */
+        	}
+        	
+        	if (!error) {
+        		// Setting up filters, and parse some request headers
+        		rp.setStage(My.coyote.Constants.STAGE_PREPARE);
+        	
+        	}
+        	
+        }
     	return null;
     }
     
