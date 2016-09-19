@@ -43,7 +43,7 @@ public class CoyoteAdapter implements Adapter{
 	// -------------------- Adapter Methods -------------------- 
 
 	@Override
-	public void service(Request req, Response res) throws Exception {
+	public void service(My.coyote.Request req, My.coyote.Response res) throws Exception {
 		// TODO Auto-generated method stub
 		
 	}
@@ -51,7 +51,7 @@ public class CoyoteAdapter implements Adapter{
 
 
 	@Override
-	public boolean event(Request req, Response res, SocketStatus status)
+	public boolean event(My.coyote.Request req, My.coyote.Response res, SocketStatus status)
 			throws Exception {
 		// TODO Auto-generated method stub
 		return false;
@@ -60,7 +60,7 @@ public class CoyoteAdapter implements Adapter{
 
 
 	@Override
-	public void log(Request req, Response res, long time) {
+	public void log(My.coyote.Request req, My.coyote.Response res, long time) {
 		// TODO Auto-generated method stub
 		
 	}

@@ -225,6 +225,28 @@ public class MimeHeaders {
     	mhf.getName().setBytes(b, startN, len);
     	return mhf.getValue();
     }
+    
+    
+    /** Allow "set" operations - 
+    return a MessageBytes container for the
+    header value ( existing header or new
+    if this .
+     */
+    public MessageBytes setValue( String name ) {
+	    for ( int i = 0; i < count; i++ ) {
+	        if(headers[i].getName().equalsIgnoreCase(name)) {
+	            for ( int j=i+1; j < count; j++ ) {
+	                if(headers[j].getName().equalsIgnoreCase(name)) {
+	                    removeHeader(j--);
+	                }
+	            }
+	            return headers[i].getValue();
+	        }
+	    }
+	    MimeHeaderField mh = createHeader();
+	    mh.getName().setString(name);
+	    return mh.getValue();
+    }
 
     
   //-------------------- Getting headers --------------------

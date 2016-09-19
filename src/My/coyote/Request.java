@@ -16,6 +16,10 @@ public final class Request {
 	
 	
 	// ----------------- Instance Variables -----------------
+	private int serverPort = -1;
+    private MessageBytes serverNameMB = MessageBytes.newInstance();
+	
+	
 	private MessageBytes methodMB = MessageBytes.newInstance();
 	private MessageBytes unparsedURIMB = MessageBytes.newInstance();
 	private MessageBytes uriMB = MessageBytes.newInstance();
@@ -37,6 +41,19 @@ public final class Request {
     private int bytesRead=0;
 	
 	private RequestInfo reqProcessorMX = new RequestInfo(this);
+	
+	
+	private Response response;
+	
+	
+	
+	
+	/**
+     * HTTP specific fields. (remove them ?)
+     */
+    private long contentLength = -1;
+    private MessageBytes contentTypeMB = null;
+    
 	
 	// ------------------- Properties --------------------
 	
@@ -66,6 +83,39 @@ public final class Request {
 
     public void setStartTime(long startTime) {
         this.startTime = startTime;
+    }
+    
+    
+    
+    /** 
+     * Return the buffer holding the server name, if
+     * any. Use isNull() to check if there is no value
+     * set.
+     * This is the "virtual host", derived from the
+     * Host: header.
+     */
+    public MessageBytes serverName() {
+        return serverNameMB;
+    }
+
+    public int getServerPort() {
+        return serverPort;
+    }
+    
+    public void setServerPort(int serverPort ) {
+        this.serverPort=serverPort;
+    }
+    
+    
+    
+	// -------------------- Associated response --------------------
+	public Response getResponse() {
+        return response;
+    }
+
+    public void setResponse( Response response ) {
+        this.response=response;
+        response.setRequest( this );
     }
 	
 	
@@ -106,5 +156,58 @@ public final class Request {
 	public RequestInfo getRequestProcessor() {
         return reqProcessorMX;
     }
+	
+	
+	
+	
+	// -------------------- encoding/type --------------------
+	public void setContentLength(int len) {
+        this.contentLength = len;
+    }
+
+
+    public int getContentLength() {
+        long length = getContentLengthLong();
+
+        if (length < Integer.MAX_VALUE) {
+            return (int) length;
+        }
+        return -1;
+    }
+
+    public long getContentLengthLong() {
+        if( contentLength > -1 ) return contentLength;
+
+        MessageBytes clB = headers.getUniqueValue("content-length");
+        contentLength = (clB == null || clB.isNull()) ? -1 : clB.getLong();
+
+        return contentLength;
+    }
+
+    public String getContentType() {
+        contentType();
+        if ((contentTypeMB == null) || contentTypeMB.isNull()) 
+            return null;
+        return contentTypeMB.toString();
+    }
+
+
+    public void setContentType(String type) {
+        contentTypeMB.setString(type);
+    }
+
+
+    public MessageBytes contentType() {
+        if (contentTypeMB == null)
+            contentTypeMB = headers.getValue("content-type");
+        return contentTypeMB;
+    }
+
+
+    public void setContentType(MessageBytes mb) {
+        contentTypeMB=mb;
+    }
+	
+	
 	
 }

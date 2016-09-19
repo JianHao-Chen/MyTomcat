@@ -36,6 +36,11 @@ public class InternalNioInputBuffer implements InputBuffer{
 		inputStreamInputBuffer = new SocketInputBuffer();
 		
 		
+		filterLibrary = new InputFilter[0];
+        activeFilters = new InputFilter[0];
+        lastActiveFilter = -1;
+		
+		
 		parsingHeader = true;
         parsingRequestLine = true;
         parsingRequestLinePhase = 0;
@@ -110,6 +115,67 @@ public class InternalNioInputBuffer implements InputBuffer{
      * Active filters (in order).
      */
     protected InputFilter[] activeFilters;
+    
+    /**
+     * Add an input filter to the filter library.
+     */
+    public void addFilter(InputFilter filter) {
+
+        InputFilter[] newFilterLibrary = 
+            new InputFilter[filterLibrary.length + 1];
+        for (int i = 0; i < filterLibrary.length; i++) {
+            newFilterLibrary[i] = filterLibrary[i];
+        }
+        newFilterLibrary[filterLibrary.length] = filter;
+        filterLibrary = newFilterLibrary;
+
+        activeFilters = new InputFilter[filterLibrary.length];
+
+    }
+
+    
+    /**
+     * Get filters.
+     */
+    public InputFilter[] getFilters() {
+
+        return filterLibrary;
+
+    }
+    
+    
+    /**
+     * Clear filters.
+     */
+    public void clearFilters() {
+
+        filterLibrary = new InputFilter[0];
+        lastActiveFilter = -1;
+
+    }
+    
+    
+    /**
+     * Add an input filter to the filter library.
+     */
+    public void addActiveFilter(InputFilter filter) {
+
+        if (lastActiveFilter == -1) {
+            filter.setBuffer(inputStreamInputBuffer);
+        } else {
+            for (int i = 0; i <= lastActiveFilter; i++) {
+                if (activeFilters[i] == filter)
+                    return;
+            }
+            filter.setBuffer(activeFilters[lastActiveFilter]);
+        }
+
+        activeFilters[++lastActiveFilter] = filter;
+
+        filter.setRequest(request);
+
+    }
+    
 
 
     /**

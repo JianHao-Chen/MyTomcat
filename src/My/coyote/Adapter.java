@@ -1,7 +1,5 @@
 package My.coyote;
 
-import My.catalina.connector.Request;
-import My.catalina.connector.Response;
 import My.tomcat.util.net.SocketStatus;
 
 /**
