@@ -131,6 +131,13 @@ public class Connector implements Lifecycle
     protected Adapter adapter = null;
     
     
+    /**
+     * URI encoding.
+     */
+    protected String URIEncoding = null;
+    
+    
+    
  // ----------------------- Properties -----------------------
     /**
      * the <code>Service</code> with which we are associated (if any).
@@ -225,6 +232,56 @@ public class Connector implements Lifecycle
     public void setProtocolHandlerClassName(String protocolHandlerClassName) {
 
         this.protocolHandlerClassName = protocolHandlerClassName;
+
+    }
+    
+    
+	// ---------------------- Public Methods ---------------------
+    
+    /**
+     * Create (or allocate) and return a Request object suitable for
+     * specifying the contents of a Request to the responsible Container.
+     */
+    public Request createRequest() {
+    	
+    	Request request = new Request();
+    	request.setConnector(this);
+    	return (request);
+    }
+    
+    /**
+     * Create (or allocate) and return a Response object suitable for
+     * receiving the contents of a Response from the responsible Container.
+     */
+    public Response createResponse() {
+
+        Response response = new Response();
+        response.setConnector(this);
+        return (response);
+
+    }
+    
+    
+    
+    /**
+     * Return the character encoding to be used for the URI.
+     */
+    public String getURIEncoding() {
+
+        return (this.URIEncoding);
+
+    }
+
+
+    /**
+     * Set the URI encoding to be used for the URI.
+     *
+     * @param URIEncoding The new URI character encoding.
+     */
+    public void setURIEncoding(String URIEncoding) {
+
+        this.URIEncoding = URIEncoding;
+        setProperty("uRIEncoding", URIEncoding);
 
     }
     

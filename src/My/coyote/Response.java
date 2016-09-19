@@ -46,6 +46,12 @@ public final class Response {
     
     
     /**
+     * Notes.
+     */
+    protected Object notes[] = new Object[Constants.MAX_NOTES];
+    
+    
+    /**
      * Committed flag.
      */
     protected boolean commited = false;
@@ -134,5 +140,18 @@ public final class Response {
 
     public void setCommitted(boolean v) {
         this.commited = v;
+    }
+    
+    
+    // -------------------- Per-Response "notes" --------------------
+
+
+    public final void setNote(int pos, Object value) {
+        notes[pos] = value;
+    }
+
+
+    public final Object getNote(int pos) {
+        return notes[pos];
     }
 }

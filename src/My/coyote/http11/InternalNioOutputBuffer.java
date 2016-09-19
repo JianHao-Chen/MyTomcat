@@ -5,12 +5,14 @@ import java.io.IOException;
 import My.coyote.OutputBuffer;
 import My.coyote.Response;
 import My.tomcat.util.buf.ByteChunk;
+import My.tomcat.util.http.HttpMessages;
 import My.tomcat.util.http.MimeHeaders;
 import My.tomcat.util.net.NioChannel;
 import My.tomcat.util.net.NioSelectorPool;
 
 public class InternalNioOutputBuffer implements OutputBuffer{
 
+	int bbufLimit = 0;
 	
 	// ------------------ Constructors ------------------
 	
@@ -27,7 +29,25 @@ public class InternalNioOutputBuffer implements OutputBuffer{
     public InternalNioOutputBuffer(Response response, int headerBufferSize) {
     	this.response = response;
         headers = response.getMimeHeaders();
+        
+        buf = new byte[headerBufferSize];
+        
+        if (headerBufferSize < (8 * 1024)) {
+            bbufLimit = 6 * 1500;    
+        } else {
+            bbufLimit = (headerBufferSize / 1500 + 1) * 1500;
+        }
+        
+        outputStreamOutputBuffer = new SocketOutputBuffer();
 
+        filterLibrary = new OutputFilter[0];
+        activeFilters = new OutputFilter[0];
+        lastActiveFilter = -1;
+
+        committed = false;
+        finished = false;
+        
+        HttpMessages.getMessage(200);
     }
     
     
@@ -209,5 +229,36 @@ public class InternalNioOutputBuffer implements OutputBuffer{
 		// TODO Auto-generated method stub
 		return 0;
 	}
+    
+    
+    
+    // ----------------------------------- OutputStreamOutputBuffer Inner Class
+
+
+    /**
+     * This class is an output buffer which will write data to an output
+     * stream.
+     */
+    protected class SocketOutputBuffer 
+        implements OutputBuffer {
+
+
+        /**
+         * Write chunk.
+         */
+        public int doWrite(ByteChunk chunk, Response res) 
+            throws IOException {
+
+            int len = chunk.getLength();
+            int start = chunk.getStart();
+            byte[] b = chunk.getBuffer();
+       //     addToBB(b, start, len);
+            return chunk.getLength();
+
+        }
+
+
+    }
+
     
 }

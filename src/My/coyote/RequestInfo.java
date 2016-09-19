@@ -22,5 +22,15 @@ public class RequestInfo {
     public void setStage(int stage) {
         this.stage = stage;
     }
+    
+    
+    
+    public String getWorkerThreadName() {
+        return workerThreadName;
+    }
+    
+    public void setWorkerThreadName(String workerThreadName) {
+        this.workerThreadName = workerThreadName;
+    }
 	
 }

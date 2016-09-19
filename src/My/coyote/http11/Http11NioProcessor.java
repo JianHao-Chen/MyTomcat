@@ -53,6 +53,7 @@ public class Http11NioProcessor {
         outputBuffer = new InternalNioOutputBuffer(response, maxHttpHeaderSize);
         response.setOutputBuffer(outputBuffer);
         request.setResponse(response);
+        
         initializeFilters();
 	}
 	
