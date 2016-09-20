@@ -3,9 +3,12 @@ package My.catalina.core;
 import java.util.Map;
 import java.util.WeakHashMap;
 
+import javax.management.ObjectName;
 import javax.naming.Context;
 
 import My.catalina.Host;
+import My.catalina.LifecycleException;
+import My.tomcat.util.modeler.Registry;
 
 /**
  * Standard implementation of the <b>Host</b> interface.  Each
@@ -58,6 +61,29 @@ public class StandardHost extends ContainerBase implements Host{
      */
     private boolean deployOnStartup = true;
     
+    
+    /**
+     * deploy Context XML config files property.
+     */
+    private boolean deployXML = true;
+    
+    
+    /**
+     * Unpack WARs property.
+     */
+    private boolean unpackWARs = true;
+    
+    /**
+     * Attribute value used to turn on/off XML namespace awarenes.
+     */
+     private boolean xmlNamespaceAware = false;
+     
+     /**
+      * Attribute value used to turn on/off XML validation
+      */
+      private boolean xmlValidation = false;
+     
+     
     
     /**
      * Track the class loaders for the child web applications so memory leaks
@@ -164,6 +190,89 @@ public class StandardHost extends ContainerBase implements Host{
         boolean oldDeployOnStartup = this.deployOnStartup;
         this.deployOnStartup = deployOnStartup;
     }
+    
+    
+    
+    
+    /**
+     * Deploy XML Context config files flag accessor.
+     */
+    public boolean isDeployXML() {
+
+        return (deployXML);
+
+    }
+    
+    
+    /**
+     * Deploy XML Context config files flag mutator.
+     */
+    public void setDeployXML(boolean deployXML) {
+
+        this.deployXML = deployXML;
+
+    }
+    
+    /**
+     * Unpack WARs flag accessor.
+     */
+    public boolean isUnpackWARs() {
+
+        return (unpackWARs);
+
+    }
+
+
+    /**
+     * Unpack WARs flag mutator.
+     */
+    public void setUnpackWARs(boolean unpackWARs) {
+
+        this.unpackWARs = unpackWARs;
+
+    }
+    
+    
+    /**
+     * Get the server.xml &lt;host&gt; attribute's xmlNamespaceAware.
+     * @return true if namespace awarenes is enabled.
+     *
+     */
+    public boolean getXmlNamespaceAware(){
+        return xmlNamespaceAware;
+    }
+
+
+    /**
+     * Set the namespace aware feature of the XML parser used when
+     * parsing xml instances.
+     * @param xmlNamespaceAware true to enable namespace awareness
+     */
+    public void setXmlNamespaceAware(boolean xmlNamespaceAware){
+        this.xmlNamespaceAware=xmlNamespaceAware;
+    }    
+    
+    
+    /**
+     * Set the validation feature of the XML parser used when
+     * parsing xml instances.
+     * @param xmlValidation true to enable xml instance validation
+     */
+    public void setXmlValidation(boolean xmlValidation){
+        
+        this.xmlValidation = xmlValidation;
+
+    }
+
+    /**
+     * Get the server.xml &lt;host&gt; attribute's xmlValidation.
+     * @return true if validation is enabled.
+     *
+     */
+    public boolean getXmlValidation(){
+        return xmlValidation;
+    }
+    
 
 
 	@Override
@@ -172,6 +281,56 @@ public class StandardHost extends ContainerBase implements Host{
 		return null;
 	}
 
+	
+	
+	// -------------------- Public Methods -------------------- 
+	
+	public void init() {
+		
+		if( initialized ) 
+			return;
+        initialized=true;
+        
+        if( getParent() == null ) {
+        	//;
+        }
+        
+        if( oname==null ) {
+        	
+        	try {
+        		StandardEngine engine=(StandardEngine)parent;
+        		domain=engine.getName();
+        		
+        		oname = new ObjectName(domain + ":type=Host,host=" +
+                        this.getName());
+        		
+        		controller = oname;
+        		
+        		Registry.getRegistry(null, null)
+                	.registerComponent(this, oname, null);
+        		
+        	}catch( Throwable t ) {
+        		
+        	}
+        }
+        
+	}
+	
+	
+	 /**
+     * Start this host.
+     */
+	 public synchronized void start() throws LifecycleException {
+		 
+		 if( started ) 
+			 return;
+		 
+		 if( ! initialized )
+			 init();
+		 
+		 
+		 super.start();
+	 }
     
 	
 }

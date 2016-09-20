@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import javax.servlet.ServletException;
 
+import My.catalina.Host;
 import My.catalina.connector.Request;
 import My.catalina.connector.Response;
 import My.catalina.valves.ValveBase;
@@ -34,5 +35,7 @@ public final class StandardEngineValve extends ValveBase {
     public final void invoke(Request request, Response response)
         throws IOException, ServletException {
     	
+    	// Select the Host to be used for this Request
+    	Host host = request.getHost();
     }
 }

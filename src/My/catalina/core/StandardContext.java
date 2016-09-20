@@ -2,7 +2,11 @@ package My.catalina.core;
 
 import java.io.Serializable;
 
+import javax.management.Notification;
+import javax.management.NotificationBroadcasterSupport;
+
 import My.catalina.Context;
+import My.catalina.LifecycleException;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 
@@ -56,6 +60,19 @@ public class StandardContext
      */
     private transient Object applicationEventListenersObjects[] = 
         new Object[0];
+    
+    
+    
+    /**
+     * The broadcaster that sends j2ee notifications. 
+     */
+    private NotificationBroadcasterSupport broadcaster = null;
+    
+    
+    /**
+     * The notification sequence number.
+     */
+    private long sequenceNumber = 0;
     
     
     
@@ -156,9 +173,67 @@ public class StandardContext
     
     
     
-	
+    /**
+     * Return the context path for this Context.
+     */
+    public String getPath() {
+
+        return (getName());
+
+    }
+
+    
+    /**
+     * Set the context path for this Context.
+     * <p>
+     * <b>IMPLEMENTATION NOTE</b>:  The context path is used as the "name" of
+     * a Context, because it must be unique.
+     *
+     * @param path The new context path
+     */
+    public void setPath(String path) {
+        // XXX Use host in name
+        setName(path);
+
+    }
     
     
+    
+    public void init() throws Exception {
+    	
+    	if( this.getParent() == null ) {
+    		//;
+    	}
+    	
+    	super.init();
+    }
+    
+    
+    /**
+     * Start this Context component.
+     */
+    public synchronized void start() throws LifecycleException {
+    	
+    	if (started) 
+    		return;
+    	
+    	 if( !initialized ) { 
+    		 
+    	 }
+    	 
+    	 
+    	// Notify our interested LifecycleListeners
+         lifecycle.fireLifecycleEvent(INIT_EVENT, null);
+         
+         
+      // Send j2ee.state.starting notification 
+         if (this.getObjectName() != null) {
+        	 Notification notification = new Notification("j2ee.state.starting", 
+                     										this.getObjectName(), 
+                     										sequenceNumber++);
+        	 broadcaster.sendNotification(notification);
+         }
+    }
     
     
     

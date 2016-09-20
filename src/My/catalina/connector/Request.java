@@ -2,6 +2,10 @@ package My.catalina.connector;
 
 import javax.servlet.http.HttpServletRequest;
 
+import My.catalina.Context;
+import My.catalina.Host;
+import My.tomcat.util.http.mapper.MappingData;
+
 /**
  * Wrapper object for the Coyote request.
  */
@@ -88,4 +92,58 @@ public final class Request implements HttpServletRequest{
     public void setResponse(My.catalina.connector.Response response) {
         this.response = response;
     }
+    
+    /**
+     * Associated context.
+     */
+    protected Context context = null;
+
+    /**
+     * Return the Context within which this Request is being processed.
+     */
+    public Context getContext() {
+        return (this.context);
+    }
+
+
+    /**
+     * Set the Context within which this Request is being processed.  This
+     * must be called as soon as the appropriate Context is identified, because
+     * it identifies the value to be returned by <code>getContextPath()</code>,
+     * and thus enables parsing of the request URI.
+     *
+     * @param context The newly associated Context
+     */
+    public void setContext(Context context) {
+        this.context = context;
+    }
+
+    
+    
+    
+    /**
+     * Return the Host within which this Request is being processed.
+     */
+    public Host getHost() {
+    	 if (getContext() == null)
+             return null;
+    	 return (Host)getContext().getParent();
+    }
+    
+    
+    
+    /**
+     * Mapping data.
+     */
+    protected MappingData mappingData = new MappingData();
+
+    /**
+     * Return mapping data.
+     */
+    public MappingData getMappingData() {
+        return (mappingData);
+    }
+    
+    
+    
 }

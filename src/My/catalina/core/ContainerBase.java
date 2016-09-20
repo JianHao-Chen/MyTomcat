@@ -4,7 +4,10 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import javax.servlet.ServletException;
 
 import My.catalina.Container;
@@ -370,6 +373,16 @@ public abstract class ContainerBase
     }
     
     
+    /**
+     * Return the Pipeline object that manages the Valves associated with
+     * this Container.
+     */
+    public Pipeline getPipeline() {
+
+        return (this.pipeline);
+
+    }
+    
     
     
     
@@ -572,11 +585,64 @@ public abstract class ContainerBase
     
     
     
+    public void init() throws Exception {
+    	
+    	initialized=true;
+    }
+    
+    
+    
     /**
      * Prepare for active use of the public methods of this Component.
      */
     public synchronized void start() throws LifecycleException {
     	
+    	// Validate and update our current component state
+    	if (started) {
+    		// already started
+    		return;
+    	}
+    	
+    	// Notify our interested LifecycleListeners
+    	lifecycle.fireLifecycleEvent(BEFORE_START_EVENT, null);
+    	
+    	started = true;
+    	
+    	/* Start our subordinate components, if any
+    		
+    		they include:
+    			loader
+    			logger
+    			manager
+    			cluster
+    			realm
+    			resources
+    	*/
+    	
+    	
+    	// Start our child containers, if any
+    	Container children[] = findChildren();
+    	for (int i = 0; i < children.length; i++) {
+    		if (children[i] instanceof Lifecycle)
+                ((Lifecycle) children[i]).start();
+    	}
+    	
+    	
+    	// Start the Valves in our pipeline (including the basic), if any
+        if (pipeline instanceof Lifecycle)
+            ((Lifecycle) pipeline).start();
+        
+        
+        // Notify our interested LifecycleListeners
+        lifecycle.fireLifecycleEvent(START_EVENT, null);
+        
+        
+        // Start our thread
+        threadStart();
+
+        // Notify our interested LifecycleListeners
+        lifecycle.fireLifecycleEvent(AFTER_START_EVENT, null);
+        
     }
      
     /**
@@ -585,7 +651,8 @@ public abstract class ContainerBase
     public synchronized void stop() throws LifecycleException {
     	
     }
-     
+    
+ 
     
     
     
@@ -710,7 +777,179 @@ public abstract class ContainerBase
     
     
     
+ // -------------------- JMX and Registration  --------------------
+    protected String type;
+    protected String domain;
+    protected String suffix;
+    protected ObjectName oname;
+    protected ObjectName controller;
+    protected transient MBeanServer mserver;
+
+    public ObjectName getJmxName() {
+        return oname;
+    }
     
+    public String getObjectName() {
+        if (oname != null) {
+            return oname.toString();
+        } else return null;
+    }
+
+    public String getDomain() {
+        if( domain==null ) {
+            Container parent=this;
+            while( parent != null &&
+                    !( parent instanceof StandardEngine) ) {
+                parent=parent.getParent();
+            }
+            if( parent instanceof StandardEngine ) {
+                domain=((StandardEngine)parent).getDomain();
+            } 
+        }
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain=domain;
+    }
+    
+    public String getType() {
+        return type;
+    }
+
+    protected String getJSR77Suffix() {
+        return suffix;
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception {
+        oname=name;
+        mserver=server;
+        if (name == null ){
+            return null;
+        }
+
+        domain=name.getDomain();
+
+        type=name.getKeyProperty("type");
+        if( type==null ) {
+            type=name.getKeyProperty("j2eeType");
+        }
+
+        String j2eeApp=name.getKeyProperty("J2EEApplication");
+        String j2eeServer=name.getKeyProperty("J2EEServer");
+        if( j2eeApp==null ) {
+            j2eeApp="none";
+        }
+        if( j2eeServer==null ) {
+            j2eeServer="none";
+        }
+        suffix=",J2EEApplication=" + j2eeApp + ",J2EEServer=" + j2eeServer;
+        return name;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
+    }
+
+    public ObjectName[] getChildren() {
+        ObjectName result[]=new ObjectName[children.size()];
+        Iterator it=children.values().iterator();
+        int i=0;
+        while( it.hasNext() ) {
+            Object next=it.next();
+            if( next instanceof ContainerBase ) {
+                result[i++]=((ContainerBase)next).getJmxName();
+            }
+        }
+        return result;
+    }
+
+    public ObjectName createObjectName(String domain, ObjectName parent)
+        throws Exception
+    {
+        if( log.isDebugEnabled())
+            log.debug("Create ObjectName " + domain + " " + parent );
+        return null;
+    }
+
+    public String getContainerSuffix() {
+        Container container=this;
+        Container context=null;
+        Container host=null;
+        Container servlet=null;
+        
+        StringBuffer suffix=new StringBuffer();
+        
+        if( container instanceof StandardHost ) {
+            host=container;
+        } else if( container instanceof StandardContext ) {
+            host=container.getParent();
+            context=container;
+        } else if( container instanceof StandardWrapper ) {
+            context=container.getParent();
+            host=context.getParent();
+            servlet=container;
+        }
+        if( context!=null ) {
+            String path=((StandardContext)context).getPath();
+            suffix.append(",path=").append((path.equals("")) ? "/" : path);
+        } 
+        if( host!=null ) suffix.append(",host=").append( host.getName() );
+        if( servlet != null ) {
+            String name=container.getName();
+            suffix.append(",servlet=");
+            suffix.append((name=="") ? "/" : name);
+        }
+        return suffix.toString();
+    }
+
+
+    /**
+     * Start the background thread that will periodically check for
+     * session timeouts.
+     */
+    protected void threadStart() {
+
+        if (thread != null)
+            return;
+        if (backgroundProcessorDelay <= 0)
+            return;
+
+        threadDone = false;
+        String threadName = "ContainerBackgroundProcessor[" + toString() + "]";
+        thread = new Thread(new ContainerBackgroundProcessor(), threadName);
+        thread.setDaemon(true);
+        thread.start();
+
+    }
+
+
+    /**
+     * Stop the background thread that is periodically checking for
+     * session timeouts.
+     */
+    protected void threadStop() {
+
+        if (thread == null)
+            return;
+
+        threadDone = true;
+        thread.interrupt();
+        try {
+            thread.join();
+        } catch (InterruptedException e) {
+            ;
+        }
+
+        thread = null;
+
+    }
     
     
     

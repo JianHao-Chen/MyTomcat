@@ -17,7 +17,7 @@ package My.catalina;
  * <p>
  */
 
-public interface Context {
+public interface Context extends Container{
 
 	 // ----------------- Manifest Constants -----------------
 	

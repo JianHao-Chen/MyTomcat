@@ -1,6 +1,7 @@
 package My.catalina.connector;
 
 import My.catalina.Container;
+import My.catalina.Host;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
@@ -8,6 +9,7 @@ import My.catalina.Service;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.tomcat.util.IntrospectionUtils;
+import My.tomcat.util.http.mapper.Mapper;
 import My.catalina.util.LifecycleSupport;
 import My.coyote.Adapter;
 import My.coyote.ProtocolHandler;
@@ -132,6 +134,12 @@ public class Connector implements Lifecycle
     
     
     /**
+     * Mapper.
+     */
+    protected Mapper mapper = new Mapper();
+    
+    
+    /**
      * URI encoding.
      */
     protected String URIEncoding = null;
@@ -207,6 +215,16 @@ public class Connector implements Lifecycle
     	return IntrospectionUtils.setProperty(protocolHandler, name, value);
     }
 
+    
+    
+    /**
+     * Return the mapper.
+     */
+    public Mapper getMapper() {
+
+        return (mapper);
+
+    }
     
     
     
@@ -331,7 +349,25 @@ public class Connector implements Lifecycle
         }
         
         
+        
+       initMapper();
+        
+        
 	}
+	
+	
+	public void initMapper(){
+		/*String defaultHost = "localhost";
+		mapper.setDefaultHostName(defaultHost);
+		
+		// add host
+		Host host = 
+		  (Host)getService().getContainer().findChild(defaultHost);
+		
+		String[] aliases = new String[0];
+        mapper.addHost(name, aliases, objectName);*/
+	}
+	
 
 	@Override
 	public void stop() throws LifecycleException {

@@ -149,6 +149,12 @@ public interface Container {
     public void setParentClassLoader(ClassLoader parent);
     
     
+    /**
+     * Return the JMX name associated with this container.
+     */
+    public String getObjectName();
+    
+    
     
     /**
      * Return the Loader with which this Container is associated.  If there is
@@ -182,6 +188,31 @@ public interface Container {
     public void setManager(Manager manager);
     
     
+    
+    
+    /**
+     * Return the Pipeline object that manages the Valves associated with
+     * this Container.
+     */
+    public Pipeline getPipeline();
+    
+    
+    
+    /**
+     * Return the child Container, associated with this Container, with
+     * the specified name (if any); otherwise, return <code>null</code>
+     *
+     * @param name Name of the child Container to be retrieved
+     */
+    public Container findChild(String name);
+
+
+    /**
+     * Return the set of children Containers associated with this Container.
+     * If this Container has no children, a zero-length array is returned.
+     */
+    public Container[] findChildren();
+
     
     
     /**

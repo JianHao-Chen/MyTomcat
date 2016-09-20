@@ -85,6 +85,8 @@ public class CoyoteAdapter implements Adapter{
 			
 			if (postParseRequest(req, request, res, response)) {
 				
+				// Calling the container
+				connector.getContainer().getPipeline().getFirst().invoke(request, response);
 			}
 			
 		}
@@ -134,6 +136,16 @@ public class CoyoteAdapter implements Adapter{
     		                       My.coyote.Response res, 
                                        Response response)
             throws Exception {
+    	
+    	
+    	connector.getMapper();
+    	
+    	/*.map(serverName, decodedURI, 
+                 request.getMappingData());
+    	
+    	request.setContext((Context) request.getMappingData().context);
+    	*/
+    	
     	
     	return true;
     	

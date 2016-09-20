@@ -243,13 +243,97 @@ public class StandardPipeline
 
 	@Override
 	public void setBasic(Valve valve) {
-		// TODO Auto-generated method stub
+		
+		Valve oldBasic = this.basic;
+		if (oldBasic == valve)
+            return;
+		
+		// Stop the old component if necessary
+		if (oldBasic != null) {
+			if (started && (oldBasic instanceof Lifecycle)) {
+				try {
+					((Lifecycle) oldBasic).stop();
+				}catch (LifecycleException e) {
+					
+				}
+			}
+			
+			 if (oldBasic instanceof Contained) {
+				 try {
+					 ((Contained) oldBasic).setContainer(null);
+				 }catch (Throwable t) {
+					 
+				 }
+			 }
+		}
+		
+		
+		// Start the new component if necessary
+		if (valve == null)
+            return;
+		
+		if (valve instanceof Contained) {
+			((Contained) valve).setContainer(this.container);
+		}
+		
+		if (valve instanceof Lifecycle) {
+			try {
+                ((Lifecycle) valve).start();
+            } catch (LifecycleException e) {
+            	
+            }
+		}
+		
+		
+		 // Update the pipeline
+		Valve current = first;
+		while (current != null) {
+			if (current.getNext() == oldBasic) {
+				
+			}
+		}
+		
+		
+		this.basic = valve;
 		
 	}
 
 	@Override
 	public void addValve(Valve valve) {
-		// TODO Auto-generated method stub
+		
+		// Validate that we can add this Valve
+		((Contained) valve).setContainer(this.container);
+		
+		// Start the new component if necessary
+		if (started) {
+			if (valve instanceof Lifecycle) {
+				try {
+                    ((Lifecycle) valve).start();
+                } catch (LifecycleException e) {
+                   
+                }
+			}
+
+			// Register the newly added valve
+         //   registerValve(valve);
+		}
+		
+		// Add this Valve to the set associated with this Pipeline
+        if (first == null) {
+        	first = valve;
+        	valve.setNext(basic);
+        }
+        else {
+        	Valve current = first;
+        	while (current != null) {
+        		if (current.getNext() == basic) {
+        			current.setNext(valve);
+        			valve.setNext(basic);
+					break;
+        		}
+        		current = current.getNext();
+        	}
+        }
 		
 	}
 
@@ -267,8 +351,11 @@ public class StandardPipeline
 
 	@Override
 	public Valve getFirst() {
-		// TODO Auto-generated method stub
-		return null;
+		if (first != null) {
+            return first;
+        } else {
+            return basic;
+        }
 	}
 
 }

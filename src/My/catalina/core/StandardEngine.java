@@ -1,6 +1,7 @@
 package My.catalina.core;
 
 import My.catalina.Engine;
+import My.catalina.LifecycleException;
 import My.catalina.Service;
 import My.catalina.Valve;
 import My.juli.logging.Log;
@@ -53,6 +54,29 @@ public class StandardEngine extends ContainerBase implements Engine{
      */
     public void setService(Service service) {
         this.service = service;
+    }
+    
+    
+    
+    public void init() {
+    	
+    }
+    
+    
+    /**
+     * Start this Engine component.
+     */
+    public void start() throws LifecycleException {
+    	if( started ) 
+            return;
+    	
+    	if( !initialized ) 
+    		init();
+    	
+    	
+    	log.info( "Starting Servlet Engine");
+    	
+    	super.start();
     }
 
 }
