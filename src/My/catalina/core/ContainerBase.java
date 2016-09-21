@@ -8,6 +8,7 @@ import java.util.Iterator;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
+import javax.naming.directory.DirContext;
 import javax.servlet.ServletException;
 
 import My.catalina.Container;
@@ -71,6 +72,11 @@ public abstract class ContainerBase
      */
     protected String name = null;
     
+    
+    /**
+     * The resources DirContext object with which this Container is associated.
+     */
+    protected DirContext resources = null;
     
     /**
      * The Manager implementation with which this Container is associated.
@@ -256,6 +262,33 @@ public abstract class ContainerBase
         this.name = name;
     }
     
+    
+    
+    /**
+     * Return the resources DirContext object with which this Container is
+     * associated.  If there is no associated resources object, return the
+     * resources associated with our parent Container (if any); otherwise
+     * return <code>null</code>.
+    */
+   public DirContext getResources() {
+       if (resources != null)
+           return (resources);
+       if (parent != null)
+           return (parent.getResources());
+       return (null);
+
+   }
+   
+   
+   /**
+    * Set the resources DirContext object with which this Container is
+    * associated.
+    *
+    * @param resources The newly associated DirContext
+    */
+   public synchronized void setResources(DirContext resources) {
+	   
+   }
     
     
     /**

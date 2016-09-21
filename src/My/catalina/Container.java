@@ -1,6 +1,8 @@
 package My.catalina;
 
 import java.io.IOException;
+
+import javax.naming.directory.DirContext;
 import javax.servlet.ServletException;
 import My.catalina.connector.Request;
 import My.catalina.connector.Response;
@@ -210,6 +212,23 @@ public interface Container {
      * @param loader The newly associated loader
      */
     public void setLoader(Loader loader);
+    
+    
+    
+    /**
+     * Return the Resources with which this Container is associated.  If there
+     * is no associated Resources object, return the Resources associated with
+     * our parent Container (if any); otherwise return <code>null</code>.
+     */
+    public DirContext getResources();
+
+
+    /**
+     * Set the Resources object with which this Container is associated.
+     *
+     * @param resources The newly associated Resources
+     */
+    public void setResources(DirContext resources);
     
     
     /**

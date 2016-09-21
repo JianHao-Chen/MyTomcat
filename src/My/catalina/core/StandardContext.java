@@ -119,7 +119,10 @@ public class StandardContext
     private String j2EEApplication="none";
     private String j2EEServer="none";
     
-    
+    /**
+     * The welcome files for this application.
+     */
+    private String welcomeFiles[] = new String[0];
     
 	// ------------------- Context Properties -------------------
     
@@ -194,6 +197,43 @@ public class StandardContext
 
         boolean oldAvailable = this.available;
         this.available = available;
+    }
+    
+    
+    
+    /**
+     * Return an object which may be utilized for mapping to this component.
+     */
+    public Object getMappingObject() {
+        return this;
+    }
+    
+    /**
+     * FIXME: Fooling introspection ...
+     */
+    public Context findMappingObject() {
+        return (Context) getMappingObject();
+    }
+    
+    
+    /**
+     * Return the naming resources associated with this web application.
+     */
+    public javax.naming.directory.DirContext getStaticResources() {
+
+        return getResources();
+
+    }
+
+
+    /**
+     * Return the naming resources associated with this web application.
+     * FIXME: Fooling introspection ... 
+     */
+    public javax.naming.directory.DirContext findStaticResources() {
+
+        return getResources();
+
     }
     
     

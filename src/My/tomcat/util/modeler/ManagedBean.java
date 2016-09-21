@@ -48,7 +48,7 @@ import javax.management.ServiceNotFoundException;
 
 public class ManagedBean implements java.io.Serializable
 {
-    private static final String BASE_MBEAN = "org.apache.tomcat.util.modeler.BaseModelMBean";
+    private static final String BASE_MBEAN = "My.tomcat.util.modeler.BaseModelMBean";
     // ----------------------------------------------------- Instance Variables
     static final Object[] NO_ARGS_PARAM=new Object[0];
     static final Class[] NO_ARGS_PARAM_SIG=new Class[0];
