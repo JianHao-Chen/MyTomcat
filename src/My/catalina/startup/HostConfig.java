@@ -11,6 +11,7 @@ import java.util.Set;
 import javax.management.ObjectName;
 
 import My.catalina.Container;
+import My.catalina.Context;
 import My.catalina.Engine;
 import My.catalina.Host;
 import My.catalina.Lifecycle;
@@ -47,13 +48,13 @@ public class HostConfig implements LifecycleListener {
 	    /**
 	     * The Java class name of the Context configuration class we should use.
 	     */
-	    protected String configClass = "org.apache.catalina.startup.ContextConfig";
+	    protected String configClass = "My.catalina.startup.ContextConfig";
 
 
 	    /**
 	     * The Java class name of the Context implementation we should use.
 	     */
-	    protected String contextClass = "org.apache.catalina.core.StandardContext";
+	    protected String contextClass = "My.catalina.core.StandardContext";
 
 
 	    /**
@@ -430,6 +431,42 @@ public class HostConfig implements LifecycleListener {
 	    }
 	    
 	    
+	    /**
+	     * Add watched resources to the specified Context.
+	     */
+	    protected void addWatchedResources(DeployedApplication app, String docBase, Context context) {
+	    	
+	    	File docBaseFile = null;
+	    	
+	    	 if (docBase != null) {
+	    		 
+	    		 docBaseFile = new File(docBase);
+	    		 if (!docBaseFile.isAbsolute()) {
+	    			 docBaseFile = new File(appBase(), docBase);
+	    		 }
+	    	 }
+	    	 
+	    	 String[] watchedResources = context.findWatchedResources();
+	    	 
+	    	 for (int i = 0; i < watchedResources.length; i++) {
+	    		 File resource = new File(watchedResources[i]);
+	    		 if (!resource.isAbsolute()) {
+	    			 if (docBase != null) {
+	                     resource = new File(docBaseFile, watchedResources[i]);
+	                 } else {
+	                     if(log.isDebugEnabled())
+	                         log.debug("Ignoring non-existent WatchedResource '" 
+	                             + resource.getAbsolutePath() + "'");
+	                    continue;
+	                 }	    		 }
+	    		 
+	    		 app.reloadResources.put(resource.getAbsolutePath(), 
+	                     new Long(resource.lastModified()));
+	    		 
+	    	 }
+	    }
+	    
+	    
 	    
 	    
 	    
@@ -440,6 +477,66 @@ public class HostConfig implements LifecycleListener {
 	    	if (deploymentExists(contextPath))
 	    		return;
 	    	
+	    	// Deploy the application in the path : webapps
+	    	if( log.isInfoEnabled() ) 
+	            log.info("hostConfig.deployDir");
+	    	
+	    	try {
+	    		Context context = null;
+	    		
+	    		File xml = new File(dir, Constants.ApplicationContextXml);
+	    		
+	    		File xmlCopy = null;
+	    		
+	    		if (deployXML && xml.exists()) {
+	    			
+	    			  synchronized (digester) {
+	                      try {
+	                          context = (Context) digester.parse(xml);
+	                          if (context == null) {
+	                              log.error("hostConfig.deployDescriptor.error");
+	                              return;
+	                          }
+	                      } finally {
+	                          digester.reset();
+	                      }
+	                  }
+	    			  
+	    		}
+	    		else {
+	    			context = (Context) Class.forName(contextClass).newInstance();
+	    		}
+	    		
+	    		//add lifecycle listener if it is lifecycle instance
+	    		if (context instanceof Lifecycle) {
+	    			
+	    			Class clazz = Class.forName(host.getConfigClass());
+	    			LifecycleListener listener =
+	    				(LifecycleListener) clazz.newInstance();
+	    			
+	    			((Lifecycle) context).addLifecycleListener(listener);
+	    		}
+	    		
+	    		context.setPath(contextPath);
+	    		context.setDocBase(file);
+	    		
+	    		host.addChild(context);
+	    		
+	    		deployedApp.redeployResources.put(dir.getAbsolutePath(),
+	                    new Long(dir.lastModified()));
+	    		
+	    		
+	    		if (xmlCopy != null) {
+	    			// implements latter
+	    		}
+	    		
+	    		addWatchedResources(deployedApp, dir.getAbsolutePath(), context);
+	    	}
+	    	catch (Throwable t) {
+	    		
+	    	}
+	    	
+	    	deployed.put(contextPath, deployedApp);
 	    	
 	    }
 	    

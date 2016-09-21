@@ -915,7 +915,7 @@ public class Registry implements RegistryMBean, MBeanRegistration  {
     {
         if( type==null ) type="MbeansDescriptorsDigesterSource";
         if( type.indexOf( ".") < 0 ) {
-            type="org.apache.tomcat.util.modeler.modules." + type;
+            type="My.tomcat.util.modeler.modules." + type;
         }
 
         Class c=Class.forName( type );

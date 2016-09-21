@@ -118,5 +118,40 @@ public interface Context extends Container{
     public void setConfigFile(String configFile);
     
     
+    /**
+     * Return the context path for this web application.
+     */
+    public String getPath();
+
+
+    /**
+     * Set the context path for this web application.
+     *
+     * @param path The new context path
+     */
+    public void setPath(String path);
+    
+    
+    /**
+     * Return the document root for this Context.  This can be an absolute
+     * pathname, a relative pathname, or a URL.
+     */
+    public String getDocBase();
+
+
+    /**
+     * Set the document root for this Context.  This can be an absolute
+     * pathname, a relative pathname, or a URL.
+     *
+     * @param docBase The new document root
+     */
+    public void setDocBase(String docBase);
+    
+    
+    /**
+     * Return the set of watched resources for this Context. If none are 
+     * defined, a zero length array will be returned.
+     */
+    public String[] findWatchedResources();
     
 }

@@ -1,5 +1,6 @@
 package My.tomcat.util;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -15,6 +16,61 @@ public final class IntrospectionUtils {
 	        My.juli.logging.LogFactory.getLog( IntrospectionUtils.class );
 	 
 	
+	 
+	 public static Object getProperty(Object o, String name) {
+	        String getter = "get" + capitalize(name);
+	        String isGetter = "is" + capitalize(name);
+
+	        try {
+	            Method methods[] = findMethods(o.getClass());
+	            Method getPropertyMethod = null;
+
+	            // First, the ideal case - a getFoo() method
+	            for (int i = 0; i < methods.length; i++) {
+	                Class paramT[] = methods[i].getParameterTypes();
+	                if (getter.equals(methods[i].getName()) && paramT.length == 0) {
+	                    return methods[i].invoke(o, (Object[]) null);
+	                }
+	                if (isGetter.equals(methods[i].getName()) && paramT.length == 0) {
+	                    return methods[i].invoke(o, (Object[]) null);
+	                }
+
+	                if ("getProperty".equals(methods[i].getName())) {
+	                    getPropertyMethod = methods[i];
+	                }
+	            }
+
+	            // Ok, no setXXX found, try a getProperty("name")
+	            if (getPropertyMethod != null) {
+	                Object params[] = new Object[1];
+	                params[0] = name;
+	                return getPropertyMethod.invoke(o, params);
+	            }
+
+	        } catch (IllegalArgumentException ex2) {
+	            log.warn("IAE " + o + " " + name, ex2);
+	        } catch (SecurityException ex1) {
+	            if (dbg > 0)
+	                d("SecurityException for " + o.getClass() + " " + name + ")");
+	            if (dbg > 1)
+	                ex1.printStackTrace();
+	        } catch (IllegalAccessException iae) {
+	            if (dbg > 0)
+	                d("IllegalAccessException for " + o.getClass() + " " + name
+	                        + ")");
+	            if (dbg > 1)
+	                iae.printStackTrace();
+	        } catch (InvocationTargetException ie) {
+	            if (dbg > 0)
+	                d("InvocationTargetException for " + o.getClass() + " " + name
+	                        + ")");
+	            if (dbg > 1)
+	                ie.printStackTrace();
+	        }
+	        return null;
+	    }
+	 
+	 
 	
 	/**
      * Find a method with the right name If found, call the method ( if param is

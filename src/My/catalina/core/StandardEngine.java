@@ -63,6 +63,19 @@ public class StandardEngine extends ContainerBase implements Engine{
     }
     
     
+    public String getDomain() {
+        if (domain!=null) {
+            return domain;
+        } else { 
+            return getName();
+        }
+    }
+    
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+    
+    
     /**
      * Start this Engine component.
      */

@@ -149,6 +149,46 @@ public interface Container {
     public void setParentClassLoader(ClassLoader parent);
     
     
+    
+    /**
+     * Add a container event listener to this component.
+     *
+     * @param listener The listener to add
+     */
+    public void addContainerListener(ContainerListener listener);
+    
+    
+    
+    /**
+     * Remove a container event listener from this component.
+     *
+     * @param listener The listener to remove
+     */
+    public void removeContainerListener(ContainerListener listener);
+    
+    
+    /**
+     * Add a new child Container to those associated with this Container,
+     * if supported.  Prior to adding this Container to the set of children,
+     * the child's <code>setParent()</code> method must be called, with this
+     * Container as an argument.  This method may thrown an
+     * <code>IllegalArgumentException</code> if this Container chooses not
+     * to be attached to the specified Container, in which case it is not added
+     *
+     * @param child New child Container to be added
+     *
+     * @exception IllegalArgumentException if this exception is thrown by
+     *  the <code>setParent()</code> method of the child Container
+     * @exception IllegalArgumentException if the new child does not have
+     *  a name unique from that of existing children of this Container
+     * @exception IllegalStateException if this Container does not support
+     *  child Containers
+     */
+    public void addChild(Container child);
+    
+    
+    
+    
     /**
      * Return the JMX name associated with this container.
      */

@@ -797,14 +797,15 @@ public abstract class ContainerBase
 
     public String getDomain() {
         if( domain==null ) {
-            Container parent=this;
+        	domain = "Catalina";
+            /*Container parent=this;
             while( parent != null &&
                     !( parent instanceof StandardEngine) ) {
                 parent=parent.getParent();
             }
             if( parent instanceof StandardEngine ) {
                 domain=((StandardEngine)parent).getDomain();
-            } 
+            } */
         }
         return domain;
     }

@@ -40,5 +40,11 @@ implements ServletConfig, Wrapper{
 		// TODO Auto-generated method stub
 		return null;
 	}
+	
+	
+	
+	protected void registerJMX(StandardContext ctx) {
+		
+	}
 
 }

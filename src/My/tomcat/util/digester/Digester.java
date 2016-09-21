@@ -1,6 +1,9 @@
 package My.tomcat.util.digester;
 
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.EmptyStackException;
 import java.util.HashMap;
 import java.util.List;
@@ -14,7 +17,9 @@ import org.xml.sax.Attributes;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
@@ -126,6 +131,14 @@ public class Digester extends DefaultHandler{
     protected ArrayStack params = new ArrayStack();
     
     
+    
+    /**
+     * The Locator associated with our parser.
+     */
+    protected Locator locator = null;
+    
+    
+    
     /**
      * The public identifier of the DTD we are currently parsing under
      * (if any).
@@ -210,6 +223,12 @@ public class Digester extends DefaultHandler{
      * for instantiating new objects.  Default is <code>false</code>.
      */
     protected boolean useContextClassLoader = false;
+    
+    
+    /**
+     * The XML schema to use for validating an XML instance.
+     */
+    protected String schemaLocation = null;
     
     
     /**
@@ -321,6 +340,77 @@ public class Digester extends DefaultHandler{
      */
     public void setRulesValidation(boolean rulesValidation) {
         this.rulesValidation = rulesValidation;
+    }
+    
+    
+    
+    /**
+     * Set the publid id of the current file being parse.
+     * @param publicId the DTD/Schema public's id.
+     */
+    public void setPublicId(String publicId){
+        this.publicId = publicId;
+    }
+    
+    
+    /**
+     * Return the public identifier of the DTD we are currently
+     * parsing under, if any.
+     */
+    public String getPublicId() {
+
+        return (this.publicId);
+
+    }
+    
+    
+    
+    /**
+     * Return the "namespace aware" flag for parsers we create.
+     */
+    public boolean getNamespaceAware() {
+
+        return (this.namespaceAware);
+
+    }
+
+
+    /**
+     * Set the "namespace aware" flag for parsers we create.
+     *
+     * @param namespaceAware The new "namespace aware" flag
+     */
+    public void setNamespaceAware(boolean namespaceAware) {
+
+        this.namespaceAware = namespaceAware;
+
+    }
+    
+    
+    
+    /**
+     * Return the boolean as to whether the context classloader should be used.
+     */
+    public boolean getUseContextClassLoader() {
+
+        return useContextClassLoader;
+
+    }
+
+
+    /**
+     * Determine whether to use the Context ClassLoader (the one found by
+     * calling <code>Thread.currentThread().getContextClassLoader()</code>)
+     * to resolve/load classes that are defined in various rules.  If not
+     * using Context ClassLoader, then the class-loading defaults to
+     * using the calling-class' ClassLoader.
+     *
+     * @param use determines whether to use Context ClassLoader.
+     */
+    public void setUseContextClassLoader(boolean use) {
+
+        useContextClassLoader = use;
+
     }
     
     
@@ -448,6 +538,14 @@ public class Digester extends DefaultHandler{
         }
 
     }
+    
+    
+    public void reset() {
+        root = null;
+        setErrorHandler(null);
+        clear();
+    }
+    
     
     /**
      * Push a new object onto the top of the object stack.
@@ -591,6 +689,27 @@ public class Digester extends DefaultHandler{
         }
 
     }
+    
+    
+    
+    /**
+     * Parse the content of the specified file using this Digester.  Returns
+     * the root element from the object stack (if any).
+     *
+     * @param file File containing the XML data to be parsed
+     *
+     * @exception IOException if an input/output error occurs
+     * @exception SAXException if a parsing exception occurs
+     */
+    public Object parse(File file) throws IOException, SAXException {
+
+        configure();
+        InputSource input = new InputSource(new FileInputStream(file));
+        input.setSystemId("file://" + file.getAbsolutePath());
+        getXMLReader().parse(input);
+        return (root);
+
+    }   
     
     
     /**
@@ -895,6 +1014,168 @@ public class Digester extends DefaultHandler{
         
     }
     
+    
+    
+    
+ // ----------------------------------------------- EntityResolver Methods
+
+    /**
+     * Set the <code>EntityResolver</code> used by SAX when resolving
+     * public id and system id.
+     * This must be called before the first call to <code>parse()</code>.
+     * @param entityResolver a class that implement the <code>EntityResolver</code> interface.
+     */
+    public void setEntityResolver(EntityResolver entityResolver){
+        this.entityResolver = entityResolver;
+    }
+    
+    
+    /**
+     * Return the Entity Resolver used by the SAX parser.
+     * @return Return the Entity Resolver used by the SAX parser.
+     */
+    public EntityResolver getEntityResolver(){
+        return entityResolver;
+    }
+
+    /**
+     * Resolve the requested external entity.
+     *
+     * @param publicId The public identifier of the entity being referenced
+     * @param systemId The system identifier of the entity being referenced
+     *
+     * @exception SAXException if a parsing exception occurs
+     * 
+     */
+    public InputSource resolveEntity(String publicId, String systemId)
+            throws SAXException {     
+                
+       
+        
+        if (publicId != null)
+            this.publicId = publicId;
+                                       
+        // Has this system identifier been registered?
+        String entityURL = null;
+        if (publicId != null) {
+            entityURL = (String) entityValidator.get(publicId);
+        }
+         
+        // Redirect the schema location to a local destination
+        if (schemaLocation != null && entityURL == null && systemId != null){
+            entityURL = (String)entityValidator.get(systemId);
+        } 
+
+        if (entityURL == null) { 
+            if (systemId == null) {
+                // cannot resolve
+                if (log.isDebugEnabled()) {
+                    log.debug(" Cannot resolve entity: '" + entityURL + "'");
+                }
+                return (null);
+                
+            } else {
+                // try to resolve using system ID
+                if (log.isDebugEnabled()) {
+                    log.debug(" Trying to resolve using system ID '" + systemId + "'");
+                } 
+                entityURL = systemId;
+            }
+        }
+        
+        // Return an input source to our alternative URL
+        if (log.isDebugEnabled()) {
+            log.debug(" Resolving to alternate DTD '" + entityURL + "'");
+        }  
+        
+        try {
+            return (new InputSource(entityURL));
+        } catch (Exception e) {
+            throw createSAXException(e);
+        }
+    }
+    
+    
+    
+    /**
+     * Create a SAX exception which also understands about the location in
+     * the digester file where the exception occurs
+     *
+     * @return the new exception
+     */
+    public SAXException createSAXException(String message, Exception e) {
+        if ((e != null) &&
+            (e instanceof InvocationTargetException)) {
+            Throwable t = ((InvocationTargetException) e).getTargetException();
+            if ((t != null) && (t instanceof Exception)) {
+                e = (Exception) t;
+            }
+        }
+        if (locator != null) {
+            String error = "Error at (" + locator.getLineNumber() + ", " +
+                    locator.getColumnNumber() + ": " + message;
+            if (e != null) {
+                return new SAXParseException(error, locator, e);
+            } else {
+                return new SAXParseException(error, locator);
+            }
+        }
+        log.error("No Locator!");
+        if (e != null) {
+            return new SAXException(message, e);
+        } else {
+            return new SAXException(message);
+        }
+    }
+
+    /**
+     * Create a SAX exception which also understands about the location in
+     * the digester file where the exception occurs
+     *
+     * @return the new exception
+     */
+    public SAXException createSAXException(Exception e) {
+        if (e instanceof InvocationTargetException) {
+            Throwable t = ((InvocationTargetException) e).getTargetException();
+            if ((t != null) && (t instanceof Exception)) {
+                e = (Exception) t;
+            }
+        }
+        return createSAXException(e.getMessage(), e);
+    }
+
+    /**
+     * Create a SAX exception which also understands about the location in
+     * the digester file where the exception occurs
+     *
+     * @return the new exception
+     */
+    public SAXException createSAXException(String message) {
+        return createSAXException(message, null);
+    }
+    
+    
+    
+    /**
+     * Return the XML Schema URI used for validating an XML instance.
+     */
+    public String getSchema() {
+
+        return (this.schemaLocation);
+
+    }
+
+
+    /**
+     * Set the XML Schema URI used for validating a XML Instance.
+     *
+     * @param schemaLocation a URI to the schema.
+     */
+    public void setSchema(String schemaLocation){
+
+        this.schemaLocation = schemaLocation;
+
+    }   
  
     
     

@@ -131,10 +131,11 @@ public class ObjectCreateRule extends Rule{
 	                realClassName = value;
 	            }
 	        }
-	        if (digester.log.isDebugEnabled()) {
+	        
+	       /* if (digester.log.isDebugEnabled()) {
 	            digester.log.debug("[ObjectCreateRule]{" + digester.match +
 	                    "}New " + realClassName);
-	        }
+	        }*/
 
 	        // Instantiate the new object and push it on the context stack
 	        Class clazz = digester.getClassLoader().loadClass(realClassName);

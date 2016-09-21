@@ -4,10 +4,14 @@ import java.util.Map;
 import java.util.WeakHashMap;
 
 import javax.management.ObjectName;
-import javax.naming.Context;
 
+import My.catalina.Container;
+import My.catalina.Context;
 import My.catalina.Host;
+import My.catalina.Lifecycle;
+import My.catalina.LifecycleEvent;
 import My.catalina.LifecycleException;
+import My.catalina.LifecycleListener;
 import My.tomcat.util.modeler.Registry;
 
 /**
@@ -53,7 +57,7 @@ public class StandardHost extends ContainerBase implements Host{
      * for deployed web applications.
      */
     private String configClass =
-        "org.apache.catalina.startup.ContextConfig";
+        "My.catalina.startup.ContextConfig";
     
     
     /**
@@ -273,11 +277,49 @@ public class StandardHost extends ContainerBase implements Host{
         return xmlValidation;
     }
     
+    
+    
+    /**
+     * Add a child Container, only if the proposed child is an implementation
+     * of Context.
+     *
+     * @param child Child container to be added
+     */
+    public void addChild(Container child) {
+
+        if (child instanceof Lifecycle) {
+            ((Lifecycle) child).addLifecycleListener(
+                    new MemoryLeakTrackingListener());
+        }
+
+        if (!(child instanceof Context))
+            throw new IllegalArgumentException
+                ("standardHost.notContext");
+        
+        super.addChild(child);
+
+    }
+    
+    
+    /**
+     * Used to ensure the regardless of {@link Context} implementation, a record
+     * is kept of the class loader used every time a context starts.
+     */
+    private class MemoryLeakTrackingListener implements LifecycleListener {
+    	
+    	public void lifecycleEvent(LifecycleEvent event) {
+    		
+    		if (event.getType().equals(Lifecycle.AFTER_START_EVENT)) {
+    			
+    			// implements latter.
+    		}
+    	}
+    }
+    
 
 
 	@Override
 	public Context map(String uri) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 

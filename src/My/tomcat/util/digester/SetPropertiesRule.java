@@ -125,7 +125,8 @@ public class SetPropertiesRule extends Rule{
         
         // Populate the corresponding properties of the top object
         Object top = digester.peek();
-        if (digester.log.isDebugEnabled()) {
+        
+        /*if (digester.log.isDebugEnabled()) {
             if (top != null) {
                 digester.log.debug("[SetPropertiesRule]{" + digester.match +
                                    "} Set " + top.getClass().getName() +
@@ -134,7 +135,7 @@ public class SetPropertiesRule extends Rule{
                 digester.log.debug("[SetPropertiesRule]{" + digester.match +
                                    "} Set NULL properties");
             }
-        }
+        }*/
         
         // set up variables for custom names mappings
         int attNamesLength = 0;

@@ -1,6 +1,5 @@
 package My.catalina;
 
-import javax.naming.Context;
 
 /**
  * A <b>Host</b> is a Container that represents a virtual host in the

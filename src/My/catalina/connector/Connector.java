@@ -1,5 +1,11 @@
 package My.catalina.connector;
 
+import java.util.HashMap;
+
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
 import My.catalina.Container;
 import My.catalina.Host;
 import My.catalina.Lifecycle;
@@ -10,6 +16,8 @@ import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.tomcat.util.IntrospectionUtils;
 import My.tomcat.util.http.mapper.Mapper;
+import My.tomcat.util.modeler.Registry;
+import My.catalina.core.StandardEngine;
 import My.catalina.util.LifecycleSupport;
 import My.coyote.Adapter;
 import My.coyote.ProtocolHandler;
@@ -137,12 +145,36 @@ public class Connector implements Lifecycle
      * Mapper.
      */
     protected Mapper mapper = new Mapper();
+
+
+    /**
+     * Mapper listener.
+     */
+    protected MapperListener mapperListener = new MapperListener(mapper, this);
     
     
     /**
      * URI encoding.
      */
     protected String URIEncoding = null;
+    
+    
+    
+    protected static HashMap replacements = new HashMap();
+    static {
+        replacements.put("acceptCount", "backlog");
+        replacements.put("connectionLinger", "soLinger");
+        replacements.put("connectionTimeout", "soTimeout");
+        replacements.put("connectionUploadTimeout", "timeout");
+        replacements.put("clientAuth", "clientauth");
+        replacements.put("keystoreFile", "keystore");
+        replacements.put("randomFile", "randomfile");
+        replacements.put("rootFile", "rootfile");
+        replacements.put("keystorePass", "keypass");
+        replacements.put("keystoreType", "keytype");
+        replacements.put("sslProtocol", "protocol");
+        replacements.put("sslProtocols", "protocols");
+    }
     
     
     
@@ -213,6 +245,18 @@ public class Connector implements Lifecycle
     public boolean setProperty(String name, String value) {
     	
     	return IntrospectionUtils.setProperty(protocolHandler, name, value);
+    }
+    
+    
+    /**
+     * Return a configured property.
+     */
+    public Object getProperty(String name) {
+        String repl = name;
+        if (replacements.get(name) != null) {
+            repl = (String) replacements.get(name);
+        }
+        return IntrospectionUtils.getProperty(protocolHandler, repl);
     }
 
     
@@ -305,6 +349,9 @@ public class Connector implements Lifecycle
     
     
     
+    
+    
+    
 	// ----------------- Lifecycle Methods -----------------
 
 
@@ -325,6 +372,117 @@ public class Connector implements Lifecycle
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	// -------------------- JMX registration  --------------------
+    protected String domain;
+    protected ObjectName oname;
+    protected MBeanServer mserver;
+    ObjectName controller;
+
+    public ObjectName getController() {
+        return controller;
+    }
+
+    public void setController(ObjectName controller) {
+        this.controller = controller;
+    }
+
+    public ObjectName getObjectName() {
+        return oname;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public ObjectName preRegister(MBeanServer server,
+                                  ObjectName name) throws Exception {
+        oname=name;
+        mserver=server;
+        domain=name.getDomain();
+        return name;
+    }
+
+    public void postRegister(Boolean registrationDone) {
+    }
+
+    public void preDeregister() throws Exception {
+    }
+
+    public void postDeregister() {
+        try {
+            if( started ) {
+                stop();
+            }
+        } catch( Throwable t ) {
+            log.error( "Unregistering - can't stop", t);
+        }
+    }
+
+    protected void findContainer() {
+        try {
+            // Register to the service
+            ObjectName parentName=new ObjectName( domain + ":" +
+                    "type=Service");
+
+            if(log.isDebugEnabled())
+                log.debug("Adding to " + parentName );
+            if( mserver.isRegistered(parentName )) {
+                mserver.invoke(parentName, "addConnector", new Object[] { this },
+                        new String[] {"org.apache.catalina.connector.Connector"});
+                // As a side effect we'll get the container field set
+                // Also initialize will be called
+                //return;
+            }
+            // XXX Go directly to the Engine
+            // initialize(); - is called by addConnector
+            ObjectName engName=new ObjectName( domain + ":" + "type=Engine");
+            if( mserver.isRegistered(engName )) {
+                Object obj=mserver.getAttribute(engName, "managedResource");
+                if(log.isDebugEnabled())
+                      log.debug("Found engine " + obj + " " + obj.getClass());
+                container=(Container)obj;
+
+                // Internal initialize - we now have the Engine
+                initialize();
+
+                if(log.isDebugEnabled())
+                    log.debug("Initialized");
+                // As a side effect we'll get the container field set
+                // Also initialize will be called
+                return;
+            }
+        } catch( Exception ex ) {
+            log.error( "Error finding container " + ex);
+        }
+    }
+    
+    
+    protected ObjectName createObjectName(String domain, String type)
+    		throws MalformedObjectNameException {
+		Object addressObj = getProperty("address");
+		
+		StringBuilder sb = new StringBuilder(domain);
+		sb.append(":type=");
+		sb.append(type);
+		sb.append(",port=");
+		sb.append(getPort());
+		if (addressObj != null) {
+		    String address = addressObj.toString();
+		    if (address.length() > 0) {
+		        sb.append(",address=");
+		        sb.append(ObjectName.quote(address));
+		    }
+		}
+		ObjectName _oname = new ObjectName(sb.toString());
+		return _oname;
+	}
+	
+	
+	
+	
+	
 
 	@Override
 	public void start() throws LifecycleException {
@@ -349,24 +507,29 @@ public class Connector implements Lifecycle
         }
         
         
-        
-       initMapper();
+        if( this.domain != null ) {
+        	
+        	mapperListener.setDomain( domain );
+        	
+        	mapperListener.init();
+        	
+        	try {
+                ObjectName mapperOname = createObjectName(this.domain,"Mapper");
+                if (log.isDebugEnabled())
+                    log.debug(
+                            "coyoteConnector.MapperRegistration");
+                Registry.getRegistry(null, null).registerComponent
+                    (mapper, mapperOname, "Mapper");
+            } catch (Exception ex) {
+                log.error("coyoteConnector.protocolRegistrationFailed");
+            }
+        	
+        }
+
         
         
 	}
-	
-	
-	public void initMapper(){
-		/*String defaultHost = "localhost";
-		mapper.setDefaultHostName(defaultHost);
-		
-		// add host
-		Host host = 
-		  (Host)getService().getContainer().findChild(defaultHost);
-		
-		String[] aliases = new String[0];
-        mapper.addHost(name, aliases, objectName);*/
-	}
+
 	
 
 	@Override
@@ -388,6 +551,25 @@ public class Connector implements Lifecycle
          }
     	 
     	 this.initialized = true;
+    	 
+    	 
+    	 if( oname == null && (container instanceof StandardEngine)) {
+             try {
+                 // we are loaded directly, via API - and no name was given to us
+                 StandardEngine cb=(StandardEngine)container;
+                 oname = createObjectName(cb.getName(), "Connector");
+                 Registry.getRegistry(null, null)
+                     .registerComponent(this, oname, null);
+                 controller=oname;
+                 
+                 domain = oname.getDomain();
+                 
+             } catch (Exception e) {
+                 log.error( "Error registering connector ", e);
+             }
+             if(log.isDebugEnabled())
+                 log.debug("Creating name for connector " + oname);
+         }
     	 
     	 
     	// Initializa adapter
