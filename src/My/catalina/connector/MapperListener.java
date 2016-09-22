@@ -98,14 +98,14 @@ public class MapperListener
              }
 
              // Query wrappers
-             onStr = "*:j2eeType=Servlet,*";
+            /* onStr = "*:j2eeType=Servlet,*";
              objectName = new ObjectName(onStr);
              set = mBeanServer.queryMBeans(objectName, null);
              iterator = set.iterator();
              while (iterator.hasNext()) {
                  ObjectInstance oi = (ObjectInstance) iterator.next();
                  registerWrapper(oi.getObjectName());
-             }
+             }*/
 
              onStr = "JMImplementation:type=MBeanServerDelegate";
              objectName = new ObjectName(onStr);
@@ -141,11 +141,15 @@ public class MapperListener
 		ObjectName engineName = new ObjectName
         (domain + ":type=Engine");
 		
-	    if ( ! mBeanServer.isRegistered(engineName)) return;
+	    if ( ! mBeanServer.isRegistered(engineName)) 
+	    	return;
+	    
 	    String defaultHost = 
 	        (String) mBeanServer.getAttribute(engineName, "defaultHost");
+	    
 	    ObjectName hostName = new ObjectName
 	        (domain + ":type=Host," + "host=" + defaultHost);
+	    
 	    if (!mBeanServer.isRegistered(hostName)) {
 	
 	        // Get the hosts' list

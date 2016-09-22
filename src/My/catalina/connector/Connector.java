@@ -97,6 +97,12 @@ public class Connector implements Lifecycle
     protected int port = 0;
     
     
+    /**
+     * The request scheme that will be set on all requests received
+     * through this connector.
+     */
+    protected String scheme = "http";
+    
     
     /**
      * Coyote protocol handler.
@@ -267,6 +273,17 @@ public class Connector implements Lifecycle
     public Mapper getMapper() {
 
         return (mapper);
+
+    }
+    
+    
+    /**
+     * Return the scheme that will be assigned to requests received
+     * through this connector.  Default value is "http".
+     */
+    public String getScheme() {
+
+        return (this.scheme);
 
     }
     

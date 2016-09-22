@@ -195,8 +195,8 @@ public class Catalina extends Embedded{
         
         
         // When the 'engine' is found, set the parentClassLoader.
-   //     digester.addRule("Server/Service/Engine",
-   //                      new SetParentClassLoaderRule(parentClassLoader));
+        digester.addRule("Server/Service/Engine",
+                         new SetParentClassLoaderRule(parentClassLoader));
     //    digester.addRuleSet(ClusterRuleSetFactory.getClusterRuleSet("Server/Service/Engine/Cluster/"));
         
         return (digester);

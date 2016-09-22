@@ -44,5 +44,15 @@ public interface Loader {
      * @param container The associated Container
      */
     public void setContainer(Container container);
+    
+    
+    
+    /**
+     * Return the Java class loader to be used by this Container.
+     */
+    public ClassLoader getClassLoader();
+    
+    
+    
 	
 }

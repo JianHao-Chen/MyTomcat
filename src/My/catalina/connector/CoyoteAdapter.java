@@ -2,9 +2,13 @@ package My.catalina.connector;
 
 import java.io.IOException;
 
+import My.catalina.Context;
 import My.coyote.Adapter;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
+import My.tomcat.util.buf.ByteChunk;
+import My.tomcat.util.buf.MessageBytes;
+import My.tomcat.util.http.mapper.MappingData;
 import My.tomcat.util.net.SocketStatus;
 
 /**
@@ -125,6 +129,41 @@ public class CoyoteAdapter implements Adapter{
 	
     
     
+	
+	/**
+     * Extract the path parameters from the request. This assumes parameters are
+     * of the form /path;name=value;name2=value2/ etc. Currently only really
+     * interested in the session ID that will be in this form. Other parameters
+     * can safely be ignored.
+     */
+	protected void parsePathParameters(My.coyote.Request req,
+            Request request) {
+		
+		// Process in bytes (this is default format so this is normally a NO-OP
+        req.decodedURI().toBytes();
+        
+        ByteChunk uriBC = req.decodedURI().getByteChunk();
+        
+        int semicolon = uriBC.indexOf(';', 0);
+        
+        // What encoding to use? Some platforms, eg z/os, use a default
+        // encoding that doesn't give the expected result so be explicit
+        String enc = connector.getURIEncoding();
+        if (enc == null) {
+            enc = "ISO-8859-1";
+        }
+        
+        boolean warnedEncoding = false;
+
+        while (semicolon > -1) {
+        	
+        	// Parse path param, and extract it from 
+        	// the decoded request URI
+        	
+        	// implements latter.
+        }
+        
+	}
     
 	
    
@@ -137,15 +176,42 @@ public class CoyoteAdapter implements Adapter{
                                        Response response)
             throws Exception {
     	
+    	// set scheme
+    	req.scheme().setString(connector.getScheme());
     	
-    	connector.getMapper();
+    	// Copy the raw URI to the decoded URI
+    	MessageBytes decodedURI = req.decodedURI();
+    	decodedURI.duplicate(req.requestURI());
     	
-    	/*.map(serverName, decodedURI, 
-                 request.getMappingData());
     	
-    	request.setContext((Context) request.getMappingData().context);
-    	*/
+    	// Parse the path parameters. This will:
+        //   - strip out the path parameters
+        //   - convert the decodedURI to bytes
+        parsePathParameters(req, request);
     	
+        
+        
+        // Request mapping.
+        
+        MessageBytes serverName = req.serverName();;
+        
+        MappingData mappingData = request.getMappingData();
+        
+        connector.getMapper().
+        	map(serverName, decodedURI, mappingData);
+        
+        request.setContext((Context) request.getMappingData().context);
+    	
+    	
+        // Had to do this after the context was set.
+        // Unfortunately parseSessionId is still necessary as it 
+        // affects the final URL. Safe as session cookies still 
+        // haven't been parsed.
+    	
+        /*
+         * implements latter
+         */
+        	
     	
     	return true;
     	

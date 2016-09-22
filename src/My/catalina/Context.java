@@ -154,4 +154,18 @@ public interface Context extends Container{
      */
     public String[] findWatchedResources();
     
+    
+    /**
+     * Return the reloadable flag for this web application.
+     */
+    public boolean getReloadable();
+
+
+    /**
+     * Set the reloadable flag for this web application.
+     *
+     * @param reloadable The new reloadable flag
+     */
+    public void setReloadable(boolean reloadable);
+    
 }

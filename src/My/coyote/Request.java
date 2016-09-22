@@ -24,9 +24,13 @@ public final class Request {
 	private MessageBytes methodMB = MessageBytes.newInstance();
 	private MessageBytes unparsedURIMB = MessageBytes.newInstance();
 	private MessageBytes uriMB = MessageBytes.newInstance();
+	private MessageBytes decodedUriMB = MessageBytes.newInstance();
 	private MessageBytes protoMB = MessageBytes.newInstance();
 	
 	private MimeHeaders headers = new MimeHeaders();
+	
+	
+	private MessageBytes schemeMB = MessageBytes.newInstance();
 	
 	
 	// Time of the request - usefull to avoid repeated calls to System.currentTime
@@ -66,6 +70,11 @@ public final class Request {
 	
 	// ------------------- Properties --------------------
 	
+    public MessageBytes scheme() {
+        return schemeMB;
+    }
+    
+    
 	public MessageBytes method() {
         return methodMB;
     }
@@ -77,6 +86,10 @@ public final class Request {
 	public MessageBytes requestURI() {
         return uriMB;
     }
+	
+	public MessageBytes decodedURI() {
+	    return decodedUriMB;
+	}
 	
 	public MessageBytes protocol() {
 	        return protoMB;

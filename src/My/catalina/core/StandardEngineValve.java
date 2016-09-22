@@ -37,5 +37,13 @@ public final class StandardEngineValve extends ValveBase {
     	
     	// Select the Host to be used for this Request
     	Host host = request.getHost();
+    	
+    	if (host == null) {
+    		//  response.sendError
+    		return;
+    	}
+    	
+    	// Ask this Host to process this request
+    	host.getPipeline().getFirst().invoke(request, response);
     }
 }

@@ -1,5 +1,6 @@
 package My.catalina.core;
 
+import java.io.File;
 import java.io.Serializable;
 
 import javax.management.MBeanServer;
@@ -7,11 +8,14 @@ import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
+import javax.naming.directory.DirContext;
 
 import My.catalina.Container;
 import My.catalina.Context;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
+import My.catalina.Loader;
+import My.catalina.loader.WebappLoader;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.tomcat.util.modeler.Registry;
@@ -99,6 +103,11 @@ public class StandardContext
         new Object[0];
     
     
+    /**
+     * The reloadable flag for this web application.
+     */
+    private boolean reloadable = false;
+    
     
     /**
      * The broadcaster that sends j2ee notifications. 
@@ -118,6 +127,11 @@ public class StandardContext
     private String engineName = null;
     private String j2EEApplication="none";
     private String j2EEServer="none";
+    
+    
+    
+    private transient DirContext webappResources = null;
+    
     
     /**
      * The welcome files for this application.
@@ -200,6 +214,18 @@ public class StandardContext
     }
     
     
+    /**
+     * Set the Loader with which this Context is associated.
+     *
+     * @param loader The newly associated loader
+     */
+    public synchronized void setLoader(Loader loader) {
+
+        super.setLoader(loader);
+
+    }
+    
+    
     
     /**
      * Return an object which may be utilized for mapping to this component.
@@ -213,6 +239,15 @@ public class StandardContext
      */
     public Context findMappingObject() {
         return (Context) getMappingObject();
+    }
+    
+    
+    
+    /**
+     * Get base path.
+     */
+    protected String getBasePath() {
+    	return null;
     }
     
     
@@ -283,6 +318,24 @@ public class StandardContext
     }
     
     
+    /**
+     * Return the reloadable flag for this web application.
+     */
+    public boolean getReloadable() {
+
+        return (this.reloadable);
+
+    }
+    
+    
+    /**
+     * Set the reloadable flag for this web application.
+     */
+    public void setReloadable(boolean reloadable) {
+    	this.reloadable = reloadable;
+    }
+    
+    
     
     /**
      * Add a new watched resource to the set recognized by this Context.
@@ -338,6 +391,15 @@ public class StandardContext
         // XXX Use host in name
         setName(path);
 
+    }
+    
+    
+    /**
+     * Set the resources DirContext object with which this Container is
+     * associated.
+     */
+    public synchronized void setResources(DirContext resources) {
+    	
     }
     
     
@@ -456,6 +518,16 @@ public class StandardContext
          boolean ok = true;
          
          
+         if (webappResources == null) {   // (1) Required by Loader
+        	 
+        	 try {
+        		 if((docBase != null) && (docBase.endsWith(".war")) &&
+        				 (!(new File(getBasePath())).isDirectory()));
+        		 else
+        			 setResources(new FileDirContext());
+        	 }
+         }
+         
          
          /*
           *  realm part!
@@ -467,7 +539,8 @@ public class StandardContext
          
          if (getLoader() == null) {
         	 
-        	 // implement latter.
+        	 WebappLoader webappLoader = new WebappLoader(getParentClassLoader());
+        	 setLoader(webappLoader);
          }
          
          

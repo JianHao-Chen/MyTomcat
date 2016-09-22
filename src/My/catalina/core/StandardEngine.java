@@ -1,11 +1,15 @@
 package My.catalina.core;
 
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+
 import My.catalina.Engine;
 import My.catalina.LifecycleException;
 import My.catalina.Service;
 import My.catalina.Valve;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
+import My.tomcat.util.modeler.Registry;
 
 /**
  * Standard implementation of the <b>Engine</b> interface.  Each
@@ -26,6 +30,12 @@ public class StandardEngine extends ContainerBase implements Engine{
 	
 	
 	 // ---------------- Instance Variables ----------------
+	
+	/**
+     * Host name to use when no server host, or an unknown host,
+     * is specified in the request.
+     */
+    private String defaultHost = null;
 	
 	
 	 /**
@@ -57,9 +67,66 @@ public class StandardEngine extends ContainerBase implements Engine{
     }
     
     
+    /**
+     * Return the default host.
+     */
+    public String getDefaultHost() {
+
+        return (defaultHost);
+
+    }
+
+
+    /**
+     * Set the default host.
+     *
+     * @param host The new default host
+     */
+    public void setDefaultHost(String host) {
+
+        String oldDefaultHost = this.defaultHost;
+        if (host == null) {
+            this.defaultHost = null;
+        } else {
+            this.defaultHost = host.toLowerCase();
+        }
+
+    }
+    
+    
     
     public void init() {
     	
+    	if( initialized ) 
+    		return;
+    	
+        initialized=true;
+        
+        if( oname==null ) {
+        	
+        	// for debug
+            MBeanServer server = Registry.getRegistry(null, null)
+                    .getMBeanServer();
+        	
+        	 try {
+        		 
+        		 if (domain==null) {
+                     domain=getName();
+                 }
+        		 
+        		 oname=new ObjectName(domain + ":type=Engine");
+        		 
+        		 controller=oname;
+                 Registry.getRegistry(null, null)
+                     .registerComponent(this, oname, null);
+
+                 
+        	 }catch( Throwable t ) {
+        		 
+        	 }
+        	 
+        	 
+        }
     }
     
     
