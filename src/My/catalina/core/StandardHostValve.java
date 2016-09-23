@@ -43,6 +43,10 @@ public class StandardHostValve extends ValveBase {
             Thread.currentThread().setContextClassLoader
                     (context.getLoader().getClassLoader());
         }
+        
+        // Ask this Context to process this request
+        context.getPipeline().getFirst().invoke(request, response);
+        
 	}
 	
 	

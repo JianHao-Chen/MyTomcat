@@ -98,14 +98,14 @@ public class MapperListener
              }
 
              // Query wrappers
-            /* onStr = "*:j2eeType=Servlet,*";
+             onStr = "*:j2eeType=Servlet,*";
              objectName = new ObjectName(onStr);
              set = mBeanServer.queryMBeans(objectName, null);
              iterator = set.iterator();
              while (iterator.hasNext()) {
                  ObjectInstance oi = (ObjectInstance) iterator.next();
                  registerWrapper(oi.getObjectName());
-             }*/
+             }
 
              onStr = "JMImplementation:type=MBeanServerDelegate";
              objectName = new ObjectName(onStr);

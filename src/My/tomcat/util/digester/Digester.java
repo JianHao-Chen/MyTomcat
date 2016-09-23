@@ -637,6 +637,48 @@ public class Digester extends DefaultHandler{
         }
         return result;
     }
+    
+    
+    /**
+     * <p>Pop the top object off of the parameters stack, and return it.  If there are
+     * no objects on the stack, return <code>null</code>.</p>
+     *
+     * <p>The parameters stack is used to store <code>CallMethodRule</code> parameters. 
+     * See {@link #params}.</p>
+     */
+    public Object popParams() {
+
+        try {
+            if (log.isTraceEnabled()) {
+                log.trace("Popping params");
+            }
+            return (params.pop());
+        } catch (EmptyStackException e) {
+            log.warn("Empty stack (returning null)");
+            return (null);
+        }
+
+    }
+    
+    
+    /**
+     * <p>Return the top object on the parameters stack without removing it.  If there are
+     * no objects on the stack, return <code>null</code>.</p>
+     *
+     * <p>The parameters stack is used to store <code>CallMethodRule</code> parameters. 
+     * See {@link #params}.</p>
+     */
+    public Object peekParams() {
+
+        try {
+            return (params.peek());
+        } catch (EmptyStackException e) {
+            log.warn("Empty stack (returning null)");
+            return (null);
+        }
+
+    }
+    
 
     /**
      * <p>Is the stack with the given name empty?</p>
@@ -901,11 +943,27 @@ public class Digester extends DefaultHandler{
     public void addCallMethod(String pattern, String methodName,
                               int paramCount) {
 
-       /* addRule(pattern,
-                new CallMethodRule(methodName, paramCount));*/
+        addRule(pattern,
+                new CallMethodRule(methodName, paramCount));
 
     }
     
+    
+    
+    /**
+     * Add a "call parameter" rule for the specified parameters.
+     *
+     * @param pattern Element matching pattern
+     * @param paramIndex Zero-relative parameter index to set
+     *  (from the body of this element)
+     * @see CallParamRule
+     */
+    public void addCallParam(String pattern, int paramIndex) {
+
+        addRule(pattern,
+                new CallParamRule(paramIndex));
+
+    }
     
     
     
@@ -930,6 +988,39 @@ public class Digester extends DefaultHandler{
     	
     	if(qName.equals("Context")){
     		System.out.println("Context");
+    	}
+    	
+    	if(qName.equals("web-app")){
+    		System.out.println("web-app");
+    	}
+
+    	if(qName.equals("servlet")){
+    		System.out.println("servlet");
+    	}
+    	
+    	if(qName.equals("servlet-name")){
+    		System.out.println("servlet-name");
+    	}
+    	
+    	if(qName.equals("servlet-name")){
+    		System.out.println("servlet-name");
+    	}
+    	
+    	if(qName.equals("init-param")){
+    		System.out.println("init-param");
+    	}
+    	
+    	
+    	if(qName.equals("param-name")){
+    		System.out.println("param-name");
+    	}
+    	
+    	if(qName.equals("param-value")){
+    		System.out.println("param-value");
+    	}
+
+    	if(qName.equals("load-on-startup")){
+    		System.out.println("load-on-startup");
     	}
     	
     	

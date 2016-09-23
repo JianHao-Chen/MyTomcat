@@ -293,6 +293,68 @@ public final class IntrospectionUtils {
     }
 	
 	
+	public static Object convert(String object, Class paramType) {
+        Object result = null;
+        if ("java.lang.String".equals(paramType.getName())) {
+            result = object;
+        } else if ("java.lang.Integer".equals(paramType.getName())
+                || "int".equals(paramType.getName())) {
+            try {
+                result = new Integer(object);
+            } catch (NumberFormatException ex) {
+            }
+            // Try a setFoo ( boolean )
+        } else if ("java.lang.Boolean".equals(paramType.getName())
+                || "boolean".equals(paramType.getName())) {
+            result = new Boolean(object);
+
+            // Try a setFoo ( InetAddress )
+        } else if ("java.net.InetAddress".equals(paramType
+                .getName())) {
+            try {
+                result = InetAddress.getByName(object);
+            } catch (UnknownHostException exc) {
+                d("Unable to resolve host name:" + object);
+            }
+
+            // Unknown type
+        } else {
+            d("Unknown type " + paramType.getName());
+        }
+        if (result == null) {
+            throw new IllegalArgumentException("Can't convert argument: " + object);
+        }
+        return result;
+    }
+	
+	
+	 public static Object callMethodN(Object target, String methodN,
+	            Object params[], Class typeParams[]) throws Exception {
+	        Method m = null;
+	        m = findMethod(target.getClass(), methodN, typeParams);
+	        if (m == null) {
+	            d("Can't find method " + methodN + " in " + target + " CLASS "
+	                    + target.getClass());
+	            return null;
+	        }
+	        Object o = m.invoke(target, params);
+
+	        if (dbg > 0) {
+	            // debug
+	            StringBuffer sb = new StringBuffer();
+	            sb.append("" + target.getClass().getName() + "." + methodN + "( ");
+	            for (int i = 0; i < params.length; i++) {
+	                if (i > 0)
+	                    sb.append(", ");
+	                sb.append(params[i]);
+	            }
+	            sb.append(")");
+	            d(sb.toString());
+	        }
+	        return o;
+	    }
+	
+	
 	
 	// debug --------------------
     static final int dbg = 0;

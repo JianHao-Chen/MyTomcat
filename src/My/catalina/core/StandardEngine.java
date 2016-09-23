@@ -43,6 +43,13 @@ public class StandardEngine extends ContainerBase implements Engine{
      */
     private Service service = null;
 	
+    
+    
+    /** Allow the base dir to be specified explicitely for
+     * each engine. In time we should stop using catalina.base property -
+     * otherwise we loose some flexibility.
+     */
+    private String baseDir = null;
 	
 	
 	 // ------------------- Properties -------------------
@@ -91,6 +98,21 @@ public class StandardEngine extends ContainerBase implements Engine{
             this.defaultHost = host.toLowerCase();
         }
 
+    }
+    
+    
+    public String getBaseDir() {
+        if( baseDir==null ) {
+            baseDir=System.getProperty("catalina.base");
+        }
+        if( baseDir==null ) {
+            baseDir=System.getProperty("catalina.home");
+        }
+        return baseDir;
+    }
+
+    public void setBaseDir(String baseDir) {
+        this.baseDir = baseDir;
     }
     
     

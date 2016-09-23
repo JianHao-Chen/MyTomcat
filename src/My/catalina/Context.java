@@ -1,5 +1,7 @@
 package My.catalina;
 
+import javax.servlet.ServletContext;
+
 /**
  * A <b>Context</b> is a Container that represents a servlet context, and
  * therefore an individual web application, in the Catalina servlet engine.
@@ -108,6 +110,22 @@ public interface Context extends Container{
      * Return the path to a file to save this Context information.
      */
     public String getConfigFile();
+    
+    
+    /**
+     * Return the "correctly configured" flag for this Context.
+     */
+    public boolean getConfigured();
+
+
+    /**
+     * Set the "correctly configured" flag for this Context.  This can be
+     * set to false by startup listeners that detect a fatal configuration
+     * error to avoid the application from being made available.
+     *
+     * @param configured The new correctly configured flag
+     */
+    public void setConfigured(boolean configured);
 
 
     /**
@@ -132,6 +150,28 @@ public interface Context extends Container{
     public void setPath(String path);
     
     
+    
+    /**
+     * Return the override flag for this web application.
+     */
+    public boolean getOverride();
+
+
+    /**
+     * Set the override flag for this web application.
+     *
+     * @param override The new override flag
+     */
+    public void setOverride(boolean override);
+    
+    
+    
+    /**
+     * Return the servlet context for which this Context is a facade.
+     */
+    public ServletContext getServletContext();
+    
+    
     /**
      * Return the document root for this Context.  This can be an absolute
      * pathname, a relative pathname, or a URL.
@@ -147,6 +187,22 @@ public interface Context extends Container{
      */
     public void setDocBase(String docBase);
     
+    
+    /**
+     * Factory method to create and return a new Wrapper instance, of
+     * the Java implementation class appropriate for this Context
+     * implementation.  The constructor of the instantiated Wrapper
+     * will have been called, but no properties will have been set.
+     */
+    public Wrapper createWrapper();
+    
+    /**
+     * Add a resource which will be watched for reloading by the host auto
+     * deployer. Note: this will not be used in embedded mode.
+     * 
+     * @param name Path to the resource, relative to docBase
+     */
+    public void addWatchedResource(String name);
     
     /**
      * Return the set of watched resources for this Context. If none are 

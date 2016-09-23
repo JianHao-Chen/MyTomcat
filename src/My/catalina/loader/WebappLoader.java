@@ -1,14 +1,22 @@
 package My.catalina.loader;
 
 import java.beans.PropertyChangeListener;
+import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
+import java.util.ArrayList;
+
+import javax.naming.directory.DirContext;
+import javax.servlet.ServletContext;
 
 import My.catalina.Container;
 import My.catalina.Context;
+import My.catalina.Globals;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
 import My.catalina.Loader;
+import My.catalina.core.StandardContext;
 import My.catalina.util.LifecycleSupport;
 
 /**
@@ -26,6 +34,10 @@ import My.catalina.util.LifecycleSupport;
  */
 
 public class WebappLoader implements Lifecycle, Loader{
+	
+	
+	private static My.juli.logging.Log log=
+        My.juli.logging.LogFactory.getLog( WebappLoader.class );
 
 	// --------------------- Constructors ---------------------
 	 /**
@@ -57,6 +69,13 @@ public class WebappLoader implements Lifecycle, Loader{
      * The Container with which this Loader has been associated.
      */
     private Container container = null;
+    
+    /**
+     * The "follow standard delegation model" flag that will be used to
+     * configure our ClassLoader.
+     */
+    private boolean delegate = false;
+    
     
     /**
      * The class loader being managed by this Loader component.
@@ -108,6 +127,17 @@ public class WebappLoader implements Lifecycle, Loader{
      */
     private String loaderClass =
         "My.catalina.loader.WebappClassLoader";
+    
+    
+    /**
+     * Repositories that are set in the loader, for JMX.
+     */
+    private ArrayList loaderRepositories = null;
+    
+    /**
+     * Whether we should search the external repositories first
+     */
+    private boolean searchExternalFirst = false;
     
     
 	// ---------------------- Properties ----------------------
@@ -248,8 +278,34 @@ public class WebappLoader implements Lifecycle, Loader{
 		try {
 			
 			classLoader = createClassLoader();
-			
 			classLoader.setResources(container.getResources());
+			classLoader.setDelegate(this.delegate);
+			classLoader.setSearchExternalFirst(searchExternalFirst);
+			
+			if (container instanceof StandardContext) {
+				classLoader.setAntiJARLocking(
+                        ((StandardContext) container).getAntiJARLocking());
+                classLoader.setClearReferencesStopThreads(
+                        ((StandardContext) container).getClearReferencesStopThreads());
+                classLoader.setClearReferencesStopTimerThreads(
+                        ((StandardContext) container).getClearReferencesStopTimerThreads());
+                classLoader.setClearReferencesThreadLocals(
+                        ((StandardContext) container).getClearReferencesThreadLocals());
+                classLoader.setClearReferencesHttpClientKeepAliveThread(
+                        ((StandardContext) container).getClearReferencesHttpClientKeepAliveThread());
+			}
+			
+			
+			for (int i = 0; i < repositories.length; i++) {
+				classLoader.addRepository(repositories[i]);
+			}
+			
+			
+			// Configure our repositories
+			setRepositories();
+			
+			
+		}catch (Throwable t) {
 			
 		}
 		
@@ -284,6 +340,50 @@ public class WebappLoader implements Lifecycle, Loader{
         classLoader = (WebappClassLoader) constr.newInstance(args);
         
         return classLoader;
+    }
+    
+    
+    
+    /**
+     * Configure the repositories for our class loader, based on the
+     * associated Context.
+     * @throws IOException 
+     */
+    private void setRepositories() throws IOException {
+    	
+    	if (!(container instanceof Context))
+    		return;
+    	
+    	ServletContext servletContext =
+            ((Context) container).getServletContext();
+    	
+    	if (servletContext == null)
+            return;
+    	
+    	loaderRepositories=new ArrayList();
+    	
+    	// Loading the work directory
+    	File workDir =
+            (File) servletContext.getAttribute(Globals.WORK_DIR_ATTR);
+    	
+    	if (workDir == null) {
+            log.info("No work dir for " + servletContext);
+        }
+    	
+    	classLoader.setWorkDir(workDir);
+    	
+    	DirContext resources = container.getResources();
+    	
+    	// Setting up the class repository (/WEB-INF/classes), if it exists
+        String classesPath = "/WEB-INF/classes";
+        
+        DirContext classes = null;
+        
+        // implements latter
+        
+       /* try {
+        	Object object = resources.lookup(classesPath);
+        }*/
     }
     
 }

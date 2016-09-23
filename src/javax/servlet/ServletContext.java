@@ -27,4 +27,38 @@ package javax.servlet;
 
 public interface ServletContext {
 
+	
+	
+	
+	/**
+     * Returns the servlet container attribute with the given name, 
+     * or <code>null</code> if there is no attribute by that name.
+     * An attribute allows a servlet container to give the
+     * servlet additional information not
+     * already provided by this interface. See your
+     * server documentation for information about its attributes.
+     * A list of supported attributes can be retrieved using
+     * <code>getAttributeNames</code>.
+     *
+     * <p>The attribute is returned as a <code>java.lang.Object</code>
+     * or some subclass.
+     * Attribute names should follow the same convention as package
+     * names. The Java Servlet API specification reserves names
+     * matching <code>java.*</code>, <code>javax.*</code>,
+     * and <code>sun.*</code>.
+     *
+     *
+     * @param name 	a <code>String</code> specifying the name 
+     *			of the attribute
+     *
+     * @return 		an <code>Object</code> containing the value 
+     *			of the attribute, or <code>null</code>
+     *			if no attribute exists matching the given
+     *			name
+     *
+     * @see 		ServletContext#getAttributeNames
+     *
+     */
+  
+    public Object getAttribute(String name);
 }

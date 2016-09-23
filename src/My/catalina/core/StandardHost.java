@@ -87,7 +87,13 @@ public class StandardHost extends ContainerBase implements Host{
       */
       private boolean xmlValidation = false;
      
-     
+      
+      /**
+       * Work Directory base for applications.
+       */
+      private String workDir = null;
+      
+      
     
     /**
      * Track the class loaders for the child web applications so memory leaks
@@ -193,6 +199,24 @@ public class StandardHost extends ContainerBase implements Host{
 
         boolean oldDeployOnStartup = this.deployOnStartup;
         this.deployOnStartup = deployOnStartup;
+    }
+    
+    
+    /**
+     * Host work directory base.
+     */
+    public String getWorkDir() {
+
+        return (workDir);
+    }
+
+
+    /**
+     * Host work directory base.
+     */
+    public void setWorkDir(String workDir) {
+
+        this.workDir = workDir;
     }
     
     
