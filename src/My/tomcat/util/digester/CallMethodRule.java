@@ -1,5 +1,9 @@
 package My.tomcat.util.digester;
 
+import org.xml.sax.Attributes;
+
+import My.tomcat.util.IntrospectionUtils;
+
 /**
  * <p>Rule implementation that calls a method on an object on the stack
  * (normally the top/parent object), passing arguments collected from 
@@ -133,5 +137,120 @@ public class CallMethodRule extends Rule{
      * Should <code>MethodUtils.invokeExactMethod</code> be used for reflection.
      */
     protected boolean useExactMatch = false;
+    
+    
+    /**
+     * Process the start of this element.
+     *
+     * @param attributes The attribute list for this element
+     */
+    public void begin(Attributes attributes) throws Exception {
+
+        // Push an array to capture the parameter values if necessary
+        if (paramCount > 0) {
+            Object parameters[] = new Object[paramCount];
+            for (int i = 0; i < parameters.length; i++) {
+                parameters[i] = null;
+            }
+            digester.pushParams(parameters);
+        }
+
+    }
+    
+    
+    /**
+     * Process the body text of this element.
+     *
+     * @param bodyText The body text of this element
+     */
+    public void body(String bodyText) throws Exception {
+
+        if (paramCount == 0) {
+            this.bodyText = bodyText.trim();
+        }
+
+    }
+    
+    
+    /**
+     * Process the end of this element.
+     */
+    public void end() throws Exception {
+
+    	// Retrieve or construct the parameter values array
+        Object parameters[] = null;
+        
+        if (paramCount > 0) {
+        	
+        
+        	parameters = (Object[]) digester.popParams();
+        	
+        	// In the case where the parameter for the method
+            // is taken from an attribute, and that attribute
+            // isn't actually defined in the source XML file,
+            // skip the method call
+            if (paramCount == 1 && parameters[0] == null) {
+                return;
+            }
+            
+            
+        }else if (paramTypes != null && paramTypes.length != 0) {
+        	// In the case where the parameter for the method
+            // is taken from the body text, but there is no
+            // body text included in the source XML file,
+            // skip the method call
+            if (bodyText == null) {
+                return;
+            }
+
+            parameters = new Object[1];
+            parameters[0] = bodyText;
+            if (paramTypes.length == 0) {
+                paramTypes = new Class[1];
+                paramTypes[0] = "abc".getClass();
+            }
+        }
+        
+        // Construct the parameter values array we will need
+        // We only do the conversion if the param value is a String and
+        // the specified paramType is not String. 
+        Object paramValues[] = new Object[paramTypes.length];
+        for (int i = 0; i < paramTypes.length; i++) {
+        	// convert nulls and convert stringy parameters 
+            // for non-stringy param types
+        	
+        	if(
+                parameters[i] == null ||
+                (parameters[i] instanceof String && 
+                 !String.class.isAssignableFrom(paramTypes[i]))) {
+        		
+        		paramValues[i] =
+                    IntrospectionUtils.convert((String) parameters[i], paramTypes[i]);
+        	}
+        	else {
+                paramValues[i] = parameters[i];
+            }
+        }
+        
+        
+        
+        // Determine the target object for the method call
+        Object target;
+        if (targetOffset >= 0) {
+        	target = digester.peek(targetOffset);
+        }else {
+            target = digester.peek( digester.getCount() + targetOffset );
+        }
+        
+        if (target == null) {
+        	// throw exception
+        }
+        
+        // Invoke the required method on the top object
+        Object result = IntrospectionUtils.callMethodN(target, methodName,
+                paramValues, paramTypes);   
+        
+    }
+    
 }
 

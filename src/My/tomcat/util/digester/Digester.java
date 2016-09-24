@@ -640,6 +640,23 @@ public class Digester extends DefaultHandler{
     
     
     /**
+     * <p>Push a new object onto the top of the parameters stack.</p>
+     *
+     * <p>The parameters stack is used to store <code>CallMethodRule</code> parameters. 
+     * See {@link #params}.</p>
+     *
+     * @param object The new object
+     */
+    public void pushParams(Object object) {
+        if (log.isTraceEnabled()) {
+            log.trace("Pushing params");
+        }
+        params.push(object);
+
+    }
+    
+    
+    /**
      * <p>Pop the top object off of the parameters stack, and return it.  If there are
      * no objects on the stack, return <code>null</code>.</p>
      *
@@ -966,6 +983,24 @@ public class Digester extends DefaultHandler{
     }
     
     
+    /**
+     * Process notification of character data received from the body of
+     * an XML element.
+     *
+     * @param buffer The characters from the XML document
+     * @param start Starting offset into the buffer
+     * @param length Number of characters from the buffer
+     *
+     * @exception SAXException if a parsing error is to be reported
+     */
+    public void characters(char buffer[], int start, int length)
+    throws SAXException {
+
+
+    	bodyText.append(buffer, start, length);
+
+    }
+    
     
     
     public void startElement(String namespaceURI, String localName,
@@ -1002,8 +1037,8 @@ public class Digester extends DefaultHandler{
     		System.out.println("servlet-name");
     	}
     	
-    	if(qName.equals("servlet-name")){
-    		System.out.println("servlet-name");
+    	if(qName.equals("servlet-class")){
+    		System.out.println("servlet-class");
     	}
     	
     	if(qName.equals("init-param")){
@@ -1022,6 +1057,12 @@ public class Digester extends DefaultHandler{
     	if(qName.equals("load-on-startup")){
     		System.out.println("load-on-startup");
     	}
+    	
+    	
+    	
+    	// Save the body text accumulated for our surrounding element
+        bodyTexts.push(bodyText);
+        bodyText = new StringBuffer();
     	
     	
     	 // the actual element name is either in localName or qName, depending 
@@ -1068,6 +1109,38 @@ public class Digester extends DefaultHandler{
     public void endElement(String namespaceURI, String localName,
             String qName) throws SAXException {
     	
+    	
+    	
+    	if(qName.equals("servlet")){
+    		System.out.println("servlet");
+    	}
+    	
+    	if(qName.equals("servlet-name")){
+    		System.out.println("servlet-name");
+    	}
+    	
+    	if(qName.equals("servlet-class")){
+    		System.out.println("servlet-class");
+    	}
+    	
+    	if(qName.equals("init-param")){
+    		System.out.println("init-param");
+    	}
+    	
+    	
+    	if(qName.equals("param-name")){
+    		System.out.println("param-name");
+    	}
+    	
+    	if(qName.equals("param-value")){
+    		System.out.println("param-value");
+    	}
+
+    	if(qName.equals("load-on-startup")){
+    		System.out.println("load-on-startup");
+    	}
+    	
+    	
     	// the actual element name is either in localName or qName, depending 
         // on whether the parser is namespace aware
         String name = localName;
@@ -1077,6 +1150,17 @@ public class Digester extends DefaultHandler{
         
         List rules = (List) matches.pop();
         
+        if ((rules != null) && (rules.size() > 0)) {
+        	String bodyText = this.bodyText.toString();
+        	for (int i = 0; i < rules.size(); i++) {
+        		try {
+        			Rule rule = (Rule) rules.get(i);
+        			rule.body(namespaceURI, name, bodyText);
+        		}catch (Exception e) {
+        			
+        		}
+        	}
+        }
         
         // Fire "end" events for all relevant rules in reverse order
         if (rules != null) {

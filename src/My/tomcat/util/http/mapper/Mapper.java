@@ -1002,6 +1002,97 @@ public final class Mapper {
     }
     
     
+    public void addWrapper(String path, Object wrapper, boolean jspWildCard) {
+        addWrapper(context, path, wrapper, jspWildCard);
+    }
+    
+    
+    
+    
+    
+    /**
+     * Remove a wrapper from the context associated with this wrapper.
+     *
+     * @param path Wrapper mapping
+     */
+    public void removeWrapper(String path) {
+        removeWrapper(context, path);
+    }
+
+
+    /**
+     * Remove a wrapper from an existing context.
+     *
+     * @param hostName Virtual host name this wrapper belongs to
+     * @param contextPath Context path this wrapper belongs to
+     * @param path Wrapper mapping
+     */
+    public void removeWrapper
+        (String hostName, String contextPath, String path) {
+        Host[] hosts = this.hosts;
+        int pos = find(hosts, hostName);
+        if (pos < 0) {
+            return;
+        }
+        Host host = hosts[pos];
+        if (host.name.equals(hostName)) {
+            Context[] contexts = host.contextList.contexts;
+            int pos2 = find(contexts, contextPath);
+            if (pos2 < 0) {
+                return;
+            }
+            Context context = contexts[pos2];
+            if (context.name.equals(contextPath)) {
+                removeWrapper(context, path);
+            }
+        }
+    }
+
+    protected void removeWrapper(Context context, String path) {
+        synchronized (context) {
+            if (path.endsWith("/*")) {
+                // Wildcard wrapper
+                String name = path.substring(0, path.length() - 2);
+                Wrapper[] oldWrappers = context.wildcardWrappers;
+                Wrapper[] newWrappers =
+                    new Wrapper[oldWrappers.length - 1];
+                if (removeMap(oldWrappers, newWrappers, name)) {
+                    // Recalculate nesting
+                    context.nesting = 0;
+                    for (int i = 0; i < newWrappers.length; i++) {
+                        int slashCount = slashCount(newWrappers[i].name);
+                        if (slashCount > context.nesting) {
+                            context.nesting = slashCount;
+                        }
+                    }
+                    context.wildcardWrappers = newWrappers;
+                }
+            } else if (path.startsWith("*.")) {
+                // Extension wrapper
+                String name = path.substring(2);
+                Wrapper[] oldWrappers = context.extensionWrappers;
+                Wrapper[] newWrappers =
+                    new Wrapper[oldWrappers.length - 1];
+                if (removeMap(oldWrappers, newWrappers, name)) {
+                    context.extensionWrappers = newWrappers;
+                }
+            } else if (path.equals("/")) {
+                // Default wrapper
+                context.defaultWrapper = null;
+            } else {
+                // Exact wrapper
+                String name = path;
+                Wrapper[] oldWrappers = context.exactWrappers;
+                Wrapper[] newWrappers =
+                    new Wrapper[oldWrappers.length - 1];
+                if (removeMap(oldWrappers, newWrappers, name)) {
+                    context.exactWrappers = newWrappers;
+                }
+            }
+        }
+    }
+    
+    
     
 	// ---------------------- MapElement Inner Class -----------
     

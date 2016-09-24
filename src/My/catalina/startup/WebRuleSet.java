@@ -1,6 +1,7 @@
 package My.catalina.startup;
 
 
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 
 import org.xml.sax.Attributes;
@@ -27,6 +28,43 @@ public class WebRuleSet extends RuleSetBase{
      */
     protected String prefix = null;
 	
+    
+    
+    // ------------------- Constructor -------------------
+    /**
+     * Construct an instance of this <code>RuleSet</code> with the default
+     * matching pattern prefix.
+     */
+    public WebRuleSet() {
+
+        this("");
+
+    }
+
+
+    /**
+     * Construct an instance of this <code>RuleSet</code> with the specified
+     * matching pattern prefix.
+     *
+     * @param prefix Prefix for matching pattern rules (including the
+     *  trailing slash character)
+     */
+    public WebRuleSet(String prefix) {
+
+        super();
+        this.prefix = prefix;
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 	
 	/**
      * <p>Add the set of Rule instances defined in this RuleSet to the
@@ -38,11 +76,18 @@ public class WebRuleSet extends RuleSetBase{
 	@Override
 	public void addRuleInstances(Digester digester) {
 		// TODO Auto-generated method stub
+		
+		digester.addRule(prefix + "web-app",
+                new SetPublicIdRule("setPublicId"));
+		digester.addRule(prefix + "web-app",
+                new IgnoreAnnotationsRule());
+		
+		
 		digester.addRule(prefix + "web-app/servlet",
                 new WrapperCreateRule());
 		digester.addSetNext(prefix + "web-app/servlet",
                    "addChild",
-                   "org.apache.catalina.Container");
+                   "My.catalina.Container");
 		
 		
 		digester.addCallMethod(prefix + "web-app/servlet/init-param",
@@ -213,6 +258,69 @@ final class CallParamMultiRule extends CallParamRule {
             }
             params.add(bodyTextStack.pop());
         }
+    }
+
+}
+
+/**
+ * Class that calls a property setter for the top object on the stack,
+ * passing the public ID of the entity we are currently processing.
+ */
+
+final class SetPublicIdRule extends Rule {
+
+    public SetPublicIdRule(String method) {
+        this.method = method;
+    }
+
+    private String method = null;
+
+    public void begin(String namespace, String name, Attributes attributes)
+        throws Exception {
+
+        Object top = digester.peek();
+        Class paramClasses[] = new Class[1];
+        paramClasses[0] = "String".getClass();
+        String paramValues[] = new String[1];
+        paramValues[0] = digester.getPublicId();
+
+        Method m = null;
+        try {
+            m = top.getClass().getMethod(method, paramClasses);
+        } catch (NoSuchMethodException e) {
+            
+            return;
+        }
+
+        m.invoke(top, (Object [])paramValues);
+        
+    }
+
+}
+
+
+/**
+ * A Rule that check if the annotations have to be loaded.
+ * 
+ */
+
+final class IgnoreAnnotationsRule extends Rule {
+
+    public IgnoreAnnotationsRule() {
+    }
+
+    public void begin(String namespace, String name, Attributes attributes)
+        throws Exception {
+        Context context = (Context) digester.peek(digester.getCount() - 1);
+        String value = attributes.getValue("metadata-complete");
+        
+        if ("true".equals(value)) {
+         //   context.setIgnoreAnnotations(true);
+        } else if ("false".equals(value)) {
+         //   context.setIgnoreAnnotations(false);
+        }
+        
+        
     }
 
 }

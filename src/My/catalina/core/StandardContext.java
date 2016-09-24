@@ -3,6 +3,7 @@ package My.catalina.core;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Hashtable;
 
 import javax.management.MBeanServer;
@@ -22,6 +23,7 @@ import My.catalina.LifecycleException;
 import My.catalina.Loader;
 import My.catalina.Wrapper;
 import My.catalina.loader.WebappLoader;
+import My.catalina.util.RequestUtil;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.naming.resources.BaseDirContext;
@@ -100,7 +102,12 @@ public class StandardContext
      */
     private boolean paused = false;
     
-    
+    /**
+     * The public identifier of the DTD for the web application deployment
+     * descriptor version we are currently parsing.  This is used to support
+     * relaxed validation rules when processing version 2.2 web.xml files.
+     */
+    private String publicId = null;
     
     
     /**
@@ -112,6 +119,21 @@ public class StandardContext
      * The ServletContext implementation associated with this Context.
      */
     protected transient ApplicationContext context = null;
+    
+    
+    /**
+     * The mapper associated with this context.
+     */
+    private My.tomcat.util.http.mapper.Mapper mapper = 
+        new My.tomcat.util.http.mapper.Mapper();
+    
+    /**
+     * The servlet mappings for this web application, keyed by
+     * matching pattern.
+     */
+    private HashMap servletMappings = new HashMap();
+    
+    private final Object servletMappingsLock = new Object();
     
     
     /**
@@ -353,6 +375,35 @@ public class StandardContext
 
         boolean oldAvailable = this.available;
         this.available = available;
+    }
+    
+    
+    /**
+     * Return the public identifier of the deployment descriptor DTD that is
+     * currently being parsed.
+     */
+    public String getPublicId() {
+
+        return (this.publicId);
+
+    }
+
+
+    /**
+     * Set the public identifier of the deployment descriptor DTD that is
+     * currently being parsed.
+     *
+     * @param publicId The public identifier
+     */
+    public void setPublicId(String publicId) {
+
+        if (log.isDebugEnabled())
+            log.debug("Setting deployment descriptor public ID to '" +
+                publicId + "'");
+
+        String oldPublicId = this.publicId;
+        this.publicId = publicId;
+        
     }
     
     
@@ -729,6 +780,152 @@ public class StandardContext
     }
     
     
+    /**
+     * Add a child Container, only if the proposed child is an implementation
+     * of Wrapper.
+     *
+     * @param child Child container to be added
+     *
+     * @exception IllegalArgumentException if the proposed container is
+     *  not an implementation of Wrapper
+     */
+    public void addChild(Container child) {
+    	// Global JspServlet
+        Wrapper oldJspServlet = null;
+
+        if (!(child instanceof Wrapper)) {
+        	throw new IllegalArgumentException
+            ("standardContext.notWrapper");
+        }
+        
+        Wrapper wrapper = (Wrapper) child;
+        boolean isJspServlet = "jsp".equals(child.getName());
+        
+        
+        
+        super.addChild(child);
+        
+    }
+    
+    
+    
+    /**
+     * Add a new servlet mapping, replacing any existing mapping for
+     * the specified pattern.
+     *
+     * @param pattern URL pattern to be mapped
+     * @param name Name of the corresponding servlet to execute
+     *
+     * @exception IllegalArgumentException if the specified servlet name
+     *  is not known to this Context
+     */
+    public void addServletMapping(String pattern, String name) {
+        addServletMapping(pattern, name, false);
+    }
+    
+    /**
+     * Add a new servlet mapping, replacing any existing mapping for
+     * the specified pattern.
+     *
+     * @param pattern URL pattern to be mapped
+     * @param name Name of the corresponding servlet to execute
+     * @param jspWildCard true if name identifies the JspServlet
+     * and pattern contains a wildcard; false otherwise
+     *
+     * @exception IllegalArgumentException if the specified servlet name
+     *  is not known to this Context
+     */
+    public void addServletMapping(String pattern, String name,
+                                  boolean jspWildCard) {
+    	
+    	// Validate the proposed mapping
+        if (findChild(name) == null)
+        	throw new IllegalArgumentException
+            	("standardContext.servletMap.name");
+        
+        pattern = adjustURLPattern(RequestUtil.URLDecode(pattern));
+        
+        if (!validateURLPattern(pattern))
+        	throw new IllegalArgumentException
+            ("standardContext.servletMap.pattern");
+        
+        // Add this mapping to our registered set
+        synchronized (servletMappingsLock) {
+        	String name2 = (String) servletMappings.get(pattern);
+        	if (name2 != null) {
+        		// Don't allow more than one servlet on the same pattern
+                Wrapper wrapper = (Wrapper) findChild(name2);
+                wrapper.removeMapping(pattern);
+                mapper.removeWrapper(pattern);
+        	}
+        	servletMappings.put(pattern, name);
+        }
+        Wrapper wrapper = (Wrapper) findChild(name);
+        wrapper.addMapping(pattern);
+        
+        // Update context mapper
+        mapper.addWrapper(pattern, wrapper, jspWildCard);
+    }
+    
+    
+    /**
+     * Adjust the URL pattern to begin with a leading slash, if appropriate
+     * (i.e. we are running a servlet 2.2 application).  Otherwise, return
+     * the specified URL pattern unchanged.
+     *
+     * @param urlPattern The URL pattern to be adjusted (if needed)
+     *  and returned
+     */
+    protected String adjustURLPattern(String urlPattern) {
+    	
+    	if (urlPattern == null)
+            return (urlPattern);
+    	
+    	if (urlPattern.startsWith("/") || urlPattern.startsWith("*."))
+            return (urlPattern);
+    	
+    	
+    	return ("/" + urlPattern);
+    }
+    
+    /**
+     * Validate the syntax of a proposed <code>&lt;url-pattern&gt;</code>
+     * for conformance with specification requirements.
+     *
+     * @param urlPattern URL pattern to be validated
+     */
+    private boolean validateURLPattern(String urlPattern) {
+    	
+    	if (urlPattern == null)
+            return (false);
+    	
+    	if (urlPattern.indexOf('\n') >= 0 || urlPattern.indexOf('\r') >= 0) {
+            return (false);
+        }
+    	
+    	if (urlPattern.startsWith("*.")) {
+    		if (urlPattern.indexOf('/') < 0) {
+    			return (true);
+    		}
+    		else
+                return (false);
+    	}
+    	
+    	if ( (urlPattern.startsWith("/")) &&
+                (urlPattern.indexOf("*.") < 0)) {
+    		return (true);
+    	}
+    	else
+            return (false);
+    }
+    
+    
+    /**
+     * Check for unusual but valid <code>&lt;url-pattern&gt;</code>s.
+     */
+    private void checkUnusualURLPattern(String urlPattern) {
+    	
+    }
     
     
     /**

@@ -1,5 +1,7 @@
 package My.tomcat.util.digester;
 
+import org.xml.sax.Attributes;
+
 /**
  * <p>Rule implementation that saves a parameter for use by a surrounding 
  * <code>CallMethodRule<code>.</p>
@@ -79,6 +81,74 @@ public class CallParamRule extends Rule{
      * Lazy creation.
      */
     protected ArrayStack bodyTextStack;
+    
+	// ------------------- Public Methods -------------------
+    
+    /**
+     * Process the start of this element.
+     *
+     * @param attributes The attribute list for this element
+     */
+    public void begin(Attributes attributes) throws Exception {
+    	
+    	Object param = null;
+        
+        if (attributeName != null) {
+        	param = attributes.getValue(attributeName);
+        }
+        else if(fromStack) {
+        	
+        	param = digester.peek(stackIndex);
+        }
+        
+        
+        // Have to save the param object to the param stack frame here.
+        // Can't wait until end(). Otherwise, the object will be lost.
+        // We can't save the object as instance variables, as 
+        // the instance variables will be overwritten
+        // if this CallParamRule is reused in subsequent nesting.
+        
+        if(param != null) {
+        	Object parameters[] = (Object[]) digester.peekParams();
+            parameters[paramIndex] = param;
+        }
+
+    }
+    
+    
+    
+    /**
+     * Process the body text of this element.
+     *
+     * @param bodyText The body text of this element
+     */
+    public void body(String bodyText) throws Exception {
+
+        if (attributeName == null && !fromStack) {
+            // We must wait to set the parameter until end
+            // so that we can make sure that the right set of parameters
+            // is at the top of the stack
+            if (bodyTextStack == null) {
+                bodyTextStack = new ArrayStack();
+            }
+            bodyTextStack.push(bodyText.trim());
+        }
+
+    }
+    
+    
+    
+    /**
+     * Process any body texts now.
+     */
+    public void end(String namespace, String name) {
+        if (bodyTextStack != null && !bodyTextStack.empty()) {
+            // what we do now is push one parameter onto the top set of parameters
+            Object parameters[] = (Object[]) digester.peekParams();
+            parameters[paramIndex] = bodyTextStack.pop();
+        }
+    }
+    
     
     
 }
