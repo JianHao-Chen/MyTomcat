@@ -205,6 +205,10 @@ public class ContextConfig implements LifecycleListener {
     	}
     	
     	
+    	if("/examples".equals(this.context.getName())){
+    		System.out.println("/examples");
+    	}
+    	
     	// Process the default and application web.xml files
         defaultWebConfig();
     }

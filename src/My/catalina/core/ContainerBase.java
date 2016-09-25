@@ -532,6 +532,14 @@ public abstract class ContainerBase
     }
     
     
+    /**
+     * Return an object which may be utilized for mapping to this component.
+     */
+    public Object getMappingObject() {
+        return this;
+    }
+    
+    
     
     /**
      * Remove an existing child Container from association with this parent

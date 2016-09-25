@@ -3,6 +3,7 @@ package My.catalina.connector;
 import java.io.IOException;
 
 import My.catalina.Context;
+import My.catalina.Wrapper;
 import My.coyote.Adapter;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
@@ -208,9 +209,8 @@ public class CoyoteAdapter implements Adapter{
         // affects the final URL. Safe as session cookies still 
         // haven't been parsed.
     	
-        /*
-         * implements latter
-         */
+        request.setWrapper(
+        		(Wrapper) request.getMappingData().wrapper);
         	
     	
     	return true;

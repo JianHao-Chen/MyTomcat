@@ -36,4 +36,10 @@ public interface Wrapper extends Container{
      * @param mapping The new wrapper mapping
      */
     public void addMapping(String mapping);
+    
+    
+    /**
+     * Is this servlet currently unavailable?
+     */
+    public boolean isUnavailable();
 }
