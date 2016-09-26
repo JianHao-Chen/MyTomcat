@@ -1,5 +1,7 @@
 package My.catalina;
 
+import javax.servlet.ServletException;
+
 /**
  * A <b>Wrapper</b> is a Container that represents an individual servlet
  * definition from the deployment descriptor of the web application.  It
@@ -42,4 +44,33 @@ public interface Wrapper extends Container{
      * Is this servlet currently unavailable?
      */
     public boolean isUnavailable();
+    
+    
+    /**
+     * Return the load-on-startup order value (negative value means
+     * load on first call).
+     */
+    public int getLoadOnStartup();
+
+
+    /**
+     * Set the load-on-startup order value (negative value means
+     * load on first call).
+     *
+     * @param value New load-on-startup value
+     */
+    public void setLoadOnStartup(int value);
+    
+    
+    /**
+     * Load and initialize an instance of this servlet, if there is not already
+     * at least one initialized instance.  This can be used, for example, to
+     * load servlets that are marked in the deployment descriptor to be loaded
+     * at server startup time.
+     *
+     * @exception ServletException if the servlet init() method threw
+     *  an exception
+     * @exception ServletException if some other loading problem occurs
+     */
+    public void load() throws ServletException;
 }

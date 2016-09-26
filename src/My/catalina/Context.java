@@ -224,4 +224,18 @@ public interface Context extends Container{
      */
     public void setReloadable(boolean reloadable);
     
+    
+    /**
+     * Return the privileged flag for this web application.
+     */
+    public boolean getPrivileged();
+
+
+    /**
+     * Set the privileged flag for this web application.
+     *
+     * @param privileged The new privileged flag
+     */
+    public void setPrivileged(boolean privileged);
+    
 }

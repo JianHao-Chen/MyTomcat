@@ -1,6 +1,7 @@
 package My.catalina.core;
 
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -13,7 +14,10 @@ import javax.servlet.Servlet;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
+import javax.servlet.UnavailableException;
 
+import My.catalina.Context;
+import My.catalina.Loader;
 import My.catalina.Wrapper;
 import My.tomcat.util.modeler.Registry;
 
@@ -82,6 +86,13 @@ public class StandardWrapper extends ContainerBase
      */
     protected String servletClass = null;
 	
+    
+    /**
+     * The facade associated with this wrapper.
+     */
+    protected StandardWrapperFacade facade =
+        new StandardWrapperFacade(this);
+    
     
     /**
      * True if this StandardWrapper is for the JspServlet
@@ -271,6 +282,34 @@ public class StandardWrapper extends ContainerBase
     
     
     /**
+     * Return <code>true</code> if loading this servlet is allowed.
+     */
+    protected boolean isServletAllowed(Object servlet) {
+ 
+        return true;
+        
+    }
+    
+    
+    /**
+     * Set the available date/time for this servlet, in milliseconds since the
+     * epoch.  If this date/time is Long.MAX_VALUE, it is considered to mean
+     * that unavailability is permanent and any request for this servlet will return
+     * an SC_NOT_FOUND error. If this date/time is in the future, any request for
+     * this servlet will return an SC_SERVICE_UNAVAILABLE error.
+     *
+     * @param available The new available date/time
+     */
+    public void setAvailable(long available) {
+    	 long oldAvailable = this.available;
+         if (available > System.currentTimeMillis())
+             this.available = available;
+         else
+             this.available = 0L;
+    }
+    
+    
+    /**
      * Is this servlet currently unavailable?
      */
     public boolean isUnavailable() {
@@ -283,6 +322,148 @@ public class StandardWrapper extends ContainerBase
         } else
             return (true);
 
+    }
+    
+    
+    /**
+     * Process an UnavailableException, marking this servlet as unavailable
+     * for the specified amount of time.
+     *
+     * @param unavailable The exception that occurred, or <code>null</code>
+     *  to mark this servlet as permanently unavailable
+     */
+    public void unavailable(UnavailableException unavailable) {
+    	
+    	if (unavailable == null)
+            setAvailable(Long.MAX_VALUE);
+    	else if (unavailable.isPermanent())
+            setAvailable(Long.MAX_VALUE);
+    	 else {
+    		 int unavailableSeconds = unavailable.getUnavailableSeconds();
+             if (unavailableSeconds <= 0)
+                 unavailableSeconds = 60;        // Arbitrary default
+             setAvailable(System.currentTimeMillis() +
+                          (unavailableSeconds * 1000L));
+    	 }
+    }
+    
+    
+    
+    /**
+     * Load and initialize an instance of this servlet, if there is not already
+     * at least one initialized instance.  This can be used, for example, to
+     * load servlets that are marked in the deployment descriptor to be loaded
+     * at server startup time.
+     * <p>
+     * <b>IMPLEMENTATION NOTE</b>:  Servlets whose classnames begin with
+     * <code>org.apache.catalina.</code> (so-called "container" servlets)
+     * are loaded by the same classloader that loaded this class, rather than
+     * the classloader for the current web application.
+     * This gives such classes access to Catalina internals, which are
+     * prevented for classes loaded for web applications.
+     *
+     * @exception ServletException if the servlet init() method threw
+     *  an exception
+     * @exception ServletException if some other loading problem occurs
+     */
+    public synchronized void load() throws ServletException {
+        instance = loadServlet();
+    }
+    
+    
+    /**
+     * Load and initialize an instance of this servlet, if there is not already
+     * at least one initialized instance.  This can be used, for example, to
+     * load servlets that are marked in the deployment descriptor to be loaded
+     * at server startup time.
+     */
+    public synchronized Servlet loadServlet() throws ServletException {
+    	
+    	 // Nothing to do if we already have an instance or an instance pool
+        if (!singleThreadModel && (instance != null))
+            return instance;
+        
+        PrintStream out = System.out;
+        
+        Servlet servlet = null;
+        try {
+        	
+        	String actualClass = servletClass;
+        	
+        	// handle JSP file here...
+        	
+        	// Complain if no servlet class has been specified
+            if (actualClass == null) {
+            	unavailable(null);
+            	throw new ServletException("standardWrapper.notClass");
+            }
+            
+            // Acquire an instance of the class loader to be used
+            Loader loader = getLoader();
+            if (loader == null) {
+            	unavailable(null);
+            	throw new ServletException("standardWrapper.missingLoader");
+            }
+            
+            ClassLoader classLoader = loader.getClassLoader();
+            
+            // Special case class loader for a container provided servlet
+            if (isContainerProvidedServlet(actualClass) && 
+                    ! ((Context)getParent()).getPrivileged() ) {
+            	
+            	classLoader = this.getClass().getClassLoader();
+            }
+            
+            // Load the specified servlet class from the appropriate class loader
+            Class classClass = null;
+            try {
+            	if (classLoader != null) {
+            		classClass = classLoader.loadClass(actualClass);
+            	}else {
+                    classClass = Class.forName(actualClass);
+                }
+            }catch (ClassNotFoundException e) {
+            	unavailable(null);
+                throw new ServletException("standardWrapper.missingClass");
+            }
+            
+            
+            // Instantiate and initialize an instance of the servlet class itself
+            try {
+            	servlet = (Servlet) classClass.newInstance();
+            }
+            catch (ClassCastException e) {
+            	unavailable(null);
+                // Restore the context ClassLoader
+                throw new ServletException("standardWrapper.notServlet");
+            }
+            catch (Throwable e) {
+            	
+            }
+            
+            
+            // Check if loading the servlet in this web application 
+            // should be allowed
+            if (!isServletAllowed(servlet)) {
+            	throw new SecurityException("standardWrapper.privilegedServlet");
+            }
+            
+            // Call the initialization method of this servlet
+            try {
+            	servlet.init(facade);
+            }catch (UnavailableException f) {
+            	
+            }catch (ServletException f) {
+            	
+            }catch (Throwable f) {
+            	
+            }
+            
+        }finally {
+        	
+        }
+        
+        return servlet;
     }
     
     
@@ -359,6 +540,20 @@ public class StandardWrapper extends ContainerBase
 		return null;
 	}
 	
+	
+	/**
+     * Return <code>true</code> if the specified class name represents a
+     * container provided servlet class that should be loaded by the
+     * server class loader.
+     *
+     * @param classname Name of the class to be checked
+     */
+    protected boolean isContainerProvidedServlet(String classname) {
+    	if (classname.startsWith("My.catalina.")) {
+            return (true);
+        }
+    	return false;
+    }
 	
 	
 	protected void registerJMX(StandardContext ctx) {

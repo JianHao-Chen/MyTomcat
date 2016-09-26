@@ -1008,7 +1008,7 @@ public class Digester extends DefaultHandler{
     	throws SAXException {
     	
     	
-    	if(qName.equals("Service")){
+    	/*if(qName.equals("Service")){
     		System.out.println("Service");
     	}
     	
@@ -1057,7 +1057,7 @@ public class Digester extends DefaultHandler{
     	if(qName.equals("load-on-startup")){
     		System.out.println("load-on-startup");
     	}
-    	
+    	*/
     	
     	
     	// Save the body text accumulated for our surrounding element
@@ -1111,7 +1111,7 @@ public class Digester extends DefaultHandler{
     	
     	
     	
-    	if(qName.equals("servlet")){
+    	/*if(qName.equals("servlet")){
     		System.out.println("servlet");
     	}
     	
@@ -1138,7 +1138,7 @@ public class Digester extends DefaultHandler{
 
     	if(qName.equals("load-on-startup")){
     		System.out.println("load-on-startup");
-    	}
+    	}*/
     	
     	
     	// the actual element name is either in localName or qName, depending 

@@ -4,11 +4,13 @@ import java.io.IOException;
 
 import javax.servlet.Servlet;
 import javax.servlet.ServletException;
+import javax.servlet.UnavailableException;
 
 import My.catalina.Context;
 import My.catalina.connector.Request;
 import My.catalina.connector.Response;
 import My.catalina.valves.ValveBase;
+import My.tomcat.util.buf.MessageBytes;
 
 final class StandardWrapperValve extends ValveBase{
 
@@ -54,7 +56,53 @@ final class StandardWrapperValve extends ValveBase{
         	unavailable = true;
         }
         
+        
         // Allocate a servlet instance to process this request
+        try {
+        	if (!unavailable) {
+        		servlet = wrapper.allocate();
+        	}
+        }catch (UnavailableException e) {
+        	
+        }
+        catch (ServletException e) {
+        	
+        }
+        catch (Throwable e) {
+        	
+        }
+        
+        
+        
+        // Acknowledge the request
+        try {
+        	response.sendAcknowledgement();
+        }catch (IOException e) {
+        	
+        }catch (Throwable e) {
+        	
+        }
+        
+        
+        MessageBytes requestPathMB = null;
+        if (request != null) {
+            requestPathMB = request.getRequestPathMB();
+        }
+        
+        request.setAttribute
+        	(ApplicationFilterFactory.DISPATCHER_TYPE_ATTR,
+        			ApplicationFilterFactory.REQUEST_INTEGER);
+        
+        request.setAttribute
+        	(ApplicationFilterFactory.DISPATCHER_REQUEST_PATH_ATTR,
+        			requestPathMB);
+        
+        // Create the filter chain for this request
+        ApplicationFilterFactory factory =
+            ApplicationFilterFactory.getInstance();
+        // FilterChain implements latter.
+        
+        
         
         
         

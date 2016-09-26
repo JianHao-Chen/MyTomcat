@@ -1,5 +1,7 @@
 package My.catalina.connector;
 
+import java.io.IOException;
+
 import javax.servlet.http.HttpServletResponse;
 
 public class Response implements HttpServletResponse{
@@ -104,5 +106,29 @@ public class Response implements HttpServletResponse{
     public void setRequest(My.catalina.connector.Request request) {
         this.request = (Request) request;
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+	// ---------------- ServletResponse Methods ----------------
+    
+    
+    /**
+     * Send an acknowledgment of a request.
+     * 
+     * @exception IOException if an input/output error occurs
+     */
+    public void sendAcknowledgement()
+        throws IOException {
+    	
+    	coyoteResponse.acknowledge();
+    }
+
+    	
     
 }

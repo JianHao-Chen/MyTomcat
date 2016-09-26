@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.util.regex.Pattern;
 
+import My.coyote.ActionCode;
+import My.coyote.ActionHook;
 import My.coyote.Adapter;
 import My.coyote.Request;
 import My.coyote.RequestInfo;
@@ -27,7 +29,7 @@ import My.tomcat.util.net.NioEndpoint.Handler.SocketState;
 * Processes HTTP requests.
 */
 
-public class Http11NioProcessor {
+public class Http11NioProcessor implements ActionHook{
 
 	protected static Log log = LogFactory.getLog(Http11NioProcessor.class);
 
@@ -50,6 +52,7 @@ public class Http11NioProcessor {
         request.setInputBuffer(inputBuffer);
         
         response = new Response();
+        response.setHook(this);
         outputBuffer = new InternalNioOutputBuffer(response, maxHttpHeaderSize);
         response.setOutputBuffer(outputBuffer);
         request.setResponse(response);
@@ -116,6 +119,12 @@ public class Http11NioProcessor {
      * be closed at the end of the request).
      */
     protected boolean contentDelimitation = true;
+    
+    
+    /**
+     * Is there an expectation ?
+     */
+    protected boolean expectation = false;
     
     
     /**
@@ -647,6 +656,32 @@ public class Http11NioProcessor {
     }
     return -1;
 
+    }
+    
+    
+    
+	// ------------- ActionHook Methods ------------- 
+    /**
+     * Send an action to the connector.
+     */
+    public void action(ActionCode actionCode, Object param) {
+    	
+    	if (actionCode == ActionCode.ACTION_COMMIT) {
+    		
+    	}
+    	else if (actionCode == ActionCode.ACTION_ACK) {
+    		
+    		// Acknowlege request
+
+            // Send a 100 status back if it makes sense (response not committed
+            // yet, and client specified an expectation for 100-continue)
+    		if ((response.isCommitted()) || !expectation)
+    			return;
+    		
+    		
+    		
+    	}
+    	
     }
 	
 }

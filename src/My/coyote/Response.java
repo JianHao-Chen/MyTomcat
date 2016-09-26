@@ -1,5 +1,6 @@
 package My.coyote;
 
+import java.io.IOException;
 import java.util.Locale;
 
 import My.tomcat.util.http.MimeHeaders;
@@ -58,6 +59,12 @@ public final class Response {
     
     
     /**
+     * Action hook.
+     */
+    public ActionHook hook;
+    
+    
+    /**
      * HTTP specific fields.
      */
     protected String contentType = null;
@@ -98,7 +105,28 @@ public final class Response {
     public MimeHeaders getMimeHeaders() {
         return headers;
     }
+    
+    
+    public ActionHook getHook() {
+        return hook;
+    }
 
+
+    public void setHook(ActionHook hook) {
+        this.hook = hook;
+    }
+    
+    
+	// -------------------- Actions --------------------
+    
+    public void action(ActionCode actionCode, Object param) {
+        if (hook != null) {
+            if( param==null ) 
+                hook.action(actionCode, this);
+            else
+                hook.action(actionCode, param);
+        }
+    }
 
     
     
@@ -154,4 +182,15 @@ public final class Response {
     public final Object getNote(int pos) {
         return notes[pos];
     }
+    
+    
+    
+    
+    
+	// -------------------- Methods --------------------
+    
+    public void acknowledge() throws IOException {
+        action(ActionCode.ACTION_ACK, this);
+    }
+    
 }

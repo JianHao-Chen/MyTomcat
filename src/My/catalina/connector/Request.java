@@ -1,8 +1,11 @@
 package My.catalina.connector;
 
+import java.util.HashMap;
+
 import javax.servlet.http.HttpServletRequest;
 
 import My.catalina.Context;
+import My.catalina.Globals;
 import My.catalina.Host;
 import My.catalina.Wrapper;
 import My.tomcat.util.buf.MessageBytes;
@@ -178,6 +181,100 @@ public class Request implements HttpServletRequest{
      */
     public void setWrapper(Wrapper wrapper) {
         this.wrapper = wrapper;
+    }
+    
+    
+    
+    /**
+     * The current dispatcher type.
+     */
+    protected Object dispatcherType = null;
+    
+    /**
+     * The current request dispatcher path.
+     */
+    protected Object requestDispatcherPath = null;
+    
+    
+    /**
+     * List of read only attributes for this Request.
+     */
+    private HashMap readOnlyAttributes = new HashMap();
+    
+    
+    /**
+     * The attributes associated with this Request, keyed by attribute name.
+     */
+    protected HashMap attributes = new HashMap();
+    
+    
+    
+    /**
+     * Set the specified request attribute to the specified value.
+     */
+    public void setAttribute(String name, Object value) {
+    	
+    	// Name cannot be null
+        if (name == null)
+            throw new IllegalArgumentException("coyoteRequest.setAttribute.namenull");
+        
+        // Null value is the same as removeAttribute()
+        if (value == null) {
+            removeAttribute(name);
+            return;
+        }
+        
+        if (name.equals(Globals.DISPATCHER_TYPE_ATTR)) {
+            dispatcherType = value;
+            return;
+        } else if (name.equals(Globals.DISPATCHER_REQUEST_PATH_ATTR)) {
+            requestDispatcherPath = value;
+            return;
+        }
+        
+        Object oldValue = null;
+        boolean replaced = false;
+        
+        // Add or replace the specified attribute
+        // Check for read only attribute
+        // requests are per thread so synchronization unnecessary
+        if (readOnlyAttributes.containsKey(name)) {
+            return;
+        }
+        
+        oldValue = attributes.put(name, value);
+        if (oldValue != null) {
+            replaced = true;
+        }
+        
+        
+        
+        
+    }
+    
+    
+    /**
+     * Remove the specified request attribute if it exists.
+     */
+    public void removeAttribute(String name) {
+    	 Object value = null;
+         boolean found = false;
+
+         // Remove the specified attribute
+         // Check for read only attribute
+         // requests are per thread so synchronization unnecessary
+         if (readOnlyAttributes.containsKey(name)) {
+             return;
+         }
+         
+         
+         found = attributes.containsKey(name);
+         if (found) {
+             value = attributes.get(name);
+             attributes.remove(name);
+         } else {
+             return;
+         }
     }
     
     

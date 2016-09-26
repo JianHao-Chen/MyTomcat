@@ -3,8 +3,11 @@ package My.catalina.core;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.TreeMap;
 
 import javax.management.MBeanServer;
 import javax.management.MalformedObjectNameException;
@@ -13,6 +16,7 @@ import javax.management.NotificationBroadcasterSupport;
 import javax.management.ObjectName;
 import javax.naming.directory.DirContext;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 
 import My.catalina.Container;
 import My.catalina.Context;
@@ -182,6 +186,11 @@ public class StandardContext
     private String j2EEApplication="none";
     private String j2EEServer="none";
     
+    
+    /**
+     * The privileged flag for this web application.
+     */
+    private boolean privileged = false;
     
     
     /**
@@ -991,6 +1000,28 @@ public class StandardContext
     
     
     /**
+     * Return the privileged flag for this web application.
+     */
+    public boolean getPrivileged() {
+
+        return (this.privileged);
+
+    }
+
+
+    /**
+     * Set the privileged flag for this web application.
+     *
+     * @param privileged The new privileged flag
+     */
+    public void setPrivileged(boolean privileged) {
+
+        boolean oldPrivileged = this.privileged;
+        this.privileged = privileged;   
+    }
+    
+    
+    /**
      * Return the antiJARLocking flag for this Context.
      */
     public boolean getAntiJARLocking() {
@@ -1306,6 +1337,53 @@ public class StandardContext
     
     
     
+    /**
+     * Load and initialize all servlets marked "load on startup" in the
+     * web application deployment descriptor.
+     *
+     * @param children Array of wrappers for all currently defined
+     *  servlets (including those not declared load on startup)
+     */
+    public void loadOnStartup(Container children[]) {
+    	
+    	// Collect "load on startup" servlets that need to be initialized
+    	TreeMap map = new TreeMap();
+    	
+    	for (int i = 0; i < children.length; i++) {
+    		Wrapper wrapper = (Wrapper) children[i];
+    		int loadOnStartup = wrapper.getLoadOnStartup();
+    		if (loadOnStartup < 0)
+    			continue;
+    		
+    		Integer key = Integer.valueOf(loadOnStartup);
+    		ArrayList list = (ArrayList) map.get(key);
+    		if (list == null) {
+                list = new ArrayList();
+                map.put(key, list);
+            }
+            list.add(wrapper);
+    	}
+    	
+    	// Load the collected "load on startup" servlets
+        Iterator keys = map.keySet().iterator();
+        while (keys.hasNext()) {
+        	Integer key = (Integer) keys.next();
+            ArrayList list = (ArrayList) map.get(key);
+            Iterator wrappers = list.iterator();
+            while (wrappers.hasNext()) {
+            	 Wrapper wrapper = (Wrapper) wrappers.next();
+            	 try {
+            		 wrapper.load();
+            	 }catch (ServletException e) {
+            		 
+            	 }
+            }
+        }
+    	
+    }
+    
+    
+    
     public void init() throws Exception {
     	
     	if( this.getParent() == null ) {
@@ -1440,6 +1518,29 @@ public class StandardContext
          finally {
         	 ;
          }
+         
+         
+         // Load and initialize all "load on startup" servlets
+         if (ok) {
+        	 loadOnStartup(findChildren());
+         }
+         
+         
+         
+         // Set available status depending upon startup success
+         if (ok) {
+        	 setAvailable(true);
+         }
+         else {
+        	 log.error("standardContext.startFailed");
+             try {
+                 stop();
+             } catch (Throwable t) {
+                 log.error("standardContext.startCleanup");
+             }
+             setAvailable(false);
+         }
+         
          
          // JMX registration
          registerJMX();
