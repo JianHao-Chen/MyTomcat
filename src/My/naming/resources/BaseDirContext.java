@@ -2,10 +2,29 @@ package My.naming.resources;
 
 import java.util.Hashtable;
 
+import javax.naming.Name;
+import javax.naming.NamingException;
+import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
 
 public abstract class BaseDirContext implements DirContext{
 
+	// ------------------ Constructors --------------------
+	
+	/**
+     * Builds a base directory context.
+     */
+    public BaseDirContext() {
+        this.env = new Hashtable();
+    }
+
+
+    /**
+     * Builds a base directory context using the given environment.
+     */
+    public BaseDirContext(Hashtable env) {
+        this.env = env;
+    }
 	
 	// ----------------- Instance Variables -----------------
 	
@@ -157,5 +176,66 @@ public abstract class BaseDirContext implements DirContext{
     public void release() {
         ; // No action taken by the default implementation
     }
+    
+    
+    
+	// ------------------ DirContext Methods ------------------
+    /**
+     * Retrieves all of the attributes associated with a named object. 
+     * 
+     * @return the set of attributes associated with name. 
+     * Returns an empty attribute set if name has no attributes; never null.
+     * @param name the name of the object from which to retrieve attributes
+     * @exception NamingException if a naming exception is encountered
+     */
+    public Attributes getAttributes(Name name)
+        throws NamingException {
+        return getAttributes(name.toString());
+    }
+
+
+    /**
+     * Retrieves all of the attributes associated with a named object.
+     * 
+     * @return the set of attributes associated with name
+     * @param name the name of the object from which to retrieve attributes
+     * @exception NamingException if a naming exception is encountered
+     */
+    public Attributes getAttributes(String name)
+        throws NamingException {
+        return getAttributes(name, null);
+    }
+
+
+    /**
+     * Retrieves selected attributes associated with a named object. 
+     * See the class description regarding attribute models, attribute type 
+     * names, and operational attributes.
+     * 
+     * @return the requested attributes; never null
+     * @param name the name of the object from which to retrieve attributes
+     * @param attrIds the identifiers of the attributes to retrieve. null 
+     * indicates that all attributes should be retrieved; an empty array 
+     * indicates that none should be retrieved
+     * @exception NamingException if a naming exception is encountered
+     */
+    public Attributes getAttributes(Name name, String[] attrIds)
+        throws NamingException {
+        return getAttributes(name.toString(), attrIds);
+    }
+    
+    
+    /**
+     * Retrieves selected attributes associated with a named object.
+     * 
+     * @return the requested attributes; never null
+     * @param name the name of the object from which to retrieve attributes
+     * @param attrIds the identifiers of the attributes to retrieve. null 
+     * indicates that all attributes should be retrieved; an empty array 
+     * indicates that none should be retrieved
+     * @exception NamingException if a naming exception is encountered
+     */
+    public abstract Attributes getAttributes(String name, String[] attrIds)
+        throws NamingException;
 	
 }

@@ -171,7 +171,8 @@ public abstract class GenericServlet
    */
   
   public void init() throws ServletException {
-
+	  this.config = config;
+	  this.init();
   }
   
   

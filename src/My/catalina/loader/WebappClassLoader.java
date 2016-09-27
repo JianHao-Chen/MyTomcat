@@ -4,13 +4,16 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.jar.JarFile;
 
+import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
 import My.naming.resources.ProxyDirContext;
+import My.naming.resources.ResourceAttributes;
 
 /**
  * Specialized web application class loader.
@@ -140,6 +143,53 @@ public class WebappClassLoader
      * resources.
      */
     boolean antiJARLocking = false; 
+    
+    
+    
+    /**
+     * The list of local repositories, in the order they should be searched
+     * for locally loaded classes or resources.
+     */
+    protected String[] repositories = new String[0];
+    
+    
+    
+    
+    /**
+     * Repositories translated as path in the work directory (for Jasper
+     * originally), but which is used to generate fake URLs should getURLs be
+     * called.
+     */
+    protected File[] files = new File[0];
+    
+    
+    
+    /**
+     * The path which will be monitored for added Jar files.
+     */
+    protected String jarPath = null;
+    
+    
+    /**
+     * The list of JARs, in the order they should be searched
+     * for locally loaded classes or resources.
+     */
+    protected String[] jarNames = new String[0];
+    
+    
+    /**
+     * The list of resources which should be checked when checking for
+     * modifications.
+     */
+    protected String[] paths = new String[0];
+    
+    
+    /**
+     * The list of JARs last modified dates, in the order they should be
+     * searched for locally loaded classes or resources.
+     */
+    protected long[] lastModifiedDates = new long[0];
+    
     
     
     /**
@@ -379,6 +429,116 @@ public class WebappClassLoader
         }
     }
     
+    
+    
+    /**
+     * Add a new repository to the set of places this ClassLoader can look for
+     * classes to be loaded.
+     *
+     * @param repository Name of a source of classes to be loaded, such as a
+     *  directory pathname, a JAR file pathname, or a ZIP file pathname
+     *
+     * @exception IllegalArgumentException if the specified repository is
+     *  invalid or does not exist
+     */
+    synchronized void addRepository(String repository, File file) {
+    	
+    	// Note : There should be only one (of course), but I think we should
+        // keep this a bit generic
+
+        if (repository == null)
+            return;
+        
+        int i;
+        
+        
+        // Add this repository to our internal list
+        String[] result = new String[repositories.length + 1];
+        for (i = 0; i < repositories.length; i++) {
+            result[i] = repositories[i];
+        }
+        
+        result[repositories.length] = repository;
+        
+        repositories = result;
+        
+        // Add the file to the list
+        File[] result2 = new File[files.length + 1];
+        
+        for (i = 0; i < files.length; i++) {
+            result2[i] = files[i];
+        }
+        result2[files.length] = file;
+        
+        files = result2;
+        
+    }
+    
+    
+    /**
+     * Change the Jar path.
+     */
+    public void setJarPath(String jarPath) {
+
+        this.jarPath = jarPath;
+
+    }
+    
+    
+    synchronized void addJar(String jar, JarFile jarFile, File file)
+    throws IOException {
+    	
+    	if (jar == null)
+            return;
+        if (jarFile == null)
+            return;
+        if (file == null)
+            return;
+        
+        int i;
+        
+        if ((jarPath != null) && (jar.startsWith(jarPath))) {
+        	
+        	String jarName = jar.substring(jarPath.length());
+        	while (jarName.startsWith("/"))
+                jarName = jarName.substring(1);
+        	
+        	String[] result = new String[jarNames.length + 1];
+        	
+        	for (i = 0; i < jarNames.length; i++) {
+                result[i] = jarNames[i];
+            }
+        	result[jarNames.length] = jarName;
+            jarNames = result;
+        }
+        
+        
+        try {
+        	// Register the JAR for tracking
+        	
+        	long lastModified =
+                ((ResourceAttributes) resources.getAttributes(jar))
+                .getLastModified();
+        	
+        	String[] result = new String[paths.length + 1];
+            for (i = 0; i < paths.length; i++) {
+                result[i] = paths[i];
+            }
+            result[paths.length] = jar;
+            paths = result;
+
+            long[] result3 = new long[lastModifiedDates.length + 1];
+            for (i = 0; i < lastModifiedDates.length; i++) {
+                result3[i] = lastModifiedDates[i];
+            }
+            result3[lastModifiedDates.length] = lastModified;
+            lastModifiedDates = result3;
+            
+        }catch (NamingException e) {
+        	
+        }
+    	
+    }
     
     
     

@@ -109,7 +109,21 @@ public class Response implements HttpServletResponse{
     
     
     
-    
+    /**
+     * The facade associated with this response.
+     */
+    protected ResponseFacade facade = null;
+
+    /**
+     * Return the <code>ServletResponse</code> for which this object
+     * is the facade.
+     */
+    public HttpServletResponse getResponse() {
+        if (facade == null) {
+            facade = new ResponseFacade(this);
+        }
+        return (facade);
+    }
     
     
     

@@ -549,6 +549,18 @@ public class StandardContext
     
     
     /**
+     * Returns true if the resources associated with this context are
+     * filesystem based.
+     */
+    public boolean isFilesystemBased() {
+
+        return (filesystemBased);
+
+    }
+    
+    
+    
+    /**
      * Return an object which may be utilized for mapping to this component.
      */
     public Object getMappingObject() {
@@ -1518,6 +1530,14 @@ public class StandardContext
          finally {
         	 ;
          }
+         
+         // We put the resources into the servlet context
+         if (ok)
+             getServletContext().setAttribute
+                 (Globals.RESOURCES_ATTR, getResources());
+         
+         
+         
          
          
          // Load and initialize all "load on startup" servlets

@@ -494,11 +494,7 @@ public class StandardWrapper extends ContainerBase
         if (!singleThreadModel) {
         	
         	// Load and initialize our instance if necessary
-        	
-        	
-        	
-        	
-        	
+
         	if (!singleThreadModel) {
             	
             	if (!newInstance) {
@@ -509,24 +505,25 @@ public class StandardWrapper extends ContainerBase
         }
         
         return null;
-        
-        
-        
+
     }
     
-    
-	
-	@Override
 	public String getServletName() {
-		// TODO Auto-generated method stub
-		return null;
+		return (getName());
 	}
+	
 
-	@Override
 	public ServletContext getServletContext() {
-		// TODO Auto-generated method stub
-		return null;
+		 if (parent == null)
+	     	return (null);
+	     else if (!(parent instanceof Context))
+	     	return (null);
+	     else
+	     	return (((Context) parent).getServletContext());
 	}
+	
+	
+	
 
 	@Override
 	public String getInitParameter(String name) {

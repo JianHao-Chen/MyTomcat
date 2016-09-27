@@ -1,5 +1,7 @@
 package My.naming.resources;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 import java.util.Hashtable;
 
 import javax.naming.Binding;
@@ -121,6 +123,12 @@ public class ProxyDirContext implements DirContext {
     protected int cacheObjectMaxSize = 512; // 512 KB
     
     
+    /**
+     * Non cacheable resources.
+     */
+    protected String[] nonCacheable = { "/WEB-INF/lib/", "/WEB-INF/classes/" };
+
+    
 	// ------------------- Public Methods -------------------
     
     /**
@@ -182,6 +190,18 @@ public class ProxyDirContext implements DirContext {
     	
     	CacheEntry entry = cacheLookup(name);
     	
+    	if (entry != null) {
+    		if (!entry.exists) {
+    			 //throw notFoundException;
+    		}
+    		if (entry.resource != null) {
+    			return entry.resource;
+    		}
+    		else {
+                return entry.context;
+            }
+    		
+    	}
     	return null;
     }
     
@@ -197,25 +217,124 @@ public class ProxyDirContext implements DirContext {
     	if (name == null)
             name = "";
     	
-    	return null;
+    	for (int i = 0; i < nonCacheable.length; i++) {
+    		if (name.startsWith(nonCacheable[i])) {
+                return (null);
+            }
+    	}
+    	
+    	CacheEntry cacheEntry = cache.lookup(name);
+    	if (cacheEntry == null) {
+    		cacheEntry = new CacheEntry();
+    		cacheEntry.name = name;
+    		// Load entry
+            cacheLoad(cacheEntry);
+    	}
+    	else {
+    		
+    	}
+    	return (cacheEntry);
     }
     
     
     
     
+    /**
+     * Retrieves the named object as a cache entry, without any exception.
+     */
+    public CacheEntry lookupCache(String name) {
+    	
+    	 CacheEntry entry = cacheLookup(name);
+    	 return null;
+    }
     
-    
-    
-    
-    
-    
-    
-    
-	@Override
+
+    /**
+     * Retrieves the named object. If name is empty, returns a new instance 
+     * of this context (which represents the same naming context as this 
+     * context, but its environment may be modified independently and it may 
+     * be accessed concurrently).
+     * 
+     * @param name the name of the object to look up
+     * @return the object bound to name
+     * @exception NamingException if a naming exception is encountered
+     */
 	public Object lookup(Name name) throws NamingException {
-		// TODO Auto-generated method stub
+		
 		return null;
 	}
+	
+
+	/**
+     * Load entry into cache.
+     */
+    protected void cacheLoad(CacheEntry entry) {
+    	
+    	String name = entry.name;
+    	
+    	boolean exists = true;
+    	 
+    	// Retrieving attributes
+        if (entry.attributes == null) {
+        	
+        	try {
+        		Attributes attributes = dirContext.getAttributes(entry.name);
+        		if (!(attributes instanceof ResourceAttributes)) {
+        			
+        		}
+        		else
+        			entry.attributes = (ResourceAttributes) attributes;
+        	}catch (NamingException e) {
+        		
+        	}
+        }
+        
+        
+        // Retriving object
+        if ((exists) && (entry.resource == null) && (entry.context == null)) {
+        	try {
+        		Object object = dirContext.lookup(name);
+        		
+        		 if (object instanceof InputStream) {
+                     entry.resource = new Resource((InputStream) object);
+                 } else if (object instanceof DirContext) {
+                     entry.context = (DirContext) object;
+                 } else if (object instanceof Resource) {
+                     entry.resource = (Resource) object;
+                 } else {
+                     entry.resource = new Resource(new ByteArrayInputStream
+                         (object.toString().getBytes()));
+                 }
+        		 
+        	}catch (NamingException e) {
+        		exists = false;
+        	}
+        	
+        	
+        }
+        
+       
+        
+        
+        // Set existence flag
+        entry.exists = exists;
+        
+        // Set timestamp
+        entry.timestamp = System.currentTimeMillis() + cacheTTL;
+        
+        // Add new entry to cache
+        synchronized (cache) {
+        	// Check cache size, and remove elements if too big
+            if ((cache.lookup(name) == null) && cache.allocate(entry.size)) {
+                cache.load(entry);
+            }
+        }
+    }
+	
+	
+	
+	
+	
 
 	@Override
 	public void bind(Name name, Object obj) throws NamingException {

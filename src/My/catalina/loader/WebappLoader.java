@@ -5,7 +5,11 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
+import java.util.jar.JarFile;
 
+import javax.naming.NameClassPair;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
 import javax.naming.directory.DirContext;
 import javax.servlet.ServletContext;
 
@@ -18,6 +22,7 @@ import My.catalina.LifecycleListener;
 import My.catalina.Loader;
 import My.catalina.core.StandardContext;
 import My.catalina.util.LifecycleSupport;
+import My.naming.resources.Resource;
 
 /**
  * Classloader implementation which is specialized for handling web
@@ -379,11 +384,128 @@ public class WebappLoader implements Lifecycle, Loader{
         
         DirContext classes = null;
         
-        // implements latter
         
-       /* try {
+        
+        try {
         	Object object = resources.lookup(classesPath);
-        }*/
+        	if (object instanceof DirContext) {
+        		classes = (DirContext) object;
+        	}
+        }catch(NamingException e) {
+        	// Silent catch: it's valid that no /WEB-INF/classes collection
+            // exists
+        }
+        
+        if (classes != null) {
+        	
+        	 File classRepository = null;
+
+             String absoluteClassesPath =
+                 servletContext.getRealPath(classesPath);
+             
+             if (absoluteClassesPath != null) {
+            	 classRepository = new File(absoluteClassesPath);
+             }else {
+            	 
+             }
+             
+             // Adding the repository to the class loader
+             classLoader.addRepository(classesPath + "/", classRepository);
+             loaderRepositories.add(classesPath + "/" );
+        }
+        
+        
+        // Setting up the JAR repository (/WEB-INF/lib), if it exists
+        
+        String libPath = "/WEB-INF/lib";
+        
+        DirContext libDir = null;
+        // Looking up directory /WEB-INF/lib in the context
+        
+        try {
+        	Object object = resources.lookup(libPath);
+        	 if (object instanceof DirContext)
+                 libDir = (DirContext) object;	 
+        }catch(NamingException e) {
+        	 // Silent catch: it's valid that no /WEB-INF/lib collection
+            // exists
+        }
+        
+        
+        if (libDir != null) {
+        	
+        	boolean copyJars = false;
+        	String absoluteLibPath = servletContext.getRealPath(libPath);
+        	
+        	File destDir = null;
+        	
+        	if (absoluteLibPath != null) {
+                destDir = new File(absoluteLibPath);
+            } else {
+                copyJars = true;
+                destDir = new File(workDir, libPath);
+                destDir.mkdirs();
+            }
+        	
+        	
+        	// Looking up directory /WEB-INF/lib in the context
+        	NamingEnumeration<NameClassPair> enumeration = null;
+        	
+        	try {
+        		 enumeration = libDir.list("");
+        		 
+        	}catch (NamingException e) {
+        		throw new IOException("webappLoader.namingFailure");
+        	}
+        	
+        	
+        	while (enumeration.hasMoreElements()) {
+        		 
+        		NameClassPair ncPair = enumeration.nextElement();
+        		String filename = libPath + "/" + ncPair.getName();
+        		
+        		if (!filename.endsWith(".jar"))
+                    continue;
+        		
+        		// Copy JAR in the work directory, always (the JAR file
+                // would get locked otherwise, which would make it
+                // impossible to update it or remove it at runtime)
+        		
+        		File destFile = new File(destDir, ncPair.getName());
+        		
+        		
+        		Object obj = null;
+                try {
+                    obj = libDir.lookup(ncPair.getName());
+                } catch (NamingException e) {
+                	
+                }
+                
+                if (!(obj instanceof Resource))
+                    continue;
+                
+                Resource jarResource = (Resource) obj;
+                
+                if (copyJars) {
+                	//...
+                }
+                
+                
+                try {
+                	// currently, don't add jar files.
+                	
+                	/*JarFile jarFile = new JarFile(destFile);
+                	classLoader.addJar(filename, jarFile, destFile);*/
+                }
+                catch (Exception ex) {
+                	
+                }
+        	}
+        	
+        }
+        
+        
+        
     }
     
 }

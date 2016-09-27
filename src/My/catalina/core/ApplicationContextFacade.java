@@ -76,5 +76,21 @@ public class ApplicationContextFacade implements ServletContext {
     	return context.getAttribute(name);
         
      }
+    
+    
+    public void setAttribute(String name, Object object) {
+        
+    	context.setAttribute(name, object);
+        
+    }
+    
+    
+    
+    
+    public String getRealPath(String path) {
+       
+    	return context.getRealPath(path);
+        
+    }
 	
 }

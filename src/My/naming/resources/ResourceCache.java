@@ -1,5 +1,7 @@
 package My.naming.resources;
 
+import java.util.HashMap;
+
 public class ResourceCache {
 
 	// -------------------- Instance Variables -------------------
@@ -9,7 +11,36 @@ public class ResourceCache {
      */
     protected int cacheMaxSize = 10240; // 10 MB
 	
-	
+    
+    /**
+     * Current cache size in KB.
+     */
+    protected int cacheSize = 0;
+    
+    
+    /**
+     * Cache.
+     * Path -> Cache entry.
+     */
+    protected CacheEntry[] cache = new CacheEntry[0];
+    
+    
+    /**
+     * Not found cache.
+     */
+    protected HashMap notFoundCache = new HashMap();
+
+    
+    /**
+     * Number of accesses to the cache.
+     */
+    protected long accessCount = 0;
+
+
+    /**
+     * Number of cache hits.
+     */
+    protected long hitsCount = 0;
 	
 	// -------------------- Properties --------------------
 	
@@ -28,5 +59,118 @@ public class ResourceCache {
         this.cacheMaxSize = cacheMaxSize;
     }
     
+    
+    
+    
+    
+	// --------------------- Public Methods ---------------------
+    
+    public boolean allocate(int space) {
+    	
+    	 int toFree = space - (cacheMaxSize - cacheSize);
+    	 if (toFree <= 0) {
+             return true;
+         }
+    	 
+    	 
+    	 
+    	 return true;
+    	 
+    	 
+    }
+    
+    
+    
+    public CacheEntry lookup(String name) {
+    	
+    	CacheEntry cacheEntry = null;
+    	CacheEntry[] currentCache = cache;
+    	accessCount++;
+    	
+    	int pos = find(currentCache, name);
+    	
+    	if ((pos != -1) && (name.equals(currentCache[pos].name))) {
+    		cacheEntry = currentCache[pos];
+    	}
+    	
+    	if (cacheEntry == null) {
+    		try {
+    			cacheEntry = (CacheEntry) notFoundCache.get(name);
+    		}catch (Exception e) {
+    			
+    		}
+    	}
+    	
+    	 if (cacheEntry != null) {
+    		 hitsCount++;
+    	 }
+    	 
+    	 return cacheEntry;
+    }
+    
+    
+    
+    
+    public void load(CacheEntry entry) {
+    	if (entry.exists) {
+    		if (insertCache(entry)) {
+    			cacheSize += entry.size;
+    		}
+    	}else {
+    		int sizeIncrement = (notFoundCache.get(entry.name) == null) ? 1 : 0;
+            notFoundCache.put(entry.name, entry);
+            cacheSize += sizeIncrement;
+    	}
+    }
+    
+    
+    
+    
+    
+    /**
+     * Find a map elemnt given its name in a sorted array of map elements.
+     * This will return the index for the closest inferior or equal item in the
+     * given array.
+     */
+    private static final int find(CacheEntry[] map, String name) {
+    	
+    	int a = 0;
+        int b = map.length - 1;
+        
+        // Special cases: -1 and 0
+        if (b == -1) {
+            return -1;
+        }
+        
+        
+        return 0;
+    }
+    
+    
+    
+    /**
+     * Insert into the right place in a sorted MapElement array, and prevent
+     * duplicates.
+     */
+    private final boolean insertCache(CacheEntry newElement) {
+    	CacheEntry[] oldCache = cache;
+    	 int pos = find(oldCache, newElement.name);
+    	 
+    	 
+    	 if ((pos != -1) && (newElement.name.equals(oldCache[pos].name))) {
+             return false;
+         }
+    	 
+    	 CacheEntry[] newCache = new CacheEntry[cache.length + 1];
+    	 
+    	 System.arraycopy(oldCache, 0, newCache, 0, pos + 1);
+    	 
+    	 newCache[pos + 1] = newElement;
+    	 
+    	 System.arraycopy
+         	(oldCache, pos + 1, newCache, pos + 2, oldCache.length - pos - 1);
+    	 cache = newCache;
+    	 return true;
+    }
     
 }

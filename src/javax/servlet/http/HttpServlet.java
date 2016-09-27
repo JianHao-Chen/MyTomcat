@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletException;
+import javax.servlet.ServletRequest;
+import javax.servlet.ServletResponse;
 
 /**
  * Provides an abstract class to be subclassed to create
@@ -138,6 +140,116 @@ public abstract class HttpServlet
     {
     	
     	
+    }
+    
+    
+    /**
+     * Returns the time the <code>HttpServletRequest</code>
+     * object was last modified,
+     * in milliseconds since midnight January 1, 1970 GMT.
+     * If the time is unknown, this method returns a negative
+     * number (the default).
+     *
+     * <p>Servlets that support HTTP GET requests and can quickly determine
+     * their last modification time should override this method.
+     * This makes browser and proxy caches work more effectively,
+     * reducing the load on server and network resources.
+     *
+     * @param req   the <code>HttpServletRequest</code> 
+     *                  object that is sent to the servlet
+     *
+     * @return  a <code>long</code> integer specifying
+     *              the time the <code>HttpServletRequest</code>
+     *              object was last modified, in milliseconds
+     *              since midnight, January 1, 1970 GMT, or
+     *              -1 if the time is not known
+     */
+    protected long getLastModified(HttpServletRequest req) {
+        return -1;
+    }
+    
+    
+    
+    /**
+     * Receives standard HTTP requests from the public
+     * <code>service</code> method and dispatches
+     * them to the <code>do</code><i>XXX</i> methods defined in 
+     * this class. This method is an HTTP-specific version of the 
+     * {@link javax.servlet.Servlet#service} method. There's no
+     * need to override this method.
+     *
+     * @param req   the {@link HttpServletRequest} object that
+     *                  contains the request the client made of
+     *                  the servlet
+     *
+     * @param resp  the {@link HttpServletResponse} object that
+     *                  contains the response the servlet returns
+     *                  to the client                                
+     *
+     * @exception IOException   if an input or output error occurs
+     *                              while the servlet is handling the
+     *                              HTTP request
+     *
+     * @exception ServletException  if the HTTP request
+     *                                  cannot be handled
+     * 
+     * @see javax.servlet.Servlet#service
+     */
+    protected void service(HttpServletRequest req, HttpServletResponse resp)
+        throws ServletException, IOException {
+    	
+    	String method = req.getMethod();
+    	
+    	if (method.equals(METHOD_GET)) {
+    		 long lastModified = getLastModified(req);
+    		 if (lastModified == -1) {
+    			// servlet doesn't support if-modified-since, no reason
+                 // to go through further expensive logic
+                 doGet(req, resp);
+    		 }
+    		 else {
+    			 
+    		 }
+    	}
+    }
+    
+    
+    
+    /**
+     * Dispatches client requests to the protected
+     * <code>service</code> method. There's no need to
+     * override this method.
+     * 
+     * @param req   the {@link HttpServletRequest} object that
+     *                  contains the request the client made of
+     *                  the servlet
+     *
+     * @param res   the {@link HttpServletResponse} object that
+     *                  contains the response the servlet returns
+     *                  to the client                                
+     *
+     * @exception IOException   if an input or output error occurs
+     *                              while the servlet is handling the
+     *                              HTTP request
+     *
+     * @exception ServletException  if the HTTP request cannot
+     *                                  be handled
+     * 
+     * @see javax.servlet.Servlet#service
+     */
+    public void service(ServletRequest req, ServletResponse res)
+        throws ServletException, IOException {
+    	
+    	HttpServletRequest  request;
+        HttpServletResponse response;
+        
+        try {
+        	 request = (HttpServletRequest) req;
+             response = (HttpServletResponse) res;
+        }catch (ClassCastException e) {
+        	throw new ServletException("non-HTTP request or response");
+        }
+        service(request, response);
     }
     
     

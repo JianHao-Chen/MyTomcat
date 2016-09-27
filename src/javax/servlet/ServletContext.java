@@ -61,4 +61,63 @@ public interface ServletContext {
      */
   
     public Object getAttribute(String name);
+    
+    
+    /**
+    *
+    * Binds an object to a given attribute name in this servlet context. If
+    * the name specified is already used for an attribute, this
+    * method will replace the attribute with the new to the new attribute.
+    * <p>If listeners are configured on the <code>ServletContext</code> the  
+    * container notifies them accordingly.
+    * <p>
+    * If a null value is passed, the effect is the same as calling 
+    * <code>removeAttribute()</code>.
+    * 
+    * <p>Attribute names should follow the same convention as package
+    * names. The Java Servlet API specification reserves names
+    * matching <code>java.*</code>, <code>javax.*</code>, and
+    * <code>sun.*</code>.
+    *
+    *
+    * @param name 	a <code>String</code> specifying the name 
+    *			of the attribute
+    *
+    * @param object 	an <code>Object</code> representing the
+    *			attribute to be bound
+    *
+    *
+    *
+    */
+   
+   public void setAttribute(String name, Object object);
+   
+   
+   
+   /**
+    * Returns a <code>String</code> containing the real path 
+    * for a given virtual path. For example, the path "/index.html"
+    * returns the absolute file path on the server's filesystem would be
+    * served by a request for "http://host/contextPath/index.html",
+    * where contextPath is the context path of this ServletContext..
+    *
+    * <p>The real path returned will be in a form
+    * appropriate to the computer and operating system on
+    * which the servlet container is running, including the
+    * proper path separators. This method returns <code>null</code>
+    * if the servlet container cannot translate the virtual path
+    * to a real path for any reason (such as when the content is
+    * being made available from a <code>.war</code> archive).
+    *
+    *
+    * @param path 	a <code>String</code> specifying a virtual path
+    *
+    *
+    * @return 		a <code>String</code> specifying the real path,
+    *                  or null if the translation cannot be performed
+    *			
+    *
+    */
+
+   public String getRealPath(String path);
 }

@@ -2,12 +2,14 @@ package My.catalina.connector;
 
 import java.util.HashMap;
 
+import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
 
 import My.catalina.Context;
 import My.catalina.Globals;
 import My.catalina.Host;
 import My.catalina.Wrapper;
+import My.catalina.core.ApplicationFilterFactory;
 import My.tomcat.util.buf.MessageBytes;
 import My.tomcat.util.http.mapper.MappingData;
 
@@ -40,6 +42,29 @@ public class Request implements HttpServletRequest{
      */
     public My.coyote.Request getCoyoteRequest() {
         return (this.coyoteRequest);
+    }
+    
+    
+    /**
+     * Return the HTTP request method used in this Request.
+     */
+    public String getMethod() {
+        return coyoteRequest.method().toString();
+    }
+    
+    /**
+     * Return the path information associated with this Request.
+     */
+    public String getPathInfo() {
+        return (mappingData.pathInfo.toString());
+    }
+    
+    /**
+     * Return the portion of the request URI used to select the servlet
+     * that will process this request.
+     */
+    public String getServletPath() {
+        return (mappingData.wrapperPath.toString());
     }
     
     
@@ -275,6 +300,73 @@ public class Request implements HttpServletRequest{
          } else {
              return;
          }
+    }
+    
+    
+    
+    /**
+     * Return the specified request attribute if it exists; otherwise, return
+     * <code>null</code>.
+     *
+     * @param name Name of the request attribute to return
+     */
+    public Object getAttribute(String name) {
+    	
+    	if (name.equals(Globals.DISPATCHER_TYPE_ATTR)) {
+            return (dispatcherType == null) 
+                ? ApplicationFilterFactory.REQUEST_INTEGER
+                : dispatcherType;
+        } else if (name.equals(Globals.DISPATCHER_REQUEST_PATH_ATTR)) {
+            return (requestDispatcherPath == null) 
+                ? getRequestPathMB().toString()
+                : requestDispatcherPath.toString();
+        }
+    	
+    	Object attr=attributes.get(name);
+    	
+    	return(attr);
+    }
+    
+    
+    
+    
+    /**
+     * Filter chain associated with the request.
+     */
+    protected FilterChain filterChain = null;
+
+    /**
+     * Get filter chain associated with the request.
+     */
+    public FilterChain getFilterChain() {
+        return (this.filterChain);
+    }
+
+    /**
+     * Set filter chain associated with the request.
+     * 
+     * @param filterChain new filter chain
+     */
+    public void setFilterChain(FilterChain filterChain) {
+        this.filterChain = filterChain;
+    }
+    
+    
+    
+    /**
+     * The facade associated with this request.
+     */
+    protected RequestFacade facade = null;
+
+    /**
+     * Return the <code>ServletRequest</code> for which this object
+     * is the facade.  This method must be implemented by a subclass.
+     */
+    public HttpServletRequest getRequest() {
+        if (facade == null) {
+            facade = new RequestFacade(this);
+        } 
+        return (facade);
     }
     
     

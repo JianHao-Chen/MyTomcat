@@ -1,5 +1,6 @@
 package My.catalina.core;
 
+import java.io.File;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -189,6 +190,28 @@ public class ApplicationContext implements ServletContext{
          /*
           *  implement latter.
           */
+    }
+    
+    
+    
+    /**
+     * Return the real path for a given virtual path, if possible; otherwise
+     * return <code>null</code>.
+     *
+     * @param path The path to the desired resource
+     */
+    public String getRealPath(String path) {
+    	
+    	if (!context.isFilesystemBased())
+            return null;
+    	
+    	if (path == null) {
+            return null;
+        }
+    	
+    	File file = new File(basePath, path);
+    	return (file.getAbsolutePath());
+    	
     }
     
     

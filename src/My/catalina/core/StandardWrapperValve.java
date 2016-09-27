@@ -101,7 +101,30 @@ final class StandardWrapperValve extends ValveBase{
         ApplicationFilterFactory factory =
             ApplicationFilterFactory.getInstance();
         // FilterChain implements latter.
+
+        ApplicationFilterChain filterChain =
+            factory.createFilterChain(request, wrapper, servlet);
         
+        
+        
+        // Call the filter chain for this request
+        // NOTE: This also calls the servlet's service() method
+        try {
+        	
+        	if ((servlet != null) && (filterChain != null)) {
+        		
+        		filterChain.doFilter
+                (request.getRequest(), response.getResponse());
+        	}
+        	
+        	
+        }catch (IOException e) {
+        	
+        }catch (UnavailableException e) {
+        	
+        }catch (ServletException e) {
+        	
+        }
         
         
         
