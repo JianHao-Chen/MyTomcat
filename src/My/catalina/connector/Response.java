@@ -188,7 +188,47 @@ public class Response implements HttpServletResponse{
     }
     
     
+    /**
+     * Set the application commit flag.
+     * 
+     * @param appCommitted The new application committed flag value
+     */
+    public void setAppCommitted(boolean appCommitted) {
+        this.appCommitted = appCommitted;
+    }
     
+    
+    /**
+     * Send an error response with the specified status and a
+     * default message.
+     *
+     * @param status HTTP status code to send
+     *
+     * @exception IllegalStateException if this response has
+     *  already been committed
+     * @exception IOException if an input/output error occurs
+     */
+    public void sendError(int status) 
+        throws IOException {
+        sendError(status, null);
+    }
+    
+    
+    
+    /**
+     * Send an error response with the specified status and message.
+     *
+     * @param status HTTP status code to send
+     * @param message Corresponding message to send
+     *
+     * @exception IllegalStateException if this response has
+     *  already been committed
+     * @exception IOException if an input/output error occurs
+     */
+    public void sendError(int status, String message) 
+        throws IOException {
+    	
+    }
     
     
     
@@ -254,6 +294,30 @@ public class Response implements HttpServletResponse{
         coyoteResponse.setMessage(message);
 
     }
+    
+    
+
+    /**
+     * Set the specified header to the specified value.
+     *
+     * @param name Name of the header to set
+     * @param value Value to be set
+     */
+	public void setHeader(String name, String value) {
+		if (name == null || name.length() == 0 || value == null) {
+            return;
+        }
+
+        if (isCommitted())
+            return;
+        
+        // Ignore any call from an included servlet
+        if (included)
+            return;
+
+        coyoteResponse.setHeader(name, value);
+		
+	}
     	
     
 }

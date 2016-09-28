@@ -162,6 +162,12 @@ public class StandardContext
     
     
     /**
+     * The MIME mappings for this web application, keyed by extension.
+     */
+    private HashMap mimeMappings = new HashMap();
+    
+    
+    /**
      * The reloadable flag for this web application.
      */
     private boolean reloadable = false;
@@ -1134,6 +1140,52 @@ public class StandardContext
             this.clearReferencesThreadLocals;
         this.clearReferencesThreadLocals = clearReferencesThreadLocals;
        
+    }
+    
+    
+    
+    /**
+     * Add a new MIME mapping, replacing any existing mapping for
+     * the specified extension.
+     *
+     * @param extension Filename extension being mapped
+     * @param mimeType Corresponding MIME type
+     */
+    public void addMimeMapping(String extension, String mimeType) {
+
+        synchronized (mimeMappings) {
+            mimeMappings.put(extension, mimeType);
+        }
+        fireContainerEvent("addMimeMapping", extension);
+
+    }
+    
+    
+    /**
+     * Return the MIME type to which the specified extension is mapped,
+     * if any; otherwise return <code>null</code>.
+     *
+     * @param extension Extension to map to a MIME type
+     */
+    public String findMimeMapping(String extension) {
+
+        return ((String) mimeMappings.get(extension));
+
+    }
+    
+    
+    /**
+     * Return the extensions for which MIME mappings are defined.  If there
+     * are none, a zero-length array is returned.
+     */
+    public String[] findMimeMappings() {
+
+        synchronized (mimeMappings) {
+            String results[] = new String[mimeMappings.size()];
+            return
+                ((String[]) mimeMappings.keySet().toArray(results));
+        }
+
     }
 
     

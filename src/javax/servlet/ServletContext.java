@@ -120,4 +120,23 @@ public interface ServletContext {
     */
 
    public String getRealPath(String path);
+   
+   
+   
+   /**
+    * Returns the MIME type of the specified file, or <code>null</code> if 
+    * the MIME type is not known. The MIME type is determined
+    * by the configuration of the servlet container, and may be specified
+    * in a web application deployment descriptor. Common MIME
+    * types are <code>"text/html"</code> and <code>"image/gif"</code>.
+    *
+    *
+    * @param   file    a <code>String</code> specifying the name
+    *			of a file
+    *
+    * @return 		a <code>String</code> specifying the file's MIME type
+    *
+    */
+
+   public String getMimeType(String file);
 }

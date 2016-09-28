@@ -1,6 +1,7 @@
 package My.catalina.servlets;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
@@ -56,6 +57,12 @@ public class DefaultServlet extends HttpServlet{
      * Proxy directory context.
      */
     protected ProxyDirContext resources = null;
+    
+    
+    /**
+     * Should the Accept-Ranges: bytes header be send with static resources?
+     */
+    protected boolean useAcceptRanges = true;
 	
 
     
@@ -202,6 +209,46 @@ public class DefaultServlet extends HttpServlet{
             }
         }
         
+        
+        
+        // Find content type.
+        String contentType = cacheEntry.attributes.getMimeType();
+        if (contentType == null) {
+        	contentType = getServletContext().getMimeType(cacheEntry.name);
+        	cacheEntry.attributes.setMimeType(contentType);
+        }
+        
+        
+        ArrayList ranges = null;
+        long contentLength = -1L;
+        
+        if (cacheEntry.context != null) {
+        	
+        	// implements latter.
+        }
+        else {
+        	
+        	if (!isError) {
+        		
+        		if (useAcceptRanges) {
+        			// Accept ranges header
+                    response.setHeader("Accept-Ranges", "bytes");
+        		}
+        		
+        		// Parse range specifier
+        		ranges = parseRange(request, response, cacheEntry.attributes);
+        		
+        		// ETag header
+                response.setHeader("ETag", cacheEntry.attributes.getETag());
+                
+             // Last-Modified header
+                response.setHeader("Last-Modified",
+                        cacheEntry.attributes.getLastModifiedHttp());
+        	}
+        	
+        }
+        
+        
     }
     
     
@@ -222,12 +269,9 @@ public class DefaultServlet extends HttpServlet{
         throws IOException {
     	
     	 return checkIfMatch(request, response, resourceAttributes)
-         && checkIfModifiedSince(request, response, resourceAttributes);
-    	 
-    	 
-         /* 
-         && checkIfNoneMatch(request, response, resourceAttributes)
-         && checkIfUnmodifiedSince(request, response, resourceAttributes);*/
+         && checkIfModifiedSince(request, response, resourceAttributes)
+    	 && checkIfNoneMatch(request, response, resourceAttributes)
+         && checkIfUnmodifiedSince(request, response, resourceAttributes);
     	
     }
     
@@ -350,10 +394,91 @@ public class DefaultServlet extends HttpServlet{
     				
     				response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
                     response.setHeader("ETag", eTag);
+                    
+                    return false;
+    			}
+    			else {
+    				response.sendError
+                    	(HttpServletResponse.SC_PRECONDITION_FAILED);
+    				return false;
     			}
     		}
-    		
     	}
+    	
+    	 return true;
+    }
+    
+    
+    
+    /**
+     * Check if the if-unmodified-since condition is satisfied.
+     *
+     * @param request The servlet request we are processing
+     * @param response The servlet response we are creating
+     * @param resourceInfo File object
+     * @return boolean true if the resource meets the specified condition,
+     * and false if the condition is not satisfied, in which case request
+     * processing is stopped
+     */
+    protected boolean checkIfUnmodifiedSince(HttpServletRequest request,
+                                           HttpServletResponse response,
+                                           ResourceAttributes resourceAttributes)
+        throws IOException {
+    	
+    	try {
+    		long lastModified = resourceAttributes.getLastModified();
+            long headerValue = request.getDateHeader("If-Unmodified-Since");
+            
+            if (headerValue != -1) {
+            	if ( lastModified >= (headerValue + 1000)) {
+                    // The entity has not been modified since the date
+                    // specified by the client. This is not an error case.
+                    response.sendError(HttpServletResponse.SC_PRECONDITION_FAILED);
+                    return false;
+                }
+            }
+    	}catch(IllegalArgumentException illegalArgument) {
+            return true;
+        }
+        return true;
+    	
+    }
+    
+    
+    
+    /**
+     * Parse the range header.
+     *
+     * @param request The servlet request we are processing
+     * @param response The servlet response we are creating
+     * @return Vector of ranges
+     */
+    protected ArrayList parseRange(HttpServletRequest request,
+                                HttpServletResponse response,
+                                ResourceAttributes resourceAttributes)
+        throws IOException {
+    	
+    	// Checking If-Range
+    	String headerValue = request.getHeader("If-Range");
+    	if (headerValue != null) {
+    		// implements latter.
+    	}
+    	
+    	
+    	long fileLength = resourceAttributes.getContentLength();
+    	
+    	if (fileLength == 0)
+            return null;
+    	
+    	// Retrieving the range header (if any is specified
+        String rangeHeader = request.getHeader("Range");
+        
+        if (rangeHeader == null)
+            return null;
+        
+        /// implements latter.
+    	
+        return null;
     }
 
 	

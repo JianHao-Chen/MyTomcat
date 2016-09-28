@@ -215,4 +215,24 @@ public class ApplicationContext implements ServletContext{
     }
     
     
+    
+    /**
+     * Return the MIME type of the specified file, or <code>null</code> if
+     * the MIME type cannot be determined.
+     *
+     * @param file Filename for which to identify a MIME type
+     */
+    public String getMimeType(String file) {
+
+        if (file == null)
+            return (null);
+        int period = file.lastIndexOf(".");
+        if (period < 0)
+            return (null);
+        String extension = file.substring(period + 1);
+        if (extension.length() < 1)
+            return (null);
+        return (context.findMimeMapping(extension));
+    }
+    
 }

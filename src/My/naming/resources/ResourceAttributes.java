@@ -31,6 +31,13 @@ public class ResourceAttributes implements Attributes{
     public static final String ETAG = "getetag";
     
 	
+    
+    /**
+     * HTTP date format.
+     */
+    protected static final SimpleDateFormat format =
+        new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US);
+    
     /**
      * Date formats using for Date parsing.
      */
@@ -77,6 +84,11 @@ public class ResourceAttributes implements Attributes{
     protected String weakETag = null;
     
     
+    /**
+     * MIME type.
+     */
+    protected String mimeType = null;
+    
     
     /**
      * Content length.
@@ -99,6 +111,11 @@ public class ResourceAttributes implements Attributes{
      */
     protected Date lastModifiedDate = null;
     
+    
+    /**
+     * Last modified date in HTTP format.
+     */
+    protected String lastModifiedHttp = null;
     
     
     /**
@@ -145,6 +162,70 @@ public class ResourceAttributes implements Attributes{
             }
         }
         return lastModified;
+    }
+    
+    
+    /**
+     * Get lastModified date.
+     * 
+     * @return LastModified date value
+     */
+    public Date getLastModifiedDate() {
+    	if (lastModifiedDate != null)
+    		return lastModifiedDate;
+    	
+    	if (lastModified != -1L) {
+            lastModifiedDate = new Date(lastModified);
+            return lastModifiedDate;
+        }
+    	
+    	return null;
+    }
+    
+    
+    
+    /**
+     * @return Returns the lastModifiedHttp.
+     */
+    public String getLastModifiedHttp() {
+        if (lastModifiedHttp != null)
+            return lastModifiedHttp;
+        Date modifiedDate = getLastModifiedDate();
+        if (modifiedDate == null) {
+          //  modifiedDate = getCreationDate();
+        }
+        if (modifiedDate == null) {
+            modifiedDate = new Date();
+        }
+        synchronized (format) {
+            lastModifiedHttp = format.format(modifiedDate);
+        }
+        return lastModifiedHttp;
+    }
+    
+    
+    /**
+     * @param lastModifiedHttp The lastModifiedHttp to set.
+     */
+    public void setLastModifiedHttp(String lastModifiedHttp) {
+        this.lastModifiedHttp = lastModifiedHttp;
+    }
+    
+    
+    
+    /**
+     * @return Returns the mimeType.
+     */
+    public String getMimeType() {
+        return mimeType;
+    }
+    
+    
+    /**
+     * @param mimeType The mimeType to set.
+     */
+    public void setMimeType(String mimeType) {
+        this.mimeType = mimeType;
     }
     
     

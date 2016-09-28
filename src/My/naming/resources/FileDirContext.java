@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Date;
 import java.util.Hashtable;
 
 import javax.naming.Binding;
@@ -771,6 +772,19 @@ public class FileDirContext extends BaseDirContext{
                 return lastModified;
             lastModified = file.lastModified();
             return lastModified;
+        }
+        
+        
+        /**
+         * Get lastModified date.
+         *
+         * @return LastModified date value
+         */
+        public Date getLastModifiedDate() {
+            if (lastModified == -1L) {
+                lastModified = getLastModified();
+            }
+            return super.getLastModifiedDate();
         }
         
         

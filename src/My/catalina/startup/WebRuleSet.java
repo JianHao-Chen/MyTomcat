@@ -114,6 +114,12 @@ public class WebRuleSet extends RuleSetBase{
 		digester.addCallParam(prefix + "web-app/servlet-mapping/servlet-name", 1);
 		
 		digester.addRule(prefix + "web-app/servlet-mapping/url-pattern", new CallParamMultiRule(0));
+		
+		
+		digester.addCallMethod(prefix + "web-app/mime-mapping",
+                "addMimeMapping", 2);
+		digester.addCallParam(prefix + "web-app/mime-mapping/extension", 0);
+		digester.addCallParam(prefix + "web-app/mime-mapping/mime-type", 1);
 	}
 
 }

@@ -1008,19 +1008,19 @@ public class Digester extends DefaultHandler{
     	throws SAXException {
     	
     	
-    	/*if(qName.equals("Service")){
-    		System.out.println("Service");
+    	if(qName.equals("mime-mapping")){
+    		System.out.println("mime-mapping");
     	}
     	
-    	if(qName.equals("Engine")){
-    		System.out.println("Engine");
+    	if(qName.equals("extension")){
+    		System.out.println("extension");
     	}
     	
     	
-    	if(qName.equals("Connector")){
-    		System.out.println("Connector");
+    	if(qName.equals("mime-type")){
+    		System.out.println("mime-type");
     	}
-    	
+    	/*
     	if(qName.equals("Context")){
     		System.out.println("Context");
     	}

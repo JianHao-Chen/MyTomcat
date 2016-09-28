@@ -1,5 +1,7 @@
 package javax.servlet.http;
 
+import java.io.IOException;
+
 import javax.servlet.ServletResponse;
 
 public interface HttpServletResponse extends ServletResponse{
@@ -7,7 +9,62 @@ public interface HttpServletResponse extends ServletResponse{
 	
 	
 	
-	
+	 /**
+     * Sets the status code for this response.  This method is used to
+     * set the return status code when there is no error (for example,
+     * for the status codes SC_OK or SC_MOVED_TEMPORARILY).  If there
+     * is an error, and the caller wishes to invoke an error-page defined
+     * in the web application, the <code>sendError</code> method should be used
+     * instead.
+     * <p> The container clears the buffer and sets the Location header, preserving
+     * cookies and other headers.
+     *
+     * @param	sc	the status code
+     *
+     * @see #sendError
+     */
+
+    public void setStatus(int sc);
+    
+    /**
+    *
+    * Sets a response header with the given name and value.
+    * If the header had already been set, the new value overwrites the
+    * previous one.  The <code>containsHeader</code> method can be
+    * used to test for the presence of a header before setting its
+    * value.
+    * 
+    * @param	name	the name of the header
+    * @param	value	the header value  If it contains octet string,
+    *		it should be encoded according to RFC 2047
+    *		(http://www.ietf.org/rfc/rfc2047.txt)
+    *
+    * @see #containsHeader
+    * @see #addHeader
+    */
+
+   public void setHeader(String name, String value);
+   
+   
+   
+   
+   /**
+    * Sends an error response to the client using the specified status
+    * code and clearing the buffer. 
+    * <p>If the response has already been committed, this method throws 
+    * an IllegalStateException.
+    * After using this method, the response should be considered
+    * to be committed and should not be written to.
+    *
+    * @param	sc	the error status code
+    * @exception	IOException	If an input or output exception occurs
+    * @exception	IllegalStateException	If the response was committed
+    *						before this method call
+    */
+
+   public void sendError(int sc) throws IOException;
+    
+    
 	
 	 /*
      * Server status codes; see RFC 2068.

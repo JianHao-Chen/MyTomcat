@@ -1,5 +1,7 @@
 package My.catalina.connector;
 
+import java.io.IOException;
+
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -52,4 +54,25 @@ public class ResponseFacade implements HttpServletResponse{
         response.setStatus(sc);
 
     }
+    
+    
+    public void sendError(int sc)
+    	throws IOException {
+
+    	if (isCommitted())
+    		throw new IllegalStateException
+            	(/*sm.getString("responseBase.reset.ise")*/);
+
+    	response.setAppCommitted(true);
+
+    	response.sendError(sc);
+
+    }
+
+	public void setHeader(String name, String value) {
+		if (isCommitted())
+            return;
+
+        response.setHeader(name, value);
+	}
 }

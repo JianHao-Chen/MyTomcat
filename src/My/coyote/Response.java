@@ -169,9 +169,104 @@ public final class Response {
     public void setCommitted(boolean v) {
         this.commited = v;
     }
+
+    
+ // -------------------- Headers --------------------
+    /**
+     * Warning: This method always returns <code>false<code> for Content-Type
+     * and Content-Length.
+     */
+    public boolean containsHeader(String name) {
+        return headers.getHeader(name) != null;
+    }
+
+
+    public void setHeader(String name, String value) {
+        char cc=name.charAt(0);
+        if( cc=='C' || cc=='c' ) {
+            if( checkSpecialHeader(name, value) )
+            return;
+        }
+        headers.setValue(name).setString( value);
+    }
+
+
+    public void addHeader(String name, String value) {
+        char cc=name.charAt(0);
+        if( cc=='C' || cc=='c' ) {
+            if( checkSpecialHeader(name, value) )
+            return;
+        }
+        headers.addValue(name).setString( value );
+    }
     
     
     
+    /** 
+     * Set internal fields for special header names. 
+     * Called from set/addHeader.
+     * Return true if the header is special, no need to set the header.
+     */
+    private boolean checkSpecialHeader( String name, String value) {
+        // XXX Eliminate redundant fields !!!
+        // ( both header and in special fields )
+        if( name.equalsIgnoreCase( "Content-Type" ) ) {
+            setContentType( value );
+            return true;
+        }
+        if( name.equalsIgnoreCase( "Content-Length" ) ) {
+            try {
+                long cL=Long.parseLong( value );
+                setContentLength( cL );
+                return true;
+            } catch( NumberFormatException ex ) {
+                // Do nothing - the spec doesn't have any "throws" 
+                // and the user might know what he's doing
+                return false;
+            }
+        }
+        if( name.equalsIgnoreCase( "Content-Language" ) ) {
+            // XXX XXX Need to construct Locale or something else
+        }
+        return false;
+    }
+    
+    
+    /** Signal that we're done with the headers, and body will follow.
+     *  Any implementation needs to notify ContextManager, to allow
+     *  interceptors to fix headers.
+     */
+    public void sendHeaders() throws IOException {
+        action(ActionCode.ACTION_COMMIT, this);
+        commited = true;
+    }
+    
+    
+    
+    /**
+     * Sets the content type.
+     *
+     * This method must preserve any response charset that may already have 
+     * been set via a call to response.setContentType(), response.setLocale(),
+     * or response.setCharacterEncoding().
+     *
+     * @param type the content type
+     */
+    public void setContentType(String type) {
+    	
+    }
+    
+    
+    
+    
+    public void setContentLength(int contentLength) {
+        this.contentLength = contentLength;
+    }
+
+    public void setContentLength(long contentLength) {
+        this.contentLength = contentLength;
+    }
+
     public int getContentLength() {
         long length = getContentLengthLong();
         
