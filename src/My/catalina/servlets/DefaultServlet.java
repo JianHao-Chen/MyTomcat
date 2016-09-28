@@ -1,6 +1,7 @@
 package My.catalina.servlets;
 
 import java.io.IOException;
+import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
@@ -275,8 +276,84 @@ public class DefaultServlet extends HttpServlet{
     	try {
     		long headerValue = request.getDateHeader("If-Modified-Since");
     		long lastModified = resourceAttributes.getLastModified();
-    	}
+    		
+    		if (headerValue != -1) {
+    			 // If an If-None-Match header has been specified, if modified since
+                 // is ignored.
+    			if ((request.getHeader("If-None-Match") == null)
+                        && (lastModified < headerValue + 1000)) {
+    				
+    				// The entity has not been modified since the date
+                    // specified by the client. This is not an error case.
+    				
+    				//response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+    			}
+    		}
+    		
+    	}catch (IllegalArgumentException illegalArgument) {
+            return true;
+        }
     	
+    	return true;
+    	
+    }
+    
+    
+    
+    /**
+     * Check if the if-none-match condition is satisfied.
+     *
+     * @param request The servlet request we are processing
+     * @param response The servlet response we are creating
+     * @param resourceInfo File object
+     * @return boolean true if the resource meets the specified condition,
+     * and false if the condition is not satisfied, in which case request
+     * processing is stopped
+     */
+    protected boolean checkIfNoneMatch(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     ResourceAttributes resourceAttributes)
+        throws IOException {
+    	
+    	String eTag = resourceAttributes.getETag();
+    	String headerValue = request.getHeader("If-None-Match");
+    	
+    	if (headerValue != null) {
+    		
+    		boolean conditionSatisfied = false;
+    		
+    		if (!headerValue.equals("*")) {
+    			
+    			StringTokenizer commaTokenizer =
+                    new StringTokenizer(headerValue, ",");
+    			
+    			while (!conditionSatisfied && commaTokenizer.hasMoreTokens()) {
+    				 String currentToken = commaTokenizer.nextToken();
+    				 if (currentToken.trim().equals(eTag))
+                         conditionSatisfied = true;
+    			}
+    		}
+    		else {
+                conditionSatisfied = true;
+            }
+    		
+    		
+    		if (conditionSatisfied) {
+    			
+    			// For GET and HEAD, we should respond with
+                // 304 Not Modified.
+                // For every other method, 412 Precondition Failed is sent
+                // back.
+    			
+    			if ( ("GET".equals(request.getMethod()))
+                        || ("HEAD".equals(request.getMethod())) ) {
+    				
+    				response.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                    response.setHeader("ETag", eTag);
+    			}
+    		}
+    		
+    	}
     }
 
 	

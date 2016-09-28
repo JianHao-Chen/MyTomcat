@@ -28,4 +28,28 @@ public class ResponseFacade implements HttpServletResponse{
      */
     protected Response response = null;
 	
+    
+    
+    
+    
+	// --------------- ServletResponse Methods ---------------
+    
+    public boolean isCommitted() {
+
+        if (response == null) {
+            throw new IllegalStateException("responseFacade.nullResponse");
+        }
+
+        return (response.isAppCommitted());
+    }
+    
+    
+    public void setStatus(int sc) {
+
+        if (isCommitted())
+            return;
+
+        response.setStatus(sc);
+
+    }
 }

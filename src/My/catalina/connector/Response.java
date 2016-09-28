@@ -60,6 +60,17 @@ public class Response implements HttpServletResponse{
     protected CoyoteWriter writer;
     
     
+    /**
+     * The application commit flag.
+     */
+    protected boolean appCommitted = false;
+    
+    
+    /**
+     * The included flag.
+     */
+    protected boolean included = false;
+    
     
     /**
      * Coyote response.
@@ -129,7 +140,72 @@ public class Response implements HttpServletResponse{
     
     
     
-	// ---------------- ServletResponse Methods ----------------
+	// ---------------------- Response Methods----------------------
+    
+    /**
+     * Application commit flag accessor.
+     */
+    public boolean isAppCommitted() {
+        return (this.appCommitted || isCommitted() || isSuspended()
+                || ((getContentLength() > 0) 
+                    && (getContentCount() >= getContentLength())));
+    }
+    
+    
+    
+    /**
+     * Set the suspended flag.
+     * 
+     * @param suspended The new suspended flag value
+     */
+    public void setSuspended(boolean suspended) {
+        outputBuffer.setSuspended(suspended);
+    }
+
+
+    /**
+     * Suspended flag accessor.
+     */
+    public boolean isSuspended() {
+        return outputBuffer.isSuspended();
+    }
+    
+    
+    
+    /**
+     * Return the content length that was set or calculated for this Response.
+     */
+    public int getContentLength() {
+        return (coyoteResponse.getContentLength());
+    }
+    
+    
+    /**
+     * Return the number of bytes actually written to the output stream.
+     */
+    public int getContentCount() {
+        return outputBuffer.getContentWritten();
+    }
+    
+    
+    
+    
+    
+    
+    
+	// -------------- ServletResponse Methods --------------
+    
+    /**
+     * Has the output of this response already been committed?
+     */
+    public boolean isCommitted() {
+        return (coyoteResponse.isCommitted());
+    }
+
+    
+    
+    
+	// ---------------- HttpServletResponse Methods ----------------
     
     
     /**
@@ -143,6 +219,41 @@ public class Response implements HttpServletResponse{
     	coyoteResponse.acknowledge();
     }
 
+    
+    /**
+     * Set the HTTP status to be returned with this response.
+     *
+     * @param status The new HTTP status
+     */
+    public void setStatus(int status) {
+        setStatus(status, null);
+    }
+    
+    
+    
+    /**
+     * Set the HTTP status and message to be returned with this response.
+     *
+     * @param status The new HTTP status
+     * @param message The associated text message
+     *
+     * @deprecated As of Version 2.1 of the Java Servlet API, this method
+     *  has been deprecated due to the ambiguous meaning of the message
+     *  parameter.
+     */
+    public void setStatus(int status, String message) {
+
+        if (isCommitted())
+            return;
+
+        // Ignore any call from an included servlet
+        if (included)
+            return;
+
+        coyoteResponse.setStatus(status);
+        coyoteResponse.setMessage(message);
+
+    }
     	
     
 }

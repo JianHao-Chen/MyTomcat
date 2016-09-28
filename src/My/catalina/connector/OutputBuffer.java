@@ -149,6 +149,18 @@ public class OutputBuffer extends Writer
 		 bb.append((byte) b);
 		 bytesWritten++;
 	 }
+    
+    
+    
+    
+    public int getContentWritten() {
+        long size = bytesWritten + charsWritten ;
+        if (size < Integer.MAX_VALUE) {
+            return (int) size;
+        }
+        return -1;
+    }
+    
 	
 	
 	@Override

@@ -171,6 +171,22 @@ public final class Response {
     }
     
     
+    
+    public int getContentLength() {
+        long length = getContentLengthLong();
+        
+        if (length < Integer.MAX_VALUE) {
+            return (int) length;
+        }
+        return -1;
+    }
+    
+    public long getContentLengthLong() {
+        return contentLength;
+    }
+    
+    
+    
     // -------------------- Per-Response "notes" --------------------
 
 
