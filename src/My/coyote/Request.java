@@ -231,6 +231,11 @@ public final class Request {
     }
     
     
+    public String getHeader(String name) {
+        return headers.getHeader(name);
+    }
+    
+    
     // -------------------- Per-Request "notes" --------------------
 
 

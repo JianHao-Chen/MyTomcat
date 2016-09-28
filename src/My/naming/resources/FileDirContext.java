@@ -772,6 +772,19 @@ public class FileDirContext extends BaseDirContext{
             lastModified = file.lastModified();
             return lastModified;
         }
+        
+        
+        /**
+         * Get content length.
+         *
+         * @return content length value
+         */
+        public long getContentLength() {
+            if (contentLength != -1L)
+                return contentLength;
+            contentLength = file.length();
+            return contentLength;
+        }
 		
 		
 	}

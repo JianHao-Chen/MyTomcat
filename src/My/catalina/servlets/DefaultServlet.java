@@ -12,6 +12,7 @@ import javax.servlet.http.HttpServletResponse;
 import My.catalina.Globals;
 import My.naming.resources.CacheEntry;
 import My.naming.resources.ProxyDirContext;
+import My.naming.resources.ResourceAttributes;
 
 /**
  * <p>The default resource-serving servlet for most web applications,
@@ -156,6 +157,126 @@ public class DefaultServlet extends HttpServlet{
         
         CacheEntry cacheEntry = resources.lookupCache(path);
         
+        if (!cacheEntry.exists) {
+        	
+        	// response send error.
+        }
+        
+        
+        // If the resource is not a collection, and the resource path
+        // ends with "/" or "\", return NOT FOUND
+        if (cacheEntry.context == null) {
+        	
+        	if (path.endsWith("/") || (path.endsWith("\\"))) {
+        		
+        		// Check if we're included so we can return the appropriate 
+                // missing resource name in the error
+        		
+        		
+        		// response send error.
+        		// return;
+        	}
+        }
+        
+        boolean isError = false;
+        
+        Integer status =
+            (Integer) request.getAttribute("javax.servlet.error.status_code");
+        /*if (status != null) {
+            isError = status.intValue() >= HttpServletResponse.SC_BAD_REQUEST;
+        }*/
+        
+        
+        // Check if the conditions specified in the optional If headers are
+        // satisfied.
+        if (cacheEntry.context == null) {
+        
+        	// Checking If headers
+        	boolean included =
+                (request.getAttribute(Globals.INCLUDE_CONTEXT_PATH_ATTR) != null);
+        	
+        	if (!included && !isError &&
+                    !checkIfHeaders(request, response, cacheEntry.attributes)) {
+                return;
+            }
+        }
+        
+    }
+    
+    
+    /**
+     * Check if the conditions specified in the optional If headers are
+     * satisfied.
+     *
+     * @param request The servlet request we are processing
+     * @param response The servlet response we are creating
+     * @param resourceAttributes The resource information
+     * @return boolean true if the resource meets all the specified conditions,
+     * and false if any of the conditions is not satisfied, in which case
+     * request processing is stopped
+     */
+    protected boolean checkIfHeaders(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     ResourceAttributes resourceAttributes)
+        throws IOException {
+    	
+    	 return checkIfMatch(request, response, resourceAttributes)
+         && checkIfModifiedSince(request, response, resourceAttributes);
+    	 
+    	 
+         /* 
+         && checkIfNoneMatch(request, response, resourceAttributes)
+         && checkIfUnmodifiedSince(request, response, resourceAttributes);*/
+    	
+    }
+    
+    
+    /**
+     * Check if the if-match condition is satisfied.
+     *
+     * @param request The servlet request we are processing
+     * @param response The servlet response we are creating
+     * @param resourceInfo File object
+     * @return boolean true if the resource meets the specified condition,
+     * and false if the condition is not satisfied, in which case request
+     * processing is stopped
+     */
+    protected boolean checkIfMatch(HttpServletRequest request,
+                                 HttpServletResponse response,
+                                 ResourceAttributes resourceAttributes)
+        throws IOException {
+    	
+    	 String eTag = resourceAttributes.getETag();
+    	 String headerValue = request.getHeader("If-Match");
+    	 
+    	 if (headerValue != null) {
+    		 
+    	 }
+    	 return true;
+    }
+    
+    
+    
+    /**
+     * Check if the if-modified-since condition is satisfied.
+     *
+     * @param request The servlet request we are processing
+     * @param response The servlet response we are creating
+     * @param resourceInfo File object
+     * @return boolean true if the resource meets the specified condition,
+     * and false if the condition is not satisfied, in which case request
+     * processing is stopped
+     */
+    protected boolean checkIfModifiedSince(HttpServletRequest request,
+                                         HttpServletResponse response,
+                                         ResourceAttributes resourceAttributes)
+        throws IOException {
+    	
+    	try {
+    		long headerValue = request.getDateHeader("If-Modified-Since");
+    		long lastModified = resourceAttributes.getLastModified();
+    	}
+    	
     }
 
 	

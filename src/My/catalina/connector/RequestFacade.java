@@ -74,5 +74,26 @@ public class RequestFacade implements HttpServletRequest{
         return request.getServletPath();
     }
     
+    
+    
+    public String getHeader(String name) {
+
+    	if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+
+        return request.getHeader(name);
+    }
+    
+    
+    public long getDateHeader(String name) {
+
+    	if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+
+        return request.getDateHeader(name);
+    }
+    
 	
 }

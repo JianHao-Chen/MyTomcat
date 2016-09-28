@@ -21,6 +21,15 @@ public class ResourceAttributes implements Attributes{
      */
     public static final String LAST_MODIFIED = "getlastmodified";
 	
+    
+    /**
+     * ETag.
+     * 
+     *  means Entity Tag , use to identify the Entity has been 
+     *  modified since last request.
+     */
+    public static final String ETAG = "getetag";
+    
 	
     /**
      * Date formats using for Date parsing.
@@ -57,6 +66,23 @@ public class ResourceAttributes implements Attributes{
     protected Attributes attributes = null;
 
 
+    /**
+     * Strong ETag.
+     */
+    protected String strongETag = null;
+    
+    /**
+     * Weak ETag.
+     */
+    protected String weakETag = null;
+    
+    
+    
+    /**
+     * Content length.
+     */
+    protected long contentLength = -1;
+    
     /**
      * Creation time.
      */
@@ -120,6 +146,67 @@ public class ResourceAttributes implements Attributes{
         }
         return lastModified;
     }
+    
+    
+    
+    
+    /**
+     * Get ETag.
+     * 
+     * @return strong ETag if available, else weak ETag. 
+     */
+    public String getETag() {
+    	
+    	String result = null;
+    	if (attributes != null) {
+    		Attribute attribute = attributes.get(ETAG);
+            if (attribute != null) {
+                try {
+                    result = attribute.get().toString();
+                } catch (NamingException e) {
+                    ; // No value for the attribute
+                }
+            }
+    	}
+    	
+    	if (result == null) {
+    		
+    		if (strongETag != null) {
+    			// The strong ETag must always be calculated by the resources
+                result = strongETag;
+    		}
+    		else {
+    			// The weakETag is contentLength + lastModified
+    			if (weakETag == null) {
+    				 long contentLength = getContentLength();
+    				 long lastModified = getLastModified();
+    				 if ((contentLength >= 0) || (lastModified >= 0)) {
+                         weakETag = "W/\"" + contentLength + "-" +
+                                    lastModified + "\"";
+                     }
+    			}
+    			result = weakETag;
+    		}
+    	}
+    	
+    	 return result;
+    }
+    
+    
+    /**
+     * Get content length.
+     * 
+     * @return content length value
+     */
+    public long getContentLength() {
+    	
+    	if (contentLength != -1L)
+            return contentLength;
+    	
+    	return 0;
+    	
+    }
+    
     
     
 

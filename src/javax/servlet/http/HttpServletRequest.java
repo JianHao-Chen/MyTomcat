@@ -80,4 +80,67 @@ public interface HttpServletRequest extends ServletRequest{
 
  public String getServletPath();
  
+ 
+ /**
+ *
+ * Returns the value of the specified request header
+ * as a <code>String</code>. If the request did not include a header
+ * of the specified name, this method returns <code>null</code>.
+ * If there are multiple headers with the same name, this method
+ * returns the first head in the request.
+ * The header name is case insensitive. You can use
+ * this method with any request header.
+ *
+ * @param name		a <code>String</code> specifying the
+ *				header name
+ *
+ * @return			a <code>String</code> containing the
+ *				value of the requested
+ *				header, or <code>null</code>
+ *				if the request does not
+ *				have a header of that name
+ *
+ */			
+
+public String getHeader(String name); 
+
+
+
+/**
+*
+* Returns the value of the specified request header
+* as a <code>long</code> value that represents a 
+* <code>Date</code> object. Use this method with
+* headers that contain dates, such as
+* <code>If-Modified-Since</code>. 
+*
+* <p>The date is returned as
+* the number of milliseconds since January 1, 1970 GMT.
+* The header name is case insensitive.
+*
+* <p>If the request did not have a header of the
+* specified name, this method returns -1. If the header
+* can't be converted to a date, the method throws
+* an <code>IllegalArgumentException</code>.
+*
+* @param name		a <code>String</code> specifying the
+*				name of the header
+*
+* @return			a <code>long</code> value
+*				representing the date specified
+*				in the header expressed as
+*				the number of milliseconds
+*				since January 1, 1970 GMT,
+*				or -1 if the named header
+*				was not included with the
+*				request
+*
+* @exception	IllegalArgumentException	If the header value
+*							can't be converted
+*							to a date
+*
+*/
+
+public long getDateHeader(String name);
+ 
 }

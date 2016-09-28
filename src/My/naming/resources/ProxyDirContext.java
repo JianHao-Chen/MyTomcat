@@ -1,6 +1,7 @@
 package My.naming.resources;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.Hashtable;
 
@@ -245,7 +246,8 @@ public class ProxyDirContext implements DirContext {
     public CacheEntry lookupCache(String name) {
     	
     	 CacheEntry entry = cacheLookup(name);
-    	 return null;
+    	 
+    	 return entry;
     }
     
 
@@ -309,11 +311,49 @@ public class ProxyDirContext implements DirContext {
         	}catch (NamingException e) {
         		exists = false;
         	}
-        	
-        	
         }
         
-       
+        
+        // Load object content
+        if ((exists) && (entry.resource != null) 
+                && (entry.resource.getContent() == null) 
+                && (entry.attributes.getContentLength() >= 0)
+                && (entry.attributes.getContentLength() < 
+                    (cacheObjectMaxSize * 1024))) {
+        	
+        	int length = (int) entry.attributes.getContentLength();
+        	
+        	// The entry size is 1 + the resource size in KB, if it will be 
+            // cached
+            entry.size += (entry.attributes.getContentLength() / 1024);
+            
+            InputStream is = null;
+            
+            try {
+            	is = entry.resource.streamContent();
+            	int pos = 0;
+                byte[] b = new byte[length];
+                
+                while (pos < length) {
+                	int n = is.read(b, pos, length - pos);
+                	if (n < 0)
+                        break;
+                	pos = pos + n;
+                }
+                entry.resource.setContent(b);
+            }catch (IOException e) {
+            	
+            }
+            finally {
+            	try {
+            		if(is!=null)
+            			is.close();
+            	}catch (IOException e) {
+            		
+            	}
+            }
+            
+        }
         
         
         // Set existence flag

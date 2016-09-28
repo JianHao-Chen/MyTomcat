@@ -1,6 +1,8 @@
 package My.catalina.connector;
 
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
+import java.util.Locale;
 
 import javax.servlet.FilterChain;
 import javax.servlet.http.HttpServletRequest;
@@ -11,6 +13,7 @@ import My.catalina.Host;
 import My.catalina.Wrapper;
 import My.catalina.core.ApplicationFilterFactory;
 import My.tomcat.util.buf.MessageBytes;
+import My.tomcat.util.http.FastHttpDateFormat;
 import My.tomcat.util.http.mapper.MappingData;
 
 /**
@@ -19,6 +22,20 @@ import My.tomcat.util.http.mapper.MappingData;
 
 public class Request implements HttpServletRequest{
 
+	
+	/**
+     * The set of SimpleDateFormat formats to use in getDateHeader().
+     *
+     * Notice that because SimpleDateFormat is not thread-safe, we can't
+     * declare formats[] as a static variable.
+     */
+    protected SimpleDateFormat formats[] = {
+        new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.US),
+        new SimpleDateFormat("EEEEEE, dd-MMM-yy HH:mm:ss zzz", Locale.US),
+        new SimpleDateFormat("EEE MMMM d HH:mm:ss yyyy", Locale.US)
+    };
+	
+	
 	 // -------------------- Properties -------------------- 
 
 
@@ -51,6 +68,43 @@ public class Request implements HttpServletRequest{
     public String getMethod() {
         return coyoteRequest.method().toString();
     }
+    
+    
+    
+    /**
+     * Return the first value of the specified header, if any; otherwise,
+     * return <code>null</code>
+     *
+     * @param name Name of the requested header
+     */
+    public String getHeader(String name) {
+        return coyoteRequest.getHeader(name);
+    }
+    
+    /**
+     * Return the value of the specified date header, if any; otherwise
+     * return -1.
+     *
+     * @param name Name of the requested date header
+     *
+     * @exception IllegalArgumentException if the specified header value
+     *  cannot be converted to a date
+     */
+    public long getDateHeader(String name) {
+
+        String value = getHeader(name);
+        if (value == null)
+            return (-1L);
+
+        // Attempt to convert the date header in a variety of formats
+        long result = FastHttpDateFormat.parseDate(value, formats);
+        if (result != (-1L)) {
+            return result;
+        }
+        throw new IllegalArgumentException(value);
+
+    }
+    
     
     /**
      * Return the path information associated with this Request.

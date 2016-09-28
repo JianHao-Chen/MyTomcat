@@ -308,7 +308,7 @@ public class WebappLoader implements Lifecycle, Loader{
 			
 			// Configure our repositories
 			setRepositories();
-			
+			//setClassPath();
 			
 		}catch (Throwable t) {
 			
