@@ -47,7 +47,46 @@ public class StandardHostValve extends ValveBase {
         // Ask this Context to process this request
         context.getPipeline().getFirst().invoke(request, response);
         
+        
+        // Error page processing
+        response.setSuspended(false);
+        
+        status(request, response);
+        
+        
+        // Restore the context classloader
+        Thread.currentThread().setContextClassLoader
+        	(StandardHostValve.class.getClassLoader());
 	}
+	
+	
+	/**
+     * Handle the HTTP status code (and corresponding message) generated
+     * while processing the specified Request to produce the specified
+     * Response.  Any exceptions that occur during generation of the error
+     * report are logged and swallowed.
+     *
+     * @param request The request being processed
+     * @param response The response being generated
+     */
+    protected void status(Request request, Response response) {
+    	
+    	 int statusCode = response.getStatus();
+    	 
+    	// Handle a custom error page for this status code
+         Context context = request.getContext();
+         if (context == null)
+             return;
+
+         /* Only look for error pages when isError() is set.
+          * isError() is set when response.sendError() is invoked. This
+          * allows custom error pages without relying on default from
+          * web.xml.
+          */
+         if (!response.isError())
+             return;
+    	
+    }
 	
 	
 }

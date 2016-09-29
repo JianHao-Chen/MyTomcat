@@ -44,6 +44,10 @@ public class CoyoteOutputStream extends ServletOutputStream {
     	ob.writeByte(i);
     }
 	
-	
+    public void write(byte[] b, int off, int len)
+    	throws IOException {
+    ob.write(b, off, len);
+}
+
 	
 }

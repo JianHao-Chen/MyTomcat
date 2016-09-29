@@ -18,6 +18,14 @@ public class InputBuffer extends Reader
     private My.coyote.Request coyoteRequest;
     
     
+    /**
+     * Flag which indicates if the input buffer is closed.
+     */
+    private boolean closed = false;
+    
+    
+    
+    
 	
 	// ---------------------- Properties ----------------------
 	 /**
@@ -55,7 +63,7 @@ public class InputBuffer extends Reader
 
 	@Override
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
+		 closed = true;
 		
 	}
 

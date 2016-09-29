@@ -542,6 +542,41 @@ public class WebappClassLoader
     
     
     
+    
+    
+    
+    
+    
+    /**
+     * Render a String representation of this object.
+     */
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer("WebappClassLoader\r\n");
+        sb.append("  context: ");
+        sb.append(contextName);
+        sb.append("\r\n");
+        sb.append("  delegate: ");
+        sb.append(delegate);
+        sb.append("\r\n");
+        sb.append("  repositories:\r\n");
+        if (repositories != null) {
+            for (int i = 0; i < repositories.length; i++) {
+                sb.append("    ");
+                sb.append(repositories[i]);
+                sb.append("\r\n");
+            }
+        }
+        if (this.parent != null) {
+            sb.append("----------> Parent Classloader:\r\n");
+            sb.append(this.parent.toString());
+            sb.append("\r\n");
+        }
+        return (sb.toString());
+
+    }
+    
+    
 
 	@Override
 	public void addLifecycleListener(LifecycleListener listener) {

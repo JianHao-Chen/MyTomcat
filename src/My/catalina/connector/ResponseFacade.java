@@ -1,7 +1,9 @@
 package My.catalina.connector;
 
 import java.io.IOException;
+import java.io.PrintWriter;
 
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -36,6 +38,28 @@ public class ResponseFacade implements HttpServletResponse{
     
 	// --------------- ServletResponse Methods ---------------
     
+    
+    public ServletOutputStream getOutputStream()
+    	throws IOException {
+    	
+    	ServletOutputStream sos = response.getOutputStream();
+    	if (isFinished())
+    		response.setSuspended(true);
+    	return (sos);
+    }
+    
+    
+    public PrintWriter getWriter()
+    throws IOException {
+    	
+    	PrintWriter writer = response.getWriter();
+        if (isFinished())
+            response.setSuspended(true);
+        return (writer);
+    	
+    }
+    
+    
     public boolean isCommitted() {
 
         if (response == null) {
@@ -44,6 +68,27 @@ public class ResponseFacade implements HttpServletResponse{
 
         return (response.isAppCommitted());
     }
+    
+    
+    public void finish() {
+
+        if (response == null) {
+            throw new IllegalStateException("responseFacade.nullResponse");
+        }
+
+        response.setSuspended(true);
+    }
+
+
+    public boolean isFinished() {
+
+        if (response == null) {
+            throw new IllegalStateException("responseFacade.nullResponse");
+        }
+
+        return response.isSuspended();
+    }
+    
     
     
     public void setStatus(int sc) {
@@ -75,4 +120,34 @@ public class ResponseFacade implements HttpServletResponse{
 
         response.setHeader(name, value);
 	}
+	
+	
+	public void setContentType(String type) {
+		
+		if (isCommitted())
+            return;
+		
+		response.setContentType(type);      
+	}
+	
+	
+	public void setContentLength(int len) {
+
+        if (isCommitted())
+            return;
+
+        response.setContentLength(len);
+
+    }
+	
+	
+	public void setBufferSize(int size) {
+
+        if (isCommitted())
+            throw new IllegalStateException
+                (/*sm.getString("responseBase.reset.ise")*/);
+
+        response.setBufferSize(size);
+
+    }
 }

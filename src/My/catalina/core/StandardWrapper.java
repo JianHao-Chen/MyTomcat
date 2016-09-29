@@ -130,6 +130,21 @@ public class StandardWrapper extends ContainerBase
     protected ArrayList mappings = new ArrayList();
     
 	// ---------------------- Properties ----------------------
+    /**
+     * Return the available date/time for this servlet, in milliseconds since
+     * the epoch.  If this date/time is Long.MAX_VALUE, it is considered to mean
+     * that unavailability is permanent and any request for this servlet will return
+     * an SC_NOT_FOUND error.  If this date/time is in the future, any request for
+     * this servlet will return an SC_SERVICE_UNAVAILABLE error.  If it is zero,
+     * the servlet is currently available.
+     */
+    public long getAvailable() {
+
+        return (this.available);
+
+    }
+    
+    
     
     /**
      * Return the fully qualified servlet class name for this servlet.
@@ -507,6 +522,28 @@ public class StandardWrapper extends ContainerBase
         return null;
 
     }
+    
+    
+    /**
+     * Return this previously allocated servlet to the pool of available
+     * instances.  If this servlet class does not implement SingleThreadModel,
+     * no action is actually required.
+     *
+     * @param servlet The servlet to be returned
+     *
+     * @exception ServletException if a deallocation error occurs
+     */
+    public void deallocate(Servlet servlet) throws ServletException {
+    	
+    	// If not SingleThreadModel, no action is required
+        if (!singleThreadModel) {
+            countAllocated.decrementAndGet();
+            return;
+        }
+    	
+    }
+    
+    
     
 	public String getServletName() {
 		return (getName());

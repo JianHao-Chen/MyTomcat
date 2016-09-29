@@ -130,10 +130,17 @@ public class NioChannel implements ByteChannel{
 		sc.close();
 	}
 
+	/**
+     * Writes a sequence of bytes to this channel from the given buffer.
+     *
+     * @param src The buffer from which bytes are to be retrieved
+     * @return The number of bytes written, possibly zero
+     * @throws IOException If some other I/O error occurs
+     * @todo Implement this java.nio.channels.WritableByteChannel method
+     */
 	@Override
 	public int write(ByteBuffer src) throws IOException {
-		// TODO Auto-generated method stub
-		return 0;
+		return sc.write(src);
 	}
 
 }

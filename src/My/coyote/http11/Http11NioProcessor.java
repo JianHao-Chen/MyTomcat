@@ -2,6 +2,7 @@ package My.coyote.http11;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
+import java.nio.channels.SelectionKey;
 import java.util.regex.Pattern;
 
 import My.coyote.ActionCode;
@@ -20,6 +21,7 @@ import My.tomcat.util.buf.Ascii;
 import My.tomcat.util.buf.ByteChunk;
 import My.tomcat.util.buf.HexUtils;
 import My.tomcat.util.buf.MessageBytes;
+import My.tomcat.util.http.FastHttpDateFormat;
 import My.tomcat.util.http.MimeHeaders;
 import My.tomcat.util.net.NioChannel;
 import My.tomcat.util.net.NioEndpoint;
@@ -205,6 +207,13 @@ public class Http11NioProcessor implements ActionHook{
      */
     protected NioEndpoint endpoint;
 
+    
+    
+    /**
+     * Allow a customized the server header for the tin-foil hat folks.
+     */
+    protected String server = null;
+    
     
     
 	// ------------- Properties -------------
@@ -668,6 +677,17 @@ public class Http11NioProcessor implements ActionHook{
     	
     	if (actionCode == ActionCode.ACTION_COMMIT) {
     		
+    		// Commit current response
+    		if (response.isCommitted())
+                return;
+    		
+    		// Validate and write response headers
+    		try {
+    			prepareResponse();
+    			outputBuffer.commit();
+    		}catch (IOException e) {
+    			
+    		}
     	}
     	else if (actionCode == ActionCode.ACTION_ACK) {
     		
@@ -681,7 +701,139 @@ public class Http11NioProcessor implements ActionHook{
     		
     		
     	}
+    	else if (actionCode == ActionCode.ACTION_CLOSE) {
+    		// Close
+    		
+    		// End the processing of the current request, and stop any further
+            // transactions with the client
+    		
+    		
+    		
+    		// this is for checking if is a comet connection
+    		
+    		//.....
+    		
+    		
+    		
+    		
+    		 try {
+    			 outputBuffer.endRequest();
+    		 }
+    		
+    	}
     	
+    	
+    }
+    
+    
+    
+    
+    /**
+     * When committing the response, we have to validate the set of headers, as
+     * well as setup the response filters.
+     */
+    protected void prepareResponse() throws IOException {
+    	
+    	boolean entityBody = true;
+    	contentDelimitation = false;
+    	
+    	OutputFilter[] outputFilters = outputBuffer.getFilters();
+    	
+    	int statusCode = response.getStatus();
+    	
+    	if ((statusCode == 204) || (statusCode == 205)
+                || (statusCode == 304)) {
+    		
+    		//...
+    	}
+    	
+    	MessageBytes methodMB = request.method();
+    	if (methodMB.equals("HEAD")) {
+    		//...
+    	}
+    	
+    	
+    	MimeHeaders headers = response.getMimeHeaders();
+    	if (!entityBody) {
+    		// means don't have response body
+    		response.setContentLength(-1);
+    	}
+    	else {
+    		String contentType = response.getContentType();
+    		if (contentType != null) {
+                headers.setValue("Content-Type").setString(contentType);
+            }
+    	}
+    	
+    	
+    	long contentLength = response.getContentLengthLong();
+    	if (contentLength != -1) {
+    		
+    		headers.setValue("Content-Length").setLong(contentLength);
+    		contentDelimitation = true;
+    	}
+    	else {
+    		// ...
+    	}
+    	
+    	
+    	
+    	// Add date header
+        headers.setValue("Date").setString(FastHttpDateFormat.getCurrentDate());
+    	
+        if ((entityBody) && (!contentDelimitation)) {
+            // Mark as close the connection after the request, and add the
+            // connection: close header
+            keepAlive = false;
+        }
+        
+        // If we know that the request is bad this early, add the
+        // Connection: close header.
+        keepAlive = keepAlive && !statusDropsConnection(statusCode);
+        
+        if (!keepAlive) {
+            headers.addValue(Constants.CONNECTION).setString(Constants.CLOSE);
+        } else if (!http11 && !error) {
+            headers.addValue(Constants.CONNECTION).setString(Constants.KEEPALIVE);
+        }
+        
+        
+        // Build the response header
+        outputBuffer.sendStatus();
+        
+        
+        // Add server header
+        if (server != null) {
+        	
+        }else if (headers.getValue("Server") == null) {
+        	// If app didn't set the header, use the default
+            outputBuffer.write(Constants.SERVER_BYTES);
+        }
+        
+        
+        int size = headers.size();
+        for (int i = 0; i < size; i++) {
+        	outputBuffer.sendHeader(
+        			headers.getName(i), headers.getValue(i));
+        }
+        
+        outputBuffer.endHeaders();
+    }
+    
+    
+    /**
+     * Determine if we must drop the connection because of the HTTP status
+     * code.  Use the same list of codes as Apache/httpd.
+     */
+    protected boolean statusDropsConnection(int status) {
+        return status == 400 /* SC_BAD_REQUEST */ ||
+               status == 408 /* SC_REQUEST_TIMEOUT */ ||
+               status == 411 /* SC_LENGTH_REQUIRED */ ||
+               status == 413 /* SC_REQUEST_ENTITY_TOO_LARGE */ ||
+               status == 414 /* SC_REQUEST_URI_TOO_LARGE */ ||
+               status == 500 /* SC_INTERNAL_SERVER_ERROR */ ||
+               status == 503 /* SC_SERVICE_UNAVAILABLE */ ||
+               status == 501 /* SC_NOT_IMPLEMENTED */;
     }
 	
 }

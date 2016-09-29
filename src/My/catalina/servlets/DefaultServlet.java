@@ -1,10 +1,13 @@
 package My.catalina.servlets;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.StringTokenizer;
 
 import javax.servlet.ServletException;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServlet;
@@ -23,7 +26,10 @@ import My.naming.resources.ResourceAttributes;
 
 public class DefaultServlet extends HttpServlet{
 	
-	
+	/**
+     * Full range marker.
+     */
+    protected static ArrayList FULL = new ArrayList();
 	
     
 	// ------------------ Instance Variables ------------------
@@ -51,6 +57,12 @@ public class DefaultServlet extends HttpServlet{
      * The output buffer size to use when serving resources.
      */
     protected int output = 2048;
+    
+    
+    /**
+     * Minimum size for sendfile usage in bytes.
+     */
+    protected int sendfileSize = 48 * 1024;
 	
 	
     /**
@@ -246,7 +258,93 @@ public class DefaultServlet extends HttpServlet{
                         cacheEntry.attributes.getLastModifiedHttp());
         	}
         	
+        	// Get content length
+            contentLength = cacheEntry.attributes.getContentLength();
+            // Special case for zero length files, which would cause a
+            // (silent) ISE when setting the output buffer size
+            if (contentLength == 0L) {
+            	content = false;
+            }
+        	
         }
+        
+        
+        
+        ServletOutputStream ostream = null;
+        PrintWriter writer = null;
+        
+        if (content) {
+        	
+        	// Trying to retrieve the servlet output stream
+        	try {
+        		ostream = response.getOutputStream();
+        	}catch (IllegalStateException e) {
+        		// If it fails, we try to get a Writer instead if we're
+                // trying to serve a text file
+        		if ( (contentType == null)
+                        || (contentType.startsWith("text"))
+                        || (contentType.endsWith("xml")) ) {
+                    writer = response.getWriter();
+                } else {
+                    throw e;
+                }
+        	}
+        }
+        
+        
+        
+        if ( (cacheEntry.context != null)
+                || isError
+                || ( ((ranges == null) || (ranges.isEmpty()))
+                        && (request.getHeader("Range") == null) )
+                || (ranges == FULL) ) {
+        	
+        	// Set the appropriate output headers
+        	 if (contentType != null) {
+        		 
+        		 response.setContentType(contentType);
+        	 }
+        	 
+        	 if ((cacheEntry.resource != null) && (contentLength >= 0)) {
+             	
+        		 if (contentLength < Integer.MAX_VALUE) {
+        			 response.setContentLength((int) contentLength);
+        		 }
+        		 else {
+                     // Set the content-length as String to be able to use a long
+                     response.setHeader("content-length", "" + contentLength);
+                 }
+             }
+        	 
+        	 InputStream renderResult = null;
+        	 
+        	 if (cacheEntry.context != null) {
+        		 // ...
+        	 }
+        	 
+        	 
+        	 // Copy the input stream to our output stream (if requested)
+        	 if (content) {
+        		 try {
+        			 response.setBufferSize(output);
+        		 }catch (IllegalStateException e) {
+        			 
+        		 }
+        		 
+        		 if (ostream != null) {
+        			 if (!checkSendfile(request, response, cacheEntry, contentLength, null))
+        				 copy(cacheEntry, renderResult, ostream);
+        		 }
+        		 
+        	 }
+        }
+        else
+        {
+        	//....
+        }
+        
+        
+        
         
         
     }
@@ -480,7 +578,102 @@ public class DefaultServlet extends HttpServlet{
     	
         return null;
     }
+    
+    
+    
+    /**
+     * Check if sendfile can be used.
+     */
+    protected boolean checkSendfile(HttpServletRequest request,
+                                  HttpServletResponse response,
+                                  CacheEntry entry,
+                                  long length, Range range) {
+    	
+    	if ((sendfileSize > 0)
+    		&& (entry.resource != null)
+    		&& ((length > sendfileSize)|| (entry.resource.getContent() == null)))
+    		{
+
+    	/*	&& (entry.attributes.getCanonicalPath() != null)
+            && (Boolean.TRUE == request.getAttribute("org.apache.tomcat.sendfile.support"))
+            && (request.getClass().getName().equals("org.apache.catalina.connector.RequestFacade"))
+            && (response.getClass().getName().equals("org.apache.catalina.connector.ResponseFacade")))
+    	*/	 
+    		
+    		return true;
+    		
+    	}
+    	else
+    		return false;
+    	
+    }
+    
+    
+    
+    
+    /**
+     * Copy the contents of the specified input stream to the specified
+     * output stream, and ensure that both streams are closed before returning
+     * (even in the face of an exception).
+     *
+     * @param resourceInfo The resource information
+     * @param ostream The output stream to write to
+     *
+     * @exception IOException if an input/output error occurs
+     */
+    protected void copy(CacheEntry cacheEntry, InputStream is,
+                      ServletOutputStream ostream)
+        throws IOException {
+    	
+    	
+    	IOException exception = null;
+        InputStream resourceInputStream = null;
+        
+        // Optimization: If the binary content has already been loaded, send
+        // it directly
+        if (cacheEntry.resource != null) {
+        	byte buffer[] = cacheEntry.resource.getContent();
+        	if (buffer != null) {
+        		ostream.write(buffer, 0, buffer.length);
+                return;
+        	}
+        	resourceInputStream = cacheEntry.resource.streamContent();
+        }
+        else {
+            resourceInputStream = is;
+        }
+        
+        // ...
+    	
+    }
 
 	
+    
+    // ------------------- Range Inner Class  -------------------
+
+
+    protected class Range {
+
+        public long start;
+        public long end;
+        public long length;
+
+        /**
+         * Validate range.
+         */
+        public boolean validate() {
+            if (end >= length)
+                end = length - 1;
+            return ( (start >= 0) && (end >= 0) && (start <= end)
+                     && (length > 0) );
+        }
+
+        public void recycle() {
+            start = 0;
+            end = 0;
+            length = 0;
+        }
+
+    }
 	
 }

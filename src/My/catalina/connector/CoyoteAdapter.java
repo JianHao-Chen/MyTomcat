@@ -80,7 +80,7 @@ public class CoyoteAdapter implements Adapter{
             (connector.getURIEncoding());
 		}
 		
-		
+		boolean comet = false;
 		
 		try {
 			
@@ -94,6 +94,9 @@ public class CoyoteAdapter implements Adapter{
 				connector.getContainer().getPipeline().getFirst().invoke(request, response);
 			}
 			
+			if (!comet) {
+				response.finishResponse();
+			}
 		}
 		catch (IOException e) {
 			

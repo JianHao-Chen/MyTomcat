@@ -69,6 +69,12 @@ public class OutputBuffer extends Writer
     
     
     /**
+     * Do a flush on the next operation.
+     */
+    private boolean doFlush = false;
+    
+    
+    /**
      * Associated Coyote response.
      */
     private My.coyote.Response coyoteResponse;
@@ -77,6 +83,12 @@ public class OutputBuffer extends Writer
      * Suspended flag. All output bytes will be swallowed if this is true.
      */
     private boolean suspended = false;
+    
+    
+    /**
+     * Byte chunk used to output bytes.
+     */
+    private ByteChunk outputChunk = new ByteChunk();
     
     
 	// ----------------------------- Properties-----------------------------
@@ -161,20 +173,92 @@ public class OutputBuffer extends Writer
         return -1;
     }
     
+    
+    
+    /** 
+     * True if this buffer hasn't been used ( since recycle() ) -
+     * i.e. no chars or bytes have been added to the buffer.  
+     */
+    public boolean isNew() {
+        return (bytesWritten == 0) && (charsWritten == 0);
+    }
+    
+    
+    public void setBufferSize(int size) {
+        if (size > bb.getLimit()) {// ??????
+            bb.setLimit(size);
+        }
+    }
+    
 	
-	
-	@Override
-	public void realWriteBytes(byte[] cbuf, int off, int len)
+    /** 
+     * Sends the buffer data to the client output, checking the
+     * state of Response and calling the right interceptors.
+     * 
+     * @param buf Byte buffer to be written to the response
+     * @param off Offset
+     * @param cnt Length
+     * 
+     * @throws IOException An underlying IOException occurred
+     */
+	public void realWriteBytes(byte[] buf, int off, int cnt)
 			throws IOException {
-		// TODO Auto-generated method stub
-		
+		if (closed)
+            return;
+        if (coyoteResponse == null)
+            return;
+        
+        
+        // If we really have something to write
+        if (cnt > 0) {
+        	
+        	// real write to the adapter
+        	outputChunk.setBytes(buf, off, cnt);
+        	try {
+        		coyoteResponse.doWrite(outputChunk);
+        	}catch (IOException e) {
+        		// An IOException on a write is almost always due to
+                // the remote client aborting the request.  Wrap this
+                // so that it can be handled better by the error dispatcher.
+        		
+        		// throw new ClientAbortException(e);
+        	}
+        }
+        
 	}
 
 	@Override
 	public void write(char[] cbuf, int off, int len) throws IOException {
-		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	
+	public void write(byte b[], int off, int len) throws IOException {
+
+        if (suspended)
+            return;
+
+        writeBytes(b, off, len);
+
+    }
+	
+	
+	private void writeBytes(byte b[], int off, int len) 
+    throws IOException {
+		if (closed)
+            return;
+		
+		bb.append(b, off, len);
+		bytesWritten += len;
+		
+		// if called from within flush(), then immediately flush
+        // remaining bytes
+        if (doFlush) {
+        	 bb.flushBuffer();
+        }
+	}
+	
 
 	@Override
 	public void flush() throws IOException {
@@ -182,11 +266,75 @@ public class OutputBuffer extends Writer
 		
 	}
 
-	@Override
+	
+	/**
+     * Close the output buffer. This tries to calculate the response size if 
+     * the response has not been committed yet.
+     * 
+     * @throws IOException An underlying IOException occurred
+     */
 	public void close() throws IOException {
-		// TODO Auto-generated method stub
+		if (closed)
+            return;
+		if (suspended)
+	        return;
 		
+		if ((!coyoteResponse.isCommitted()) 
+	            && (coyoteResponse.getContentLengthLong() == -1)) {
+			
+			// If this didn't cause a commit of the response, the final content
+            // length can be calculated
+            if (!coyoteResponse.isCommitted()) {
+                coyoteResponse.setContentLength(bb.getLength());
+            }
+		}
+		
+		doFlush(false);
+		
+		closed = true;
+		
+		// The request should have been completely read by the time the response
+        // is closed.
+		
+		Request req = (Request) coyoteResponse.getRequest().getNote(
+                CoyoteAdapter.ADAPTER_NOTES);
+		req.inputBuffer.close();
+		
+		coyoteResponse.finish();
 	}
+	
+	
+	/**
+     * Flush bytes or chars contained in the buffer.
+     * 
+     * @throws IOException An underlying IOException occurred
+     */
+    protected void doFlush(boolean realFlush)
+        throws IOException {
+    	
+    	
+    	if (suspended)
+            return;
+    	
+    	try {
+    		doFlush = true;
+    		if (initial) {
+    			coyoteResponse.sendHeaders();
+    			initial = false;
+    		}
+    		if (bb.getLength() > 0) {
+    			bb.flushBuffer();
+    		}
+    	}finally {
+    		doFlush = false;
+    	}
+    	
+    	
+    	if (realFlush) {
+    		//...
+    	}
+    	
+    }
 
 	
 	

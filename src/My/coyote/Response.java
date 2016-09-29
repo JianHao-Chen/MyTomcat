@@ -3,6 +3,7 @@ package My.coyote;
 import java.io.IOException;
 import java.util.Locale;
 
+import My.tomcat.util.buf.ByteChunk;
 import My.tomcat.util.http.MimeHeaders;
 
 public final class Response {
@@ -73,6 +74,16 @@ public final class Response {
     protected long contentLength = -1;
     private Locale locale = DEFAULT_LOCALE;
     
+    
+    
+    // General informations
+    private long bytesWritten=0;
+    
+    
+    /**
+     * Has the charset been explicitly set.
+     */
+    protected boolean charsetSet = false;
     
     
     /**
@@ -254,6 +265,54 @@ public final class Response {
      */
     public void setContentType(String type) {
     	
+    	int semicolonIndex = -1;
+    	
+    	if (type == null) {
+            this.contentType = null;
+            return;
+        }
+    	
+    	/*
+         * Remove the charset param (if any) from the Content-Type, and use it
+         * to set the response encoding.
+         * The most recent response encoding setting will be appended to the
+         * response's Content-Type (as its charset param) by getContentType();
+         */
+    	boolean hasCharset = false;
+    	int len = type.length();
+        int index = type.indexOf(';');
+        while (index != -1) {
+        	
+        	semicolonIndex = index;
+            index++;
+            while (index < len && Character.isSpace(type.charAt(index))) {
+                index++;
+            }
+            if (index+8 < len
+                    && type.charAt(index) == 'c'
+                    && type.charAt(index+1) == 'h'
+                    && type.charAt(index+2) == 'a'
+                    && type.charAt(index+3) == 'r'
+                    && type.charAt(index+4) == 's'
+                    && type.charAt(index+5) == 'e'
+                    && type.charAt(index+6) == 't'
+                    && type.charAt(index+7) == '=') {
+                hasCharset = true;
+                break;
+            }
+            index = type.indexOf(';', index);
+        }
+        
+        
+        if (!hasCharset) {
+        	this.contentType = type;
+        	return;
+        }
+        
+        
+        // has charset param, implements latter.
+        
+        
     }
     
     
@@ -282,6 +341,32 @@ public final class Response {
     
     
     
+    public String getContentType() {
+
+        String ret = contentType;
+
+        if (ret != null 
+            && characterEncoding != null
+            && charsetSet) {
+            ret = ret + ";charset=" + characterEncoding;
+        }
+
+        return ret;
+    }
+    
+    
+    /** 
+     * Write a chunk of bytes.
+     */
+    public void doWrite(ByteChunk chunk)
+        throws IOException
+    {
+        outputBuffer.doWrite(chunk, this);
+        bytesWritten+=chunk.getLength();
+    }
+    
+    
+    
     // -------------------- Per-Response "notes" --------------------
 
 
@@ -302,6 +387,11 @@ public final class Response {
     
     public void acknowledge() throws IOException {
         action(ActionCode.ACTION_ACK, this);
+    }
+    
+    
+    public void finish() throws IOException {
+        action(ActionCode.ACTION_CLOSE, this);
     }
     
 }

@@ -128,6 +128,41 @@ final class StandardWrapperValve extends ValveBase{
         
         
         
+        // Release the filter chain (if any) for this request
+        if (filterChain != null) {
+        	// If this is a Comet request, then the same chain will be used for the
+            // processing of all subsequent events.
+        	
+        	//but here we don't consider Comet
+        	filterChain.release();
+        }
+        
+        
+        
+        // Deallocate the allocated servlet instance
+        try {
+        	if (servlet != null) {
+        		wrapper.deallocate(servlet);
+        	}
+        }catch (Throwable e) {
+        	
+        }
+        
+        
+        
+        // If this servlet has been marked permanently unavailable,
+        // unload it and release this instance
+        try {
+        	if ((servlet != null) &&
+                    (wrapper.getAvailable() == Long.MAX_VALUE)) {
+        		
+        		// wrapper.unload();
+        	}
+        }catch (Throwable e) {
+        	
+        }
+        
+        
         
 	}
 
