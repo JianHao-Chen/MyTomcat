@@ -368,6 +368,10 @@ public class Http11NioProcessor implements ActionHook{
     	inputBuffer.setSocket(socket);
     	inputBuffer.setSelectorPool(endpoint.getSelectorPool());
     	
+    	outputBuffer.setSocket(socket);
+    	outputBuffer.setSelectorPool(endpoint.getSelectorPool());
+    	
+    	
     	// Error flag
         error = false;
         keepAlive = true;
@@ -718,6 +722,9 @@ public class Http11NioProcessor implements ActionHook{
     		
     		 try {
     			 outputBuffer.endRequest();
+    		 }catch (IOException e) {
+    			// Set error flag
+                 error = true;
     		 }
     		
     	}

@@ -367,6 +367,29 @@ public final class Response {
     
     
     
+    public void recycle() {
+    	
+    	contentType = null;
+        contentLanguage = null;
+        
+        locale = DEFAULT_LOCALE;
+        characterEncoding = Constants.DEFAULT_CHARACTER_ENCODING;
+        
+        contentLength = -1;
+        status = 200;
+        message = null;
+        
+        commited = false;
+ 
+        errorURI = null;
+        headers.clear();
+        
+        // update counters
+        bytesWritten=0;
+    }
+    
+    
+    
     // -------------------- Per-Response "notes" --------------------
 
 

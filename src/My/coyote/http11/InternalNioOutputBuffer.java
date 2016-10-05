@@ -8,6 +8,7 @@ import java.nio.channels.Selector;
 import My.coyote.ActionCode;
 import My.coyote.OutputBuffer;
 import My.coyote.Response;
+import My.tomcat.util.MutableInteger;
 import My.tomcat.util.buf.ByteChunk;
 import My.tomcat.util.buf.MessageBytes;
 import My.tomcat.util.http.HttpMessages;
@@ -95,7 +96,7 @@ public class InternalNioOutputBuffer implements OutputBuffer{
     /**
      * Number of bytes last written
      */
-    protected Integer lastWrite = new Integer(1);
+    protected MutableInteger lastWrite = new MutableInteger(1);
 
     /**
      * Underlying socket.
@@ -455,9 +456,16 @@ public class InternalNioOutputBuffer implements OutputBuffer{
     		written = getSelectorPool().
     			write(bytebuffer, socket, selector, writeTimeout, block,lastWrite);
     		
+    		//make sure we are flushed 
+    		//...
     		
-    		
+    	}finally { 
+    		//...
     	}
+    	
+    	if ( block ) bytebuffer.clear(); //only clear
+        this.total = 0;
+        return written;
     	
     }
     

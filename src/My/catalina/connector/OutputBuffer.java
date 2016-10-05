@@ -145,7 +145,20 @@ public class OutputBuffer extends Writer
 	// ---------------------- Public Methods----------------------
     
     
-    
+    /**
+     * Recycle the output buffer.
+     */
+    public void recycle() {
+    	initial = true;
+    	bytesWritten = 0;
+        charsWritten = 0;
+        
+        bb.recycle(); 
+        
+        closed = false;
+        doFlush = false;
+        suspended = false;
+    }
 	 
 	
 	

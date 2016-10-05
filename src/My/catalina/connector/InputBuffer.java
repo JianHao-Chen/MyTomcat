@@ -51,7 +51,17 @@ public class InputBuffer extends Reader
 	
 	
 	
-	
+	// ------------------ Public Methods ------------------
+    
+    /**
+     * Recycle the output buffer.
+     */
+    public void recycle() {
+    	
+    
+        
+        
+    }
 	
 	
 

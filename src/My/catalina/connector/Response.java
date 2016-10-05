@@ -514,6 +514,21 @@ public class Response implements HttpServletResponse{
         coyoteResponse.setHeader(name, value);
 		
 	}
+	
+	
+	// ---------------------- Public Methods ----------------------
+	
+	/**
+     * Release all object references, and initialize instance variables, in
+     * preparation for reuse of this object.
+     */
+    public void recycle() {
+    	
+    	outputBuffer.recycle();
+    	usingOutputStream = false;
+    	usingWriter = false;
+    	
+    }
     	
     
 }

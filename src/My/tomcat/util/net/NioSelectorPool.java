@@ -6,6 +6,7 @@ import java.nio.channels.Selector;
 
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
+import My.tomcat.util.MutableInteger;
 
 /**
 *
@@ -88,7 +89,7 @@ public class NioSelectorPool {
     }
 	
 	public int write(ByteBuffer buf, NioChannel socket, Selector selector, 
-            long writeTimeout, boolean block, Integer lastWrite) throws IOException {
+            long writeTimeout, boolean block, MutableInteger lastWrite) throws IOException {
 		
 		if ( SHARED && block ) {
 			return blockingSelector.write(buf,socket,writeTimeout,lastWrite);

@@ -425,4 +425,24 @@ public class Request implements HttpServletRequest{
     
     
     
+    
+    /**
+     * Release all object references, and initialize instance variables, in
+     * preparation for reuse of this object.
+     */
+    public void recycle() {
+    	
+    	context = null;
+        wrapper = null;
+        
+        inputBuffer.recycle();
+
+        
+        attributes.clear();
+        
+        
+        mappingData.recycle();
+    }
+    
+    
 }

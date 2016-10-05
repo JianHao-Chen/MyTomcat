@@ -275,6 +275,29 @@ public final class Request {
         return parameters;
     }
 	
-	
+    
+    
+    
+    // -------------------- Recycling -------------------- 
+    public void recycle() {
+    	
+    	bytesRead=0;
+
+        contentLength = -1;
+        contentTypeMB = null;
+        
+        headers.recycle();
+        serverNameMB.recycle();
+        
+        serverPort=-1;
+        parameters.recycle();
+
+        unparsedURIMB.recycle();
+        uriMB.recycle(); 
+        decodedUriMB.recycle();
+        methodMB.recycle();
+        protoMB.recycle();
+        
+    }
 	
 }

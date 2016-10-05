@@ -106,6 +106,10 @@ public class CoyoteAdapter implements Adapter{
 		}
 		finally {
 			
+			// Recycle the wrapper request and response
+            if (!comet) {
+            	request.recycle();
+            }
 		}
 		
 		
