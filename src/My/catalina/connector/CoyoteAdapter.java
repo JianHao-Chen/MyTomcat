@@ -99,7 +99,7 @@ public class CoyoteAdapter implements Adapter{
 			}
 		}
 		catch (IOException e) {
-			
+			;
 		}
 		catch (Throwable t) {
 			
@@ -109,6 +109,10 @@ public class CoyoteAdapter implements Adapter{
 			// Recycle the wrapper request and response
             if (!comet) {
             	request.recycle();
+            	response.recycle();
+            }
+            else {
+            	;
             }
 		}
 		

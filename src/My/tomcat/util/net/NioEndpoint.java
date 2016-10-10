@@ -646,6 +646,30 @@ public class NioEndpoint {
     	public Selector getSelector() { return selector;}
     	
     	
+    	 /**
+         * Add specified socket and associated pool to the poller. The socket will
+         * be added to a temporary array, and polled first after a maximum amount
+         * of time equal to pollTime (in most cases, latency will be much lower,
+         * however).
+         *
+         * @param socket to add to the poller
+         */
+        public void add(final NioChannel socket) {
+        	add(socket,SelectionKey.OP_READ);
+        }
+        
+        public void add(final NioChannel socket, final int interestOps) {
+        	PollerEvent r = eventCache.poll();
+        	if ( r==null) 
+        		r = new PollerEvent(socket,null,interestOps);
+        	else 
+        		r.reset(socket,null,interestOps);
+        	
+        	addEvent(r);
+        }
+    	
+    	
+    	
     	public void addEvent(Runnable event) {
              events.offer(event);
              if ( wakeupCounter.incrementAndGet() == 0 ) 

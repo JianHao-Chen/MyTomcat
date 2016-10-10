@@ -10,6 +10,7 @@ import My.coyote.OutputBuffer;
 import My.coyote.Response;
 import My.tomcat.util.MutableInteger;
 import My.tomcat.util.buf.ByteChunk;
+import My.tomcat.util.buf.CharChunk;
 import My.tomcat.util.buf.MessageBytes;
 import My.tomcat.util.http.HttpMessages;
 import My.tomcat.util.http.MimeHeaders;
@@ -232,6 +233,24 @@ public class InternalNioOutputBuffer implements OutputBuffer{
 	// -------------------- Public Methods --------------------
   
     /**
+     * End processing of current HTTP request.
+     * Note: All bytes of the current request should have been already 
+     * consumed. This method only resets all the pointers so that we are ready
+     * to parse the next HTTP request.
+     */
+    public void nextRequest() {
+    	
+    	// Recycle Request object
+        response.recycle();
+        
+        // Reset pointers
+        pos = 0;
+        committed = false;
+        finished = false;
+    }
+    
+    
+    /**
      * End request.
      * 
      * @throws IOException an undelying I/O error occured
@@ -251,6 +270,7 @@ public class InternalNioOutputBuffer implements OutputBuffer{
     	 
     	 flushBuffer();
     	
+    	 finished = true;
     }
     
     
@@ -266,7 +286,10 @@ public class InternalNioOutputBuffer implements OutputBuffer{
 	public int doWrite(ByteChunk chunk, Response response) throws IOException {
 
 		if (!committed) {
-			
+			// Send the connector a request for commit. The connector should
+            // then validate the headers, send them (using sendHeaders) and 
+            // set the filters accordingly.
+			response.action(ActionCode.ACTION_COMMIT, null);
 		}
 		
 		return outputStreamOutputBuffer.doWrite(chunk, response);
@@ -274,6 +297,34 @@ public class InternalNioOutputBuffer implements OutputBuffer{
 	}
     
     
+	/**
+     * This method will write the contents of the specyfied char 
+     * buffer to the output stream, without filtering. This method is meant to
+     * be used to write the response header.
+     * 
+     * @param cc data to be written
+     */
+    protected void write(CharChunk cc) {
+
+        int start = cc.getStart();
+        int end = cc.getEnd();
+        char[] cbuf = cc.getBuffer();
+        for (int i = start; i < end; i++) {
+            char c = cbuf[i];
+            // Note:  This is clearly incorrect for many strings,
+            // but is the only consistent approach within the current
+            // servlet framework.  It must suffice until servlet output
+            // streams properly encode their output.
+            if ((c <= 31) && (c != 9)) {
+                c = ' ';
+            } else if (c == 127) {
+                c = ' ';
+            }
+            buf[pos++] = (byte) c;
+        }
+
+    }
+	
     
     /**
      * This method will write the contents of the specyfied byte 
@@ -345,16 +396,32 @@ public class InternalNioOutputBuffer implements OutputBuffer{
     protected void write(MessageBytes mb) {
     	
     	if (mb.getType() == MessageBytes.T_BYTES) {
-    		
+    		 ByteChunk bc = mb.getByteChunk();
+             write(bc);
     	}
     	else if (mb.getType() == MessageBytes.T_CHARS) {
-    		
+    		CharChunk cc = mb.getCharChunk();
+            write(cc);
     	}
     	else
     		write(mb.toString());
     }
     
-    
+    /**
+     * This method will write the contents of the specyfied message bytes 
+     * buffer to the output stream, without filtering. This method is meant to
+     * be used to write the response header.
+     * 
+     * @param bc data to be written
+     */
+    protected void write(ByteChunk bc) {
+
+        // Writing the byte chunk to the output buffer
+        int length = bc.getLength();
+        System.arraycopy(bc.getBytes(), bc.getStart(), buf, pos, length);
+        pos = pos + length;
+
+    }
     
     
     
@@ -563,7 +630,7 @@ public class InternalNioOutputBuffer implements OutputBuffer{
         ByteBuffer bytebuffer = socket.getBufHandler().getWriteBuffer();
         if(bytebuffer.position() > 0){
         	bytebuffer.flip();
-        	writeToSocket(socket.getBufHandler().getWriteBuffer(),true, false);
+        	writeToSocket(bytebuffer,true, false);
         }
         
         

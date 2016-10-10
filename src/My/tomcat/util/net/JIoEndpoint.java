@@ -166,7 +166,9 @@ public class JIoEndpoint {
      */
     protected int soTimeout = -1;
     public int getSoTimeout() { return soTimeout; }
-    public void setSoTimeout(int soTimeout) { this.soTimeout = soTimeout; }
+    public void setSoTimeout(int soTimeout) { 
+    	this.soTimeout = soTimeout; 
+    }
     
     
     /**

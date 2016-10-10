@@ -303,6 +303,47 @@ public class InternalNioInputBuffer implements InputBuffer{
 	// ---------------------- Public Methods ----------------------
     
     /**
+     * End processing of current HTTP request.
+     * Note: All bytes of the current request should have been already 
+     * consumed. This method only resets all the pointers so that we are ready
+     * to parse the next HTTP request.
+     */
+    public void nextRequest() {
+    	
+    	// Recycle Request object
+        request.recycle();
+        
+        
+        // Reset pointers
+        lastValid = lastValid - pos;
+        pos = 0;
+        
+        parsingHeader = true;
+        headerParsePos = HeaderParsePosition.HEADER_START;
+        parsingRequestLine = true;
+        parsingRequestLinePhase = 0;
+        parsingRequestLineEol = false;
+        parsingRequestLineStart = 0;
+        parsingRequestLineQPos = -1;
+        headerData.recycle();
+    	
+    }
+    
+    
+    /**
+     * End request (consumes leftover bytes).
+     * 
+     * @throws IOException an undelying I/O error occured
+     */
+    public void endRequest()
+        throws IOException {
+    	
+    	
+    }
+    
+    
+    
+    /**
      * Read the request line. This function is meant to be used during the 
      * HTTP request header parsing. Do NOT attempt to read the request body 
      * using it.
@@ -324,6 +365,10 @@ public class InternalNioInputBuffer implements InputBuffer{
     		do{
     			// Read new bytes if needed
     			if (pos >= lastValid) {
+    				
+    				if (useAvailableDataOnly) {
+                        return false;
+                    }
     				
     				// Ignore bytes that were read
     				pos = lastValid = 0;

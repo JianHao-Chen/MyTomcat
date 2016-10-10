@@ -217,6 +217,10 @@ public class Http11NioProtocol implements ProtocolHandler{
 				
 				if (state == SocketState.LONG) {
 					
+					// In the middle of processing a request/response. Keep the
+                    // socket associated with the processor.
+					connections.put(socket, processor);
+					socket.getPoller().add(socket);
 				}
 				else if (state == SocketState.OPEN) {
 					

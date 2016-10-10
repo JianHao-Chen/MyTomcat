@@ -376,6 +376,8 @@ public class Http11NioProcessor implements ActionHook{
         error = false;
         keepAlive = true;
         
+        boolean openSocket = false;
+        boolean recycle = true;
         boolean keptAlive = false;
         
         while (!error && keepAlive ) {
@@ -383,15 +385,15 @@ public class Http11NioProcessor implements ActionHook{
         	// Parsing the request header
         	try {
         		
-        		if(!inputBuffer.parseRequestLine(keepAlive)){
+        		if(!inputBuffer.parseRequestLine(keptAlive)){
         			//no data available yet, since we might have read part
                     //of the request line, we can't recycle the processor
         			
-        			/*
+        			
         			openSocket = true;
                     recycle = false;
                     break;
-                    */
+                    
         		}
         		
         		keptAlive = true;
@@ -400,11 +402,11 @@ public class Http11NioProcessor implements ActionHook{
         			//we've read part of the request, don't recycle it
                     //instead associate it with the socket
         			
-        			/*
+        			
         			openSocket = true;
                     recycle = false;
                     break;
-                    */
+                    
         		}
         		
         		request.setStartTime(System.currentTimeMillis());
@@ -458,8 +460,79 @@ public class Http11NioProcessor implements ActionHook{
         		}
         	}
         	
+        	
+        	endRequest();
+        	
+        	
+            // Next request
+            inputBuffer.nextRequest();
+            outputBuffer.nextRequest();
+            
+        	
+        	
+        	// If there was an error, make sure the request is counted as
+            // and error, and update the statistics counter
+            if (error) {
+                response.setStatus(500);
+            }
+
+            
+            rp.setStage(My.coyote.Constants.STAGE_KEEPALIVE);
+        	
         }
-    	return null;
+        
+        rp.setStage(My.coyote.Constants.STAGE_ENDED);
+        
+        if ( recycle ) 
+        		recycle();
+        
+        return (openSocket) ? 
+        		(recycle?SocketState.OPEN:SocketState.LONG) : SocketState.CLOSED;
+    }
+    
+    
+    public void endRequest() {
+    	
+    	// Finish the handling of the request
+    	try {
+            inputBuffer.endRequest();
+        }
+    	 catch (IOException e) {
+             error = true;
+         } catch (Throwable t) {
+        	 
+        	 response.setStatus(500);
+             adapter.log(request, response, 0);
+             error = true;
+         }
+         
+         
+         
+         try {
+             outputBuffer.endRequest();
+         } catch (IOException e) {
+             error = true;
+         } catch (Throwable t) {
+             log.error("http11processor.response.finish");
+             error = true;
+         }
+    	
+    }
+    
+    
+    
+    public void recycle() {
+        /*inputBuffer.recycle();
+        outputBuffer.recycle();
+        this.socket = null;
+        this.cometClose = false;
+        this.comet = false;
+        remoteAddr = null;
+        remoteHost = null;
+        localAddr = null;
+        localName = null;
+        remotePort = -1;
+        localPort = -1;*/
     }
     
     
