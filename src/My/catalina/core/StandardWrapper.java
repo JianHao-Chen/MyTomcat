@@ -509,7 +509,27 @@ public class StandardWrapper extends ContainerBase
         if (!singleThreadModel) {
         	
         	// Load and initialize our instance if necessary
-
+        	if (instance == null) {
+        		
+        		synchronized (this) {
+        			if (instance == null) {
+        				try {
+        					instance = loadServlet();
+        					
+        					if (!singleThreadModel) {
+                                newInstance = true;
+                                countAllocated.incrementAndGet();
+                            }
+        				}catch (ServletException e) {
+        					throw e;
+        				}
+        				catch (Throwable e) {
+        					
+        				}
+        			}
+        		}
+        	}
+        	
         	if (!singleThreadModel) {
             	
             	if (!newInstance) {
@@ -625,5 +645,24 @@ public class StandardWrapper extends ContainerBase
         }
 		
 	}
+	
+	
+	
+	/**
+     * Return a String representation of this component.
+     */
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer();
+        if (getParent() != null) {
+            sb.append(getParent().toString());
+            sb.append(".");
+        }
+        sb.append("StandardWrapper[");
+        sb.append(getName());
+        sb.append("]");
+        return (sb.toString());
+
+    }
 
 }

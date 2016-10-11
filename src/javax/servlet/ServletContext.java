@@ -1,5 +1,9 @@
 package javax.servlet;
 
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 
 
 /**
@@ -139,4 +143,88 @@ public interface ServletContext {
     */
 
    public String getMimeType(String file);
+   
+   
+   /**
+    * Returns the resource located at the named path as
+    * an <code>InputStream</code> object.
+    *
+    * <p>The data in the <code>InputStream</code> can be 
+    * of any type or length. The path must be specified according
+    * to the rules given in <code>getResource</code>.
+    * This method returns <code>null</code> if no resource exists at
+    * the specified path. 
+    * 
+    * <p>Meta-information such as content length and content type
+    * that is available via <code>getResource</code>
+    * method is lost when using this method.
+    *
+    * <p>The servlet container must implement the URL handlers
+    * and <code>URLConnection</code> objects necessary to access
+    * the resource.
+    *
+    * <p>This method is different from 
+    * <code>java.lang.Class.getResourceAsStream</code>,
+    * which uses a class loader. This method allows servlet containers 
+    * to make a resource available
+    * to a servlet from any location, without using a class loader.
+    * 
+    *
+    * @param path 	a <code>String</code> specifying the path
+    *			to the resource
+    *
+    * @return 		the <code>InputStream</code> returned to the 
+    *			servlet, or <code>null</code> if no resource
+    *			exists at the specified path 
+    *
+    *
+    */
+
+   public InputStream getResourceAsStream(String path);
+   
+   
+   /**
+    * Returns a URL to the resource that is mapped to a specified
+    * path. The path must begin with a "/" and is interpreted
+    * as relative to the current context root.
+    *
+    * <p>This method allows the servlet container to make a resource 
+    * available to servlets from any source. Resources 
+    * can be located on a local or remote
+    * file system, in a database, or in a <code>.war</code> file. 
+    *
+    * <p>The servlet container must implement the URL handlers
+    * and <code>URLConnection</code> objects that are necessary
+    * to access the resource.
+    *
+    * <p>This method returns <code>null</code>
+    * if no resource is mapped to the pathname.
+    *
+    * <p>Some containers may allow writing to the URL returned by
+    * this method using the methods of the URL class.
+    *
+    * <p>The resource content is returned directly, so be aware that 
+    * requesting a <code>.jsp</code> page returns the JSP source code.
+    * Use a <code>RequestDispatcher</code> instead to include results of 
+    * an execution.
+    *
+    * <p>This method has a different purpose than
+    * <code>java.lang.Class.getResource</code>,
+    * which looks up resources based on a class loader. This
+    * method does not use class loaders.
+    * 
+    * @param path 				a <code>String</code> specifying
+    *						the path to the resource
+    *
+    * @return 					the resource located at the named path,
+    * 						or <code>null</code> if there is no resource
+    *						at that path
+    *
+    * @exception MalformedURLException 	if the pathname is not given in 
+    * 						the correct form
+    *
+    */
+   
+   public URL getResource(String path) throws MalformedURLException;
+   
 }

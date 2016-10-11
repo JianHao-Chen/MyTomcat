@@ -30,7 +30,17 @@ public class ResourceAttributes implements Attributes{
      */
     public static final String ETAG = "getetag";
     
+    
+    /**
+     * Content length.
+     */
+    public static final String CONTENT_LENGTH = "getcontentlength";
 	
+    
+    /**
+     * MIME type of the content.
+     */
+    public static final String CONTENT_TYPE = "getcontenttype";
     
     /**
      * HTTP date format.

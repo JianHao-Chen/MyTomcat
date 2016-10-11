@@ -1227,6 +1227,24 @@ public class StandardContext
     
     
     
+    /**
+     * Return a String representation of this component.
+     */
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer();
+        if (getParent() != null) {
+            sb.append(getParent().toString());
+            sb.append(".");
+        }
+        sb.append("StandardContext[");
+        sb.append(getName());
+        sb.append("]");
+        return (sb.toString());
+
+    }
+    
+    
     
     public String getJ2EEApplication() {
         return j2EEApplication;

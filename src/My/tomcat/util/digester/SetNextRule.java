@@ -150,7 +150,7 @@ public class SetNextRule extends Rule{
         // Identify the objects to be used
         Object child = digester.peek(0);
         Object parent = digester.peek(1);
-        if (digester.log.isDebugEnabled()) {
+        /*if (digester.log.isDebugEnabled()) {
             if (parent == null) {
                 digester.log.debug("[SetNextRule]{" + digester.match +
                         "} Call [NULL PARENT]." +
@@ -160,7 +160,7 @@ public class SetNextRule extends Rule{
                         "} Call " + parent.getClass().getName() + "." +
                         methodName + "(" + child + ")");
             }
-        }
+        }*/
 
         // Call the specified method
         IntrospectionUtils.callMethod1(parent, methodName,

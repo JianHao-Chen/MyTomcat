@@ -121,6 +121,16 @@ public class WebRuleSet extends RuleSetBase{
 		digester.addCallParam(prefix + "web-app/mime-mapping/extension", 0);
 		digester.addCallParam(prefix + "web-app/mime-mapping/mime-type", 1);
 	}
+	
+	
+	/**
+     * Reset counter used for validating the web.xml file.
+     */
+    public void recycle(){
+        /*jspConfig.isJspConfigSet = false;
+        sessionConfig.isSessionConfigSet = false;
+        loginConfig.isLoginConfigSet = false;*/
+    }
 
 }
 

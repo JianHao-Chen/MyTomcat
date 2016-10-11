@@ -435,5 +435,19 @@ public class StandardService implements Lifecycle , Service{
 		
 		}
 	}
+	
+	
+	
+	/**
+     * Return a String representation of this component.
+     */
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer("StandardService[");
+        sb.append(getName());
+        sb.append("]");
+        return (sb.toString());
+
+    }
     
 }

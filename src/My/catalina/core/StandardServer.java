@@ -452,6 +452,20 @@ public final class StandardServer
 	        }
 		
 	}
+	
+	
+	
+	/**
+     * Return a String representation of this component.
+     */
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer("StandardServer[");
+        sb.append(getPort());
+        sb.append("]");
+        return (sb.toString());
+
+    }
     
     
 }

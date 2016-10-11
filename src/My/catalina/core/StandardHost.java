@@ -397,6 +397,25 @@ public class StandardHost extends ContainerBase implements Host{
 		 
 		 super.start();
 	 }
+	 
+	 
+	 
+	 /**
+	     * Return a String representation of this component.
+	     */
+	    public String toString() {
+
+	        StringBuffer sb = new StringBuffer();
+	        if (getParent() != null) {
+	            sb.append(getParent().toString());
+	            sb.append(".");
+	        }
+	        sb.append("StandardHost[");
+	        sb.append(getName());
+	        sb.append("]");
+	        return (sb.toString());
+
+	    }
     
 	
 }

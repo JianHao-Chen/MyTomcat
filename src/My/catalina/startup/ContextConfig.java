@@ -4,6 +4,9 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
+
+import javax.servlet.ServletContext;
 
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
@@ -211,6 +214,7 @@ public class ContextConfig implements LifecycleListener {
     	
     	// Process the default and application web.xml files
         defaultWebConfig();
+        applicationWebConfig();
     }
     
     
@@ -425,6 +429,80 @@ public class ContextConfig implements LifecycleListener {
     }
     
     
+    /**
+     * Process the application configuration file, if it exists.
+     */
+    protected void applicationWebConfig() {
+    	
+    	String altDDName = null;
+    	// Open the application web.xml file, if it exists
+        InputStream stream = null;
+        
+        ServletContext servletContext = context.getServletContext();
+        
+        if (servletContext != null) {
+        	
+        	stream = servletContext.getResourceAsStream
+            				(Constants.ApplicationWebXml);
+        }
+        
+        if (stream == null) {
+        	// log ...
+        	return;
+        }
+        
+        URL url=null;
+        
+        // Process the application web.xml file
+        
+        synchronized (webDigester) {
+        	
+        	try {
+        		url = servletContext.getResource(
+                        Constants.ApplicationWebXml);
+        		
+        		if( url!=null ) {
+        			InputSource is = new InputSource(url.toExternalForm());
+        			is.setByteStream(stream);
+        			
+        			webDigester.push(context);
+        			webDigester.setErrorHandler(new ContextErrorHandler());
+        			
+        			webDigester.parse(is);
+        			
+        			if (parseException != null) {
+                        ok = false;
+                    }
+        		}
+        		else {
+                    log.info("No web.xml, using defaults " + context );
+                }
+        		
+        	}
+        	catch (SAXParseException e) {
+        		// log ...
+        		ok = false;
+        	}
+        	catch (Exception e) {
+        		ok = false;
+        	}
+        	finally {
+        		webDigester.reset();
+                parseException = null;
+                try {
+                    if (stream != null) {
+                        stream.close();
+                    }
+                } catch (IOException e) {
+                    log.error("contextConfig.applicationClose");
+                }
+        	}
+        }
+        
+        
+    }
+    
+    
     
     /**
      * Process the default configuration file, if it exists.
@@ -464,7 +542,7 @@ public class ContextConfig implements LifecycleListener {
         
         if (stream != null) {
         	processDefaultWebConfig(webDigester, stream, source);
-          //  webRuleSet.recycle();
+            webRuleSet.recycle();
         }
         
     }

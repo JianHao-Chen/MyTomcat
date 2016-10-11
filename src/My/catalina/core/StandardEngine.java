@@ -181,4 +181,16 @@ public class StandardEngine extends ContainerBase implements Engine{
     	super.start();
     }
 
+    
+    /**
+     * Return a String representation of this component.
+     */
+    public String toString() {
+
+        StringBuffer sb = new StringBuffer("StandardEngine[");
+        sb.append(getName());
+        sb.append("]");
+        return (sb.toString());
+
+    }
 }

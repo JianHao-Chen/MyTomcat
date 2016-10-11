@@ -1,5 +1,8 @@
 package My.catalina.core;
 
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 
 import javax.servlet.ServletContext;
@@ -98,6 +101,18 @@ public class ApplicationContextFacade implements ServletContext {
        return context.getMimeType(file);
         
     }
+    
+    
+    public URL getResource(String path)
+    	throws MalformedURLException {
+    	
+    	return context.getResource(path);
+    }
 
+    
+    public InputStream getResourceAsStream(String path) {
+    	
+    	 return context.getResourceAsStream(path);
+    }
 	
 }

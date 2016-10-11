@@ -1,10 +1,19 @@
 package My.catalina.core;
 
 import java.io.File;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
 import javax.servlet.ServletContext;
+
+import My.catalina.util.RequestUtil;
+import My.naming.resources.DirContextURLStreamHandler;
+import My.naming.resources.Resource;
 
 
 /**
@@ -233,6 +242,105 @@ public class ApplicationContext implements ServletContext{
         if (extension.length() < 1)
             return (null);
         return (context.findMimeMapping(extension));
+    }
+    
+    
+    
+    /**
+     * Return the requested resource as an <code>InputStream</code>.  The
+     * path must be specified according to the rules described under
+     * <code>getResource</code>.  If no such resource can be identified,
+     * return <code>null</code>.
+     *
+     * @param path The path to the desired resource.
+     */
+    public InputStream getResourceAsStream(String path) {
+    	
+    	if (path == null)
+            return (null);
+    	
+    	if (!path.startsWith("/"))
+    		return null;
+    	
+    	DirContext resources = context.getResources();
+    	
+    	if (resources != null) {
+    		try {
+    			Object resource = resources.lookup(path);
+    			if (resource instanceof Resource)
+    				return (((Resource) resource).streamContent());
+    		}
+    		catch (NamingException e) {
+    			// Ignore
+    		}
+    		catch (Exception e) {
+    			// Unexpected
+    			// log ....
+    		}
+    	}
+    	
+    	return null;
+    }
+    
+    
+    /**
+     * Return the URL to the resource that is mapped to a specified path.
+     * The path must begin with a "/" and is interpreted as relative to the
+     * current context root.
+     *
+     * @param path The path to the desired resource
+     *
+     * @exception MalformedURLException if the path is not given
+     *  in the correct form
+     */
+    public URL getResource(String path)
+        throws MalformedURLException {
+    	
+    	if (path == null)
+            throw new MalformedURLException("applicationContext.requestDispatcher.iae");
+    	
+    	
+    	String libPath = "/WEB-INF/lib/";
+    	
+    	if ((path.startsWith(libPath)) && (path.endsWith(".jar"))) {
+    		//...
+    	}
+    	else {
+    		
+    		DirContext resources = context.getResources();
+    		if (resources != null) {
+    			String fullPath = context.getName() + path;
+                String hostName = context.getParent().getName();
+                try {
+                	 resources.lookup(path);
+                	 return new URL
+                     ("jndi", "", 0, getJNDIUri(hostName, fullPath),
+                      new DirContextURLStreamHandler(resources));
+                }
+                catch (NamingException e) {
+                    // Ignore
+                }
+                catch (Exception e) {
+                	// Unexpected
+                   
+                }
+                
+    		}
+    	}
+    	
+    	return null;
+    }
+    
+    
+    
+    /**
+     * Get full path, based on the host name and the context path.
+     */
+    private static String getJNDIUri(String hostName, String path) {
+        if (!path.startsWith("/"))
+            return "/" + hostName + "/" + path;
+        else
+            return "/" + hostName + path;
     }
     
 }

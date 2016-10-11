@@ -648,9 +648,9 @@ public class Digester extends DefaultHandler{
      * @param object The new object
      */
     public void pushParams(Object object) {
-        if (log.isTraceEnabled()) {
+        /*if (log.isTraceEnabled()) {
             log.trace("Pushing params");
-        }
+        }*/
         params.push(object);
 
     }
@@ -666,12 +666,12 @@ public class Digester extends DefaultHandler{
     public Object popParams() {
 
         try {
-            if (log.isTraceEnabled()) {
+            /*if (log.isTraceEnabled()) {
                 log.trace("Popping params");
-            }
+            }*/
             return (params.pop());
         } catch (EmptyStackException e) {
-            log.warn("Empty stack (returning null)");
+            /*log.warn("Empty stack (returning null)");*/
             return (null);
         }
 
@@ -1008,18 +1008,27 @@ public class Digester extends DefaultHandler{
     	throws SAXException {
     	
     	
-    	if(qName.equals("mime-mapping")){
-    		System.out.println("mime-mapping");
+    	if(qName.equals("servlet")){
+    		System.out.println("servlet");
     	}
     	
-    	if(qName.equals("extension")){
-    		System.out.println("extension");
+    	if(qName.equals("servlet-name")){
+    		System.out.println("servlet-name");
     	}
     	
-    	
-    	if(qName.equals("mime-type")){
-    		System.out.println("mime-type");
+    	if(qName.equals("servlet-class")){
+    		System.out.println("servlet-class");
     	}
+    	
+    	if(qName.equals("servlet-mapping")){
+    		System.out.println("servlet-mapping");
+    	}
+    	
+    	if(qName.equals("surl-pattern")){
+    		System.out.println("url-pattern");
+    	}
+    	
+
     	/*
     	if(qName.equals("Context")){
     		System.out.println("Context");
@@ -1111,7 +1120,7 @@ public class Digester extends DefaultHandler{
     	
     	
     	
-    	/*if(qName.equals("servlet")){
+    	if(qName.equals("servlet")){
     		System.out.println("servlet");
     	}
     	
@@ -1123,22 +1132,13 @@ public class Digester extends DefaultHandler{
     		System.out.println("servlet-class");
     	}
     	
-    	if(qName.equals("init-param")){
-    		System.out.println("init-param");
+    	if(qName.equals("servlet-mapping")){
+    		System.out.println("servlet-mapping");
     	}
     	
-    	
-    	if(qName.equals("param-name")){
-    		System.out.println("param-name");
+    	if(qName.equals("surl-pattern")){
+    		System.out.println("url-pattern");
     	}
-    	
-    	if(qName.equals("param-value")){
-    		System.out.println("param-value");
-    	}
-
-    	if(qName.equals("load-on-startup")){
-    		System.out.println("load-on-startup");
-    	}*/
     	
     	
     	// the actual element name is either in localName or qName, depending 
