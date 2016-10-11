@@ -2,8 +2,12 @@ package My.catalina.loader;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.security.CodeSource;
+import java.util.HashMap;
 import java.util.jar.JarFile;
 
 import javax.naming.NamingException;
@@ -13,6 +17,7 @@ import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
 import My.naming.resources.ProxyDirContext;
+import My.naming.resources.Resource;
 import My.naming.resources.ResourceAttributes;
 
 /**
@@ -95,6 +100,14 @@ public class WebappClassLoader
      * webapp.
      */
     protected DirContext resources = null;
+    
+    
+    /**
+     * The cache of ResourceEntry for classes and resources we have loaded,
+     * keyed by resource name.
+     */
+    protected HashMap resourceEntries = new HashMap();
+    
     
     
     /**
@@ -542,6 +555,167 @@ public class WebappClassLoader
     
     
     
+    /**
+     * Find the specified class in our local repositories, if possible.  If
+     * not found, throw <code>ClassNotFoundException</code>.
+     *
+     * @param name Name of the class to be loaded
+     *
+     * @exception ClassNotFoundException if the class was not found
+     */
+    public Class findClass(String name) throws ClassNotFoundException {
+    	
+    	if (log.isDebugEnabled())
+            log.debug("    findClass(" + name + ")");
+    	
+    	// Cannot load anything from local repositories if class loader is stopped
+        if (!started) {
+            throw new ClassNotFoundException(name);
+        }
+        
+        // Ask our superclass to locate this class, if possible
+        // (throws ClassNotFoundException if it is not found)
+        Class clazz = null;
+        try {
+        	
+        	try {
+        		clazz = findClassInternal(name);
+        	}
+        	catch(ClassNotFoundException cnfe) {
+        		
+        	}
+        	
+        	
+        	if (clazz == null) {
+        		if (log.isDebugEnabled())
+                    log.debug("    --> Returning ClassNotFoundException");
+                throw new ClassNotFoundException(name);
+        	}
+        }
+        catch (ClassNotFoundException e) {
+        	if (log.isTraceEnabled())
+                log.trace("    --> Passing on ClassNotFoundException");
+            throw e;
+        }
+        
+        
+        
+    	
+    }
+    
+    
+    /**
+     * Load the class with the specified name.  This method searches for
+     * classes in the same manner as <code>loadClass(String, boolean)</code>
+     * with <code>false</code> as the second argument.
+     *
+     * @param name Name of the class to be loaded
+     *
+     * @exception ClassNotFoundException if the class was not found
+     */
+    public Class loadClass(String name) throws ClassNotFoundException {
+
+        return (loadClass(name, false));
+
+    }
+    
+    
+    /**
+     * Load the class with the specified name, searching using the following
+     * algorithm until it finds and returns the class.  If the class cannot
+     * be found, returns <code>ClassNotFoundException</code>.
+     * <ul>
+     * <li>Call <code>findLoadedClass(String)</code> to check if the
+     *     class has already been loaded.  If it has, the same
+     *     <code>Class</code> object is returned.</li>
+     * <li>If the <code>delegate</code> property is set to <code>true</code>,
+     *     call the <code>loadClass()</code> method of the parent class
+     *     loader, if any.</li>
+     * <li>Call <code>findClass()</code> to find this class in our locally
+     *     defined repositories.</li>
+     * <li>Call the <code>loadClass()</code> method of our parent
+     *     class loader, if any.</li>
+     * </ul>
+     * If the class was found using the above steps, and the
+     * <code>resolve</code> flag is <code>true</code>, this method will then
+     * call <code>resolveClass(Class)</code> on the resulting Class object.
+     *
+     * @param name Name of the class to be loaded
+     * @param resolve If <code>true</code> then resolve the class
+     *
+     * @exception ClassNotFoundException if the class was not found
+     */
+    public synchronized Class loadClass(String name, boolean resolve)
+        throws ClassNotFoundException {
+    	
+    	Class clazz = null;
+    	
+    	if (!started) {
+    		try {
+                throw new IllegalStateException();
+            } catch (IllegalStateException e) {
+                log.info("webappClassLoader.stopped");
+            }
+    	}
+    	
+    	
+    	// (0) Check our previously loaded local class cache
+    	clazz = findLoadedClass0(name);
+    	if (clazz != null) {
+    		 if (log.isDebugEnabled())
+                 log.debug("  Returning class from cache");
+    		 
+    		 if (resolve)
+                 resolveClass(clazz);
+    		 
+    		 return (clazz);
+    	}
+    	
+    	
+    	// (0.1) Check our previously loaded class cache
+    	clazz = findLoadedClass(name);
+    	if (clazz != null) {
+    		if (log.isDebugEnabled())
+                log.debug("  Returning class from cache");
+    		 if (resolve)
+                 resolveClass(clazz);
+             return (clazz);
+    	}
+    	
+    	
+    	// (0.2) Try loading the class with the system class loader, to prevent
+        //       the webapp from overriding J2SE classes
+    	try {
+    		
+    		clazz = system.loadClass(name);
+    		if (clazz != null) {
+                if (resolve)
+                    resolveClass(clazz);
+                return (clazz);
+            }
+    	}catch (ClassNotFoundException e) {
+            // Ignore
+        }
+    	
+    	
+    	// (1) Delegate to our parent if requested
+    	 if (delegate) {
+    		 if (log.isDebugEnabled())
+                 log.debug("  Delegating to parent classloader1 " + parent);
+    		 
+    		 //...
+    	 }
+    	 
+    	// (2) Search local repositories
+    	 if (log.isDebugEnabled())
+             log.debug("  Searching local repositories");
+         try {
+        	 
+        	 clazz = findClass(name);
+         }
+    	
+    }
+    
     
     
     
@@ -576,6 +750,253 @@ public class WebappClassLoader
 
     }
     
+    
+    
+    
+    /**
+     * Finds the class with the given name if it has previously been
+     * loaded and cached by this class loader, and return the Class object.
+     * If this class has not been cached, return <code>null</code>.
+     *
+     * @param name Name of the resource to return
+     */
+    protected Class findLoadedClass0(String name) {
+    	
+    	ResourceEntry entry = (ResourceEntry) resourceEntries.get(name);
+    	
+    	if (entry != null) {
+            return entry.loadedClass;
+        }
+    	 return (null);
+    }
+    
+    
+    /**
+     * Validate a classname. As per SRV.9.7.2, we must restict loading of 
+     * classes from J2SE (java.*) and classes of the servlet API 
+     * (javax.servlet.*). That should enhance robustness and prevent a number
+     * of user error (where an older version of servlet.jar would be present
+     * in /WEB-INF/lib).
+     * 
+     * @param name class name
+     * @return true if the name is valid
+     */
+    protected boolean validate(String name) {
+
+        if (name == null)
+            return false;
+        if (name.startsWith("java."))
+            return false;
+
+        return true;
+
+    }
+    
+    /**
+     * Find specified class in local repositories.
+     *
+     * @return the loaded class, or null if the class isn't found
+     */
+    protected Class findClassInternal(String name)
+        throws ClassNotFoundException {
+    	
+    	 if (!validate(name))
+             throw new ClassNotFoundException(name);
+    	 
+    	 String tempPath = name.replace('.', '/');
+         String classPath = tempPath + ".class";
+         
+         ResourceEntry entry = null;
+         
+         entry = findResourceInternal(name, classPath);
+    	
+         if (entry == null)
+             throw new ClassNotFoundException(name);
+         
+         
+         Class clazz = entry.loadedClass;
+         
+         if (clazz != null)
+             return clazz;
+         
+         synchronized (this) {
+        	 clazz = entry.loadedClass;
+             if (clazz != null)
+                 return clazz;
+             
+             if (entry.binaryContent == null)
+                 throw new ClassNotFoundException(name);
+             
+             
+             // Looking up the package
+             // implements latter...
+             
+             try {
+            	 clazz = defineClass(name, entry.binaryContent, 0,
+                         entry.binaryContent.length, 
+                         new CodeSource(entry.codeBase, entry.certificates));
+            	 
+             }catch (UnsupportedClassVersionError ucve) {
+            	 
+             }
+             
+             entry.loadedClass = clazz;
+             entry.binaryContent = null;
+             entry.source = null;
+             entry.codeBase = null;
+             entry.manifest = null;
+             entry.certificates = null;
+             
+         }
+         return clazz;
+    }
+    
+    
+    
+    /**
+     * Find specified resource in local repositories.
+     *
+     * @return the loaded resource, or null if the resource isn't found
+     */
+    protected ResourceEntry findResourceInternal(String name, String path) {
+    	
+    	 if (!started) {
+             log.info("webappClassLoader.stopped");
+             return null;
+         }
+    	 
+    	 if ((name == null) || (path == null))
+             return null;
+    	 
+    	 ResourceEntry entry = (ResourceEntry) resourceEntries.get(name);
+         if (entry != null)
+             return entry;
+         
+         int contentLength = -1;
+         InputStream binaryStream = null;
+
+         int repositoriesLength = repositories.length;
+         
+         int i;
+
+         Resource resource = null;
+         
+         for (i = 0; (entry == null) && (i < repositoriesLength); i++) {
+        	 
+        	 try {
+        		 
+        		 String fullPath = repositories[i] + path;
+        		 
+        		 Object lookupResult = resources.lookup(fullPath);
+        		 
+        		 if (lookupResult instanceof Resource) {
+                     resource = (Resource) lookupResult;
+                 }
+        		 
+        		// Note : Not getting an exception here means the 
+        		// resource was found
+        		 entry = findResourceInternal(files[i], path);
+        		 
+        		 ResourceAttributes attributes =
+                     (ResourceAttributes) resources.getAttributes(fullPath);
+        		 
+        		 contentLength = (int) attributes.getContentLength();
+        		 entry.lastModified = attributes.getLastModified();
+        		 
+        		 if (resource != null) {
+        			 
+        		 
+        			 try {
+                         binaryStream = resource.streamContent();
+        			 }catch (IOException e) {
+                         return null;
+                     }
+        		 }
+        		 
+        	 }catch (NamingException e) {
+             }
+         }
+         
+         
+         if ((entry == null) )
+             return null;
+         
+         
+         
+         // Add the entry in the local resource repository
+         synchronized (resourceEntries) {
+        	 // Ensures that all the threads which may be in a race to load
+             // a particular class all end up with the same ResourceEntry
+             // instance
+        	 
+        	 ResourceEntry entry2 = (ResourceEntry) resourceEntries.get(name);
+             if (entry2 == null) {
+                 resourceEntries.put(name, entry);
+             } else {
+                 entry = entry2;
+             }
+         }
+         
+         return entry;
+    }
+    
+    
+    
+    /**
+     * Find specified resource in local repositories.
+     *
+     * @return the loaded resource, or null if the resource isn't found
+     */
+    protected ResourceEntry findResourceInternal(File file, String path){
+    	
+    	ResourceEntry entry = new ResourceEntry();
+    	 try {
+    		 entry.source = getURI(new File(file, path));
+    		 entry.codeBase = getURL(new File(file, path), false);
+    	 }catch (MalformedURLException e) {
+             return null;
+         }   
+         return entry;
+    	
+    }
+    
+    
+    /**
+     * Get URL.
+     */
+    protected URL getURI(File file)
+        throws MalformedURLException {
+
+
+        File realFile = file;
+        try {
+            realFile = realFile.getCanonicalFile();
+        } catch (IOException e) {
+            // Ignore
+        }
+        return realFile.toURI().toURL();
+
+    }
+    
+    /**
+     * Get URL.
+     */
+    protected URL getURL(File file, boolean encoded)
+        throws MalformedURLException {
+
+        File realFile = file;
+        try {
+            realFile = realFile.getCanonicalFile();
+        } catch (IOException e) {
+            // Ignore
+        }
+        if(encoded) {
+            return getURI(realFile);
+        } else {
+            return realFile.toURL();
+        }
+
+    }
     
 
 	@Override

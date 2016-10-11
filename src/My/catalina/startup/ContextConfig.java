@@ -215,6 +215,8 @@ public class ContextConfig implements LifecycleListener {
     	// Process the default and application web.xml files
         defaultWebConfig();
         applicationWebConfig();
+        
+        applicationAnnotationsConfig();
     }
     
     
@@ -310,6 +312,17 @@ public class ContextConfig implements LifecycleListener {
 
         this.defaultContextXml = path;
 
+    }
+    
+    
+    
+    /**
+     * Process the application classes annotations, if it exists.
+     */
+    protected void applicationAnnotationsConfig() {
+    	
+    	WebAnnotationSet.loadApplicationAnnotations(context);
+    	
     }
     
     
