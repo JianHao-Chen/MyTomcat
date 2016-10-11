@@ -226,8 +226,11 @@ public class Http11NioProtocol implements ProtocolHandler{
 					
 				}
 				else {
-					
+					// Connection closed. OK to recycle the processor.
+					release(socket, processor);
 				}
+				
+				return state;
 				
 			}catch (java.net.SocketException e) {
 				
@@ -261,6 +264,26 @@ public class Http11NioProtocol implements ProtocolHandler{
 		
 		
 		
+		/**
+         * Use this only if the processor is not available, otherwise use
+         * {@link #release(NioChannel, Http11NioProcessor).
+         */
+        public void release(NioChannel socket) {
+        	Http11NioProcessor result = connections.remove(socket);
+            if ( result != null ) {
+                result.recycle();
+                recycledProcessors.offer(result);
+            }
+        }
+		
+		
+		public void release(NioChannel socket, Http11NioProcessor processor) {
+			connections.remove(socket);
+            processor.recycle();
+            recycledProcessors.offer(processor);
+		}
+		
+		
 		
 		@Override
 		public SocketState event(NioChannel socket, SocketStatus status) {
@@ -272,11 +295,7 @@ public class Http11NioProtocol implements ProtocolHandler{
 			// TODO Auto-generated method stub
 			
 		}
-		@Override
-		public void release(NioChannel socket) {
-			// TODO Auto-generated method stub
-			
-		}
+		
 		 
 		 
 	 }

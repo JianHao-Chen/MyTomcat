@@ -522,17 +522,15 @@ public class Http11NioProcessor implements ActionHook{
     
     
     public void recycle() {
-        /*inputBuffer.recycle();
+        inputBuffer.recycle();
         outputBuffer.recycle();
         this.socket = null;
-        this.cometClose = false;
-        this.comet = false;
         remoteAddr = null;
         remoteHost = null;
         localAddr = null;
         localName = null;
         remotePort = -1;
-        localPort = -1;*/
+        localPort = -1;
     }
     
     

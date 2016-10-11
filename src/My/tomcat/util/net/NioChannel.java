@@ -129,6 +129,13 @@ public class NioChannel implements ByteChannel{
 		sc.socket().close();
 		sc.close();
 	}
+	
+	
+	public void close(boolean force) throws IOException {
+        if (isOpen() || force ) 
+        	close();
+    }
+	
 
 	/**
      * Writes a sequence of bytes to this channel from the given buffer.

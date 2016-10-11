@@ -618,7 +618,30 @@ public class NioEndpoint {
 					
 				}
 			}else{
+				final SelectionKey key = socket.getIOChannel().keyFor(
+											socket.getPoller().getSelector());
 				
+				try {
+					boolean cancel = false;
+					if (key != null) {
+						final KeyAttachment att = (KeyAttachment) key.attachment();
+						if ( att!=null ) {
+							att.access();//to prevent timeout
+							int ops = key.interestOps() | interestOps;
+                            att.interestOps(ops);
+                            key.interestOps(ops);
+						}
+					}
+					else {
+                        cancel = true;
+                    }
+					
+					if ( cancel )
+						socket.getPoller().cancelledKey(key,SocketStatus.ERROR,false);
+				}
+				catch (CancelledKeyException ckx) {
+					
+				}
 			}
 			
 		}
@@ -751,6 +774,45 @@ public class NioEndpoint {
     	}
     	
     	
+    	 public void cancelledKey(SelectionKey key, SocketStatus status, boolean dispatch) {
+    		 
+    		 try {
+    			 if ( key == null ) 
+    				 return;//nothing to do
+    			 
+    			 KeyAttachment ka = (KeyAttachment) key.attachment();
+    			 // handle comet event here , implements latter.
+    			 
+    			 
+    			 key.attach(null);
+    			 if (ka!=null) 
+    				 handler.release(ka.getChannel());
+    			 
+    			 if (key.isValid()) 
+    				 key.cancel();
+    			 
+    			 if (key.channel().isOpen()){ 
+    				try {
+    					 key.channel().close();
+    				}
+    			 	catch (Exception ignore){}
+    			 }
+    			 	
+    			 try {
+    			 	if (ka!=null) 
+    			 		ka.channel.close(true);
+    			 }
+    			 catch (Exception ignore){}
+    			 
+    			 if (ka!=null) 
+    				 ka.reset();
+    			 
+    		 }catch (Throwable e) {
+    			// Ignore
+    		 }
+    	 }
+    	
+    	
     	
     	protected void unreg(SelectionKey sk, KeyAttachment attachment, int readyOps) {
             //must do this unreg, so that we don't have multiple threads messing with the socket
@@ -869,6 +931,10 @@ public class NioEndpoint {
         public void access(long access) { lastAccess = access; }
         
         
+        public void reset() {
+            reset(null,null,-1);
+        }
+        
         public void reset(Poller poller, NioChannel channel, long soTimeout) {
     		 this.channel = channel;
              this.poller = poller;
@@ -917,10 +983,48 @@ public class NioEndpoint {
         			
         			if (closed) {
         				// Close socket and pool
-        				
+        				try {
+        					KeyAttachment ka = null;
+                            if (key!=null) {
+                            	ka = (KeyAttachment) key.attachment();
+                            	
+                            	socket.getPoller().
+                            		cancelledKey(key, SocketStatus.ERROR, false);
+                            }
+                            
+                            if (socket!=null) 
+                            	nioChannels.offer(socket);
+                            
+                            socket = null;
+                            
+                            if ( ka!=null ) 
+                            	keyCache.offer(ka);
+                            
+                            ka = null;
+        				}
+        				catch ( Exception x ) {
+        					
+        				}
         			}
         		}catch(CancelledKeyException cx) {
         			
+        		}
+        		
+        		catch (OutOfMemoryError oom) {
+        			
+        		}
+        		
+        		catch ( Throwable t ) {
+        			
+        		}
+        		
+        		finally {
+        			socket = null;
+                    status = null;
+                    
+                    //return to cache
+                    processorCache.offer(this);
+                    NioEndpoint.this.activeSocketProcessors.addAndGet(-1);
         		}
         		
         	}

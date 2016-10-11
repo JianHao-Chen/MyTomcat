@@ -233,6 +233,27 @@ public class InternalNioOutputBuffer implements OutputBuffer{
 	// -------------------- Public Methods --------------------
   
     /**
+     * Recycle the output buffer. This should be called when closing the 
+     * connection.
+     */
+    public void recycle() {
+    	
+    	// Recycle Request object
+        response.recycle();
+        
+        if (socket != null) {
+            socket.getBufHandler().getWriteBuffer().clear();
+            socket = null;
+        }
+        
+        pos = 0;
+        finished = false;
+        lastWrite.set(1);
+        
+    }
+    
+    
+    /**
      * End processing of current HTTP request.
      * Note: All bytes of the current request should have been already 
      * consumed. This method only resets all the pointers so that we are ready

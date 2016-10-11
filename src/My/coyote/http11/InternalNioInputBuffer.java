@@ -303,6 +303,30 @@ public class InternalNioInputBuffer implements InputBuffer{
 	// ---------------------- Public Methods ----------------------
     
     /**
+     * Recycle the input buffer. This should be called when closing the 
+     * connection.
+     */
+    public void recycle() {
+    	
+    	// Recycle Request object
+        request.recycle();
+        
+        socket = null;
+        lastValid = 0;
+        pos = 0;
+        
+        parsingHeader = true;
+        headerParsePos = HeaderParsePosition.HEADER_START;
+        parsingRequestLine = true;
+        parsingRequestLinePhase = 0;
+        parsingRequestLineEol = false;
+        parsingRequestLineStart = 0;
+        parsingRequestLineQPos = -1;
+        headerData.recycle();
+    }
+    
+    
+    /**
      * End processing of current HTTP request.
      * Note: All bytes of the current request should have been already 
      * consumed. This method only resets all the pointers so that we are ready
