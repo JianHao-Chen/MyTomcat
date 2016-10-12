@@ -46,6 +46,12 @@ public class WebAnnotationSet {
         		}catch (NoClassDefFoundError e) {
         			// We do nothing
         		}
+        		
+        		if (classClass == null) {
+                    continue;
+                }
+        		
+        		
         	}
         	
         }

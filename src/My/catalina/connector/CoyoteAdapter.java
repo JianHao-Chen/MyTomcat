@@ -103,6 +103,7 @@ public class CoyoteAdapter implements Adapter{
 		}
 		catch (Throwable t) {
 			
+			t.printStackTrace();
 		}
 		finally {
 			

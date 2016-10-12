@@ -109,6 +109,11 @@ public class WebappClassLoader
     protected HashMap resourceEntries = new HashMap();
     
     
+    /**
+     * The list of not found resources.
+     */
+    protected HashMap<String, String> notFoundResources = new HashMap<String, String>();
+    
     
     /**
      * Should this class loader delegate to the parent class loader
@@ -599,7 +604,7 @@ public class WebappClassLoader
         }
         
         
-        
+        return (clazz);
     	
     }
     
@@ -618,107 +623,6 @@ public class WebappClassLoader
         return (loadClass(name, false));
 
     }
-    
-    
-    /**
-     * Load the class with the specified name, searching using the following
-     * algorithm until it finds and returns the class.  If the class cannot
-     * be found, returns <code>ClassNotFoundException</code>.
-     * <ul>
-     * <li>Call <code>findLoadedClass(String)</code> to check if the
-     *     class has already been loaded.  If it has, the same
-     *     <code>Class</code> object is returned.</li>
-     * <li>If the <code>delegate</code> property is set to <code>true</code>,
-     *     call the <code>loadClass()</code> method of the parent class
-     *     loader, if any.</li>
-     * <li>Call <code>findClass()</code> to find this class in our locally
-     *     defined repositories.</li>
-     * <li>Call the <code>loadClass()</code> method of our parent
-     *     class loader, if any.</li>
-     * </ul>
-     * If the class was found using the above steps, and the
-     * <code>resolve</code> flag is <code>true</code>, this method will then
-     * call <code>resolveClass(Class)</code> on the resulting Class object.
-     *
-     * @param name Name of the class to be loaded
-     * @param resolve If <code>true</code> then resolve the class
-     *
-     * @exception ClassNotFoundException if the class was not found
-     */
-    public synchronized Class loadClass(String name, boolean resolve)
-        throws ClassNotFoundException {
-    	
-    	Class clazz = null;
-    	
-    	if (!started) {
-    		try {
-                throw new IllegalStateException();
-            } catch (IllegalStateException e) {
-                log.info("webappClassLoader.stopped");
-            }
-    	}
-    	
-    	
-    	// (0) Check our previously loaded local class cache
-    	clazz = findLoadedClass0(name);
-    	if (clazz != null) {
-    		 if (log.isDebugEnabled())
-                 log.debug("  Returning class from cache");
-    		 
-    		 if (resolve)
-                 resolveClass(clazz);
-    		 
-    		 return (clazz);
-    	}
-    	
-    	
-    	// (0.1) Check our previously loaded class cache
-    	clazz = findLoadedClass(name);
-    	if (clazz != null) {
-    		if (log.isDebugEnabled())
-                log.debug("  Returning class from cache");
-    		 if (resolve)
-                 resolveClass(clazz);
-             return (clazz);
-    	}
-    	
-    	
-    	// (0.2) Try loading the class with the system class loader, to prevent
-        //       the webapp from overriding J2SE classes
-    	try {
-    		
-    		clazz = system.loadClass(name);
-    		if (clazz != null) {
-                if (resolve)
-                    resolveClass(clazz);
-                return (clazz);
-            }
-    	}catch (ClassNotFoundException e) {
-            // Ignore
-        }
-    	
-    	
-    	// (1) Delegate to our parent if requested
-    	 if (delegate) {
-    		 if (log.isDebugEnabled())
-                 log.debug("  Delegating to parent classloader1 " + parent);
-    		 
-    		 //...
-    	 }
-    	 
-    	// (2) Search local repositories
-    	 if (log.isDebugEnabled())
-             log.debug("  Searching local repositories");
-         try {
-        	 
-        	 clazz = findClass(name);
-         }
-    	
-    }
-    
-    
-    
-    
     
     
     /**
@@ -754,6 +658,114 @@ public class WebappClassLoader
     
     
     /**
+	 * Load the class with the specified name, searching using the following
+	 * algorithm until it finds and returns the class.  If the class cannot
+	 * be found, returns <code>ClassNotFoundException</code>.
+	 * <ul>
+	 * <li>Call <code>findLoadedClass(String)</code> to check if the
+	 *     class has already been loaded.  If it has, the same
+	 *     <code>Class</code> object is returned.</li>
+	 * <li>If the <code>delegate</code> property is set to <code>true</code>,
+	 *     call the <code>loadClass()</code> method of the parent class
+	 *     loader, if any.</li>
+	 * <li>Call <code>findClass()</code> to find this class in our locally
+	 *     defined repositories.</li>
+	 * <li>Call the <code>loadClass()</code> method of our parent
+	 *     class loader, if any.</li>
+	 * </ul>
+	 * If the class was found using the above steps, and the
+	 * <code>resolve</code> flag is <code>true</code>, this method will then
+	 * call <code>resolveClass(Class)</code> on the resulting Class object.
+	 *
+	 * @param name Name of the class to be loaded
+	 * @param resolve If <code>true</code> then resolve the class
+	 *
+	 * @exception ClassNotFoundException if the class was not found
+	 */
+	public synchronized Class loadClass(String name, boolean resolve)
+	    throws ClassNotFoundException {
+		
+		Class clazz = null;
+		
+		if (!started) {
+			try {
+	            throw new IllegalStateException();
+	        } catch (IllegalStateException e) {
+	            log.info("webappClassLoader.stopped");
+	        }
+		}
+		
+		
+		// (0) Check our previously loaded local class cache
+		clazz = findLoadedClass0(name);
+		if (clazz != null) {
+			 if (log.isDebugEnabled())
+	             log.debug("  Returning class from cache");
+			 
+			 if (resolve)
+	             resolveClass(clazz);
+			 
+			 return (clazz);
+		}
+		
+		
+		// (0.1) Check our previously loaded class cache
+		clazz = findLoadedClass(name);
+		if (clazz != null) {
+			if (log.isDebugEnabled())
+	            log.debug("  Returning class from cache");
+			 if (resolve)
+	             resolveClass(clazz);
+	         return (clazz);
+		}
+		
+		
+		// (0.2) Try loading the class with the system class loader, to prevent
+	    //       the webapp from overriding J2SE classes
+		try {
+			
+			clazz = system.loadClass(name);
+			if (clazz != null) {
+	            if (resolve)
+	                resolveClass(clazz);
+	            return (clazz);
+	        }
+		}catch (ClassNotFoundException e) {
+	        // Ignore
+	    }
+		
+		
+		// (1) Delegate to our parent if requested
+		 if (delegate) {
+			 if (log.isDebugEnabled())
+	             log.debug("  Delegating to parent classloader1 " + parent);
+			 
+			 //...
+		 }
+		 
+		// (2) Search local repositories
+		 if (log.isDebugEnabled())
+	         log.debug("  Searching local repositories");
+	     try {
+	    	 
+	    	 clazz = findClass(name);
+	    	 
+	    	 if (clazz != null) {
+	             if (log.isDebugEnabled())
+	                 log.debug("  Loading class from local repository");
+	             if (resolve)
+	                 resolveClass(clazz);
+	             return (clazz);
+	    	 }
+	     }
+	     catch (ClassNotFoundException e) {
+	         ;
+	     }
+		
+	     throw new ClassNotFoundException(name);
+	}
+
+	/**
      * Finds the class with the given name if it has previously been
      * loaded and cached by this class loader, and return the Class object.
      * If this class has not been cached, return <code>null</code>.
@@ -923,6 +935,54 @@ public class WebappClassLoader
          
          
          
+         try{
+        	 
+        	 
+        	 //handle jar latter.
+        	 // for (i = 0; (entry == null) && (i < jarFilesLength); i++)
+        	 
+        	 
+        	 
+        	 if (entry == null) {
+            	 synchronized (notFoundResources) {
+                     notFoundResources.put(name, name);
+                 }
+                 return null;
+             }
+        	 
+        	 
+        	 
+        	 if (binaryStream != null) {
+            	 
+            	 byte[] binaryContent = new byte[contentLength];
+            	 
+            	 int pos = 0;
+                 try {
+                	 while (true) {
+                		 int n = binaryStream.read(binaryContent, pos,
+                                 binaryContent.length - pos);
+                		 if (n <= 0)
+                             break;
+                		 pos += n;
+                	 }
+                 }catch (IOException e) {
+                     log.error("webappClassLoader.readError");
+                     return null;
+                 }
+                 
+                 
+                 entry.binaryContent = binaryContent;
+             }
+        	 
+         }finally{
+        	 if (binaryStream != null) {
+        		 try {
+                     binaryStream.close();
+                 } catch (IOException e) { /* Ignore */}
+        	 }
+         }
+         
+
          // Add the entry in the local resource repository
          synchronized (resourceEntries) {
         	 // Ensures that all the threads which may be in a race to load
@@ -998,6 +1058,19 @@ public class WebappClassLoader
 
     }
     
+    
+    /**
+     * Start the class loader.
+     */
+	
+	public void start() throws LifecycleException {
+		started = true;
+        String encoding = null;
+
+	}
+    
+    
+    
 
 	@Override
 	public void addLifecycleListener(LifecycleListener listener) {
@@ -1017,11 +1090,7 @@ public class WebappClassLoader
 		
 	}
 
-	@Override
-	public void start() throws LifecycleException {
-		// TODO Auto-generated method stub
-		
-	}
+	
 
 	@Override
 	public void stop() throws LifecycleException {

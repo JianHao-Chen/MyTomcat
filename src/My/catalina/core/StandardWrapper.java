@@ -443,6 +443,12 @@ public class StandardWrapper extends ContainerBase
             }
             
             
+            if (classClass == null) {
+            	unavailable(null);
+            	throw new ServletException("standardWrapper.missingClass");
+            }
+            
+            
             // Instantiate and initialize an instance of the servlet class itself
             try {
             	servlet = (Servlet) classClass.newInstance();
@@ -453,7 +459,7 @@ public class StandardWrapper extends ContainerBase
                 throw new ServletException("standardWrapper.notServlet");
             }
             catch (Throwable e) {
-            	
+            	unavailable(null);
             }
             
             
@@ -463,9 +469,15 @@ public class StandardWrapper extends ContainerBase
             	throw new SecurityException("standardWrapper.privilegedServlet");
             }
             
+            
+            
             // Call the initialization method of this servlet
             try {
             	servlet.init(facade);
+            	
+            	
+            	
+            	
             }catch (UnavailableException f) {
             	
             }catch (ServletException f) {
@@ -515,7 +527,8 @@ public class StandardWrapper extends ContainerBase
         			if (instance == null) {
         				try {
         					instance = loadServlet();
-        					
+        					// For non-STM, increment here to prevent a race
+                            // condition with unload. Bug 43683, test case #3
         					if (!singleThreadModel) {
                                 newInstance = true;
                                 countAllocated.incrementAndGet();

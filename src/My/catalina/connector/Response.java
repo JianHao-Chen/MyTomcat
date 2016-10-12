@@ -416,7 +416,17 @@ public class Response implements HttpServletResponse{
     public PrintWriter getWriter() 
         throws IOException {
     	
-    	return null;
+    	if (usingOutputStream)
+            throw new IllegalStateException("coyoteResponse.getWriter.ise");
+    	
+    	usingWriter = true;
+    	
+    	outputBuffer.checkConverter();
+    	
+    	if (writer == null) {
+            writer = new CoyoteWriter(outputBuffer);
+        }
+        return writer;
     }
     
     

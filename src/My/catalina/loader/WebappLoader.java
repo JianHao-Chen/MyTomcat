@@ -310,6 +310,10 @@ public class WebappLoader implements Lifecycle, Loader{
 			setRepositories();
 			//setClassPath();
 			
+			
+			if (classLoader instanceof Lifecycle)
+                ((Lifecycle) classLoader).start();
+			
 		}catch (Throwable t) {
 			
 		}
@@ -417,7 +421,7 @@ public class WebappLoader implements Lifecycle, Loader{
         
         // Setting up the JAR repository (/WEB-INF/lib), if it exists
         
-        String libPath = "/WEB-INF/lib";
+       /* String libPath = "/WEB-INF/lib";
         
         DirContext libDir = null;
         // Looking up directory /WEB-INF/lib in the context
@@ -494,15 +498,15 @@ public class WebappLoader implements Lifecycle, Loader{
                 try {
                 	// currently, don't add jar files.
                 	
-                	/*JarFile jarFile = new JarFile(destFile);
-                	classLoader.addJar(filename, jarFile, destFile);*/
+                	JarFile jarFile = new JarFile(destFile);
+                	classLoader.addJar(filename, jarFile, destFile);
                 }
                 catch (Exception ex) {
                 	
                 }
         	}
         	
-        }
+        }*/
         
         
         

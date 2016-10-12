@@ -1,6 +1,7 @@
 package My.catalina.connector;
 
 import java.util.Enumeration;
+import java.util.Locale;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -95,5 +96,16 @@ public class RequestFacade implements HttpServletRequest{
         return request.getDateHeader(name);
     }
     
+    
+    
+    public Locale getLocale() {
+    	
+    	 if (request == null) {
+             throw new IllegalStateException("requestFacade.nullRequest");
+         }
+    	 
+    	 return request.getLocale();
+    	
+    }
 	
 }

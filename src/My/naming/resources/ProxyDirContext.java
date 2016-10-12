@@ -9,6 +9,7 @@ import javax.naming.Binding;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NameClassPair;
+import javax.naming.NameNotFoundException;
 import javax.naming.NameParser;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
@@ -129,6 +130,13 @@ public class ProxyDirContext implements DirContext {
      */
     protected String[] nonCacheable = { "/WEB-INF/lib/", "/WEB-INF/classes/" };
 
+    /**
+     * Immutable name not found exception.
+     */
+    protected NameNotFoundException notFoundException =
+        new ImmutableNameNotFoundException();
+    
+    
     
 	// ------------------- Public Methods -------------------
     
@@ -203,7 +211,19 @@ public class ProxyDirContext implements DirContext {
             }
     		
     	}
-    	return null;
+    	
+    	Object object = dirContext.lookup(name);
+    	
+    	if (object instanceof InputStream) {
+            return new Resource((InputStream) object);
+        } else if (object instanceof DirContext) {
+            return object;
+        } else if (object instanceof Resource) {
+            return object;
+        } else {
+            return new Resource(new ByteArrayInputStream
+                (object.toString().getBytes()));
+        }
     }
     
     
@@ -522,11 +542,32 @@ public class ProxyDirContext implements DirContext {
 		// TODO Auto-generated method stub
 		return null;
 	}
-	@Override
+	
+	
+	
+	/**
+     * Retrieves all of the attributes associated with a named object.
+     */
+	
 	public Attributes getAttributes(String name) throws NamingException {
-		// TODO Auto-generated method stub
-		return null;
+		CacheEntry entry = cacheLookup(name);
+		
+		if (entry != null) {
+			if (!entry.exists) {
+                throw notFoundException;
+            }
+            return entry.attributes;
+		}
+		
+		Attributes attributes = dirContext.getAttributes(name);
+		if (!(attributes instanceof ResourceAttributes)) {
+            attributes = new ResourceAttributes(attributes);
+        }
+        return attributes;
 	}
+	
+	
+	
 	@Override
 	public Attributes getAttributes(Name name, String[] attrIds)
 			throws NamingException {

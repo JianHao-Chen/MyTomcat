@@ -355,6 +355,30 @@ public final class Response {
     }
     
     
+    /*
+     * Overrides the name of the character encoding used in the body
+     * of the response. This method must be called prior to writing output
+     * using getWriter().
+     *
+     * @param charset String containing the name of the chararacter encoding.
+     */
+    public void setCharacterEncoding(String charset) {
+
+        if (isCommitted())
+            return;
+        if (charset == null)
+            return;
+
+        characterEncoding = charset;
+        charsetSet=true;
+    }
+
+    public String getCharacterEncoding() {
+        return characterEncoding;
+    }
+    
+    
+    
     /** 
      * Write a chunk of bytes.
      */

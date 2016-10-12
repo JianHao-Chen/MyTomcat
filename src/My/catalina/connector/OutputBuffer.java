@@ -2,7 +2,10 @@ package My.catalina.connector;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.util.HashMap;
+
 import My.tomcat.util.buf.ByteChunk;
+import My.tomcat.util.buf.C2BConverter;
 
 public class OutputBuffer extends Writer
 	implements ByteChunk.ByteOutputChannel{
@@ -72,6 +75,31 @@ public class OutputBuffer extends Writer
      * Do a flush on the next operation.
      */
     private boolean doFlush = false;
+    
+    
+    
+    /**
+     * Encoding to use.
+     */
+    private String enc;
+    
+    
+    /**
+     * Encoder is set.
+     */
+    private boolean gotEnc = false;
+    
+    
+    /**
+     * List of encoders.
+     */
+    protected HashMap encoders = new HashMap();
+    
+    
+    /**
+     * Current char to byte converter.
+     */
+    protected C2BConverter conv;
     
     
     /**
@@ -240,9 +268,14 @@ public class OutputBuffer extends Writer
         
 	}
 
-	@Override
+
 	public void write(char[] cbuf, int off, int len) throws IOException {
-		
+		if (suspended)
+            return;
+
+        conv.convert(cbuf, off, len);
+        conv.flushBuffer();
+        charsWritten += len;
 	}
 	
 	
@@ -271,6 +304,52 @@ public class OutputBuffer extends Writer
         	 bb.flushBuffer();
         }
 	}
+	
+	
+	 /**
+     * Append a string to the buffer
+     */
+    public void write(String s, int off, int len)
+        throws IOException {
+
+        if (suspended)
+            return;
+
+        charsWritten += len;
+        if (s == null)
+            s = "null";
+        conv.convert(s, off, len);
+        conv.flushBuffer();
+
+    }
+    
+    
+    public void checkConverter() 
+    throws IOException {
+
+    if (!gotEnc)
+        setConverter();
+
+    }
+    
+    
+    protected void setConverter() 
+    throws IOException {
+    	
+    	if (coyoteResponse != null)
+            enc = coyoteResponse.getCharacterEncoding();
+    	
+    	gotEnc = true;
+    	
+    	conv = (C2BConverter) encoders.get(enc);
+    	if (conv == null) {
+    		
+    		conv = new C2BConverter(bb, enc);
+    	}
+    	
+    	encoders.put(enc, conv);
+    	
+    }
 	
 
 	@Override

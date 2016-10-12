@@ -1,6 +1,8 @@
 package My.catalina.connector;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -80,6 +82,18 @@ public class Request implements HttpServletRequest{
     public String getHeader(String name) {
         return coyoteRequest.getHeader(name);
     }
+    
+    
+    /**
+     * Return all of the values of the specified header, if any; otherwise,
+     * return an empty enumeration.
+     *
+     * @param name Name of the requested header
+     */
+    public Enumeration getHeaders(String name) {
+        return coyoteRequest.getMimeHeaders().values(name);
+    }
+    
     
     /**
      * Return the value of the specified date header, if any; otherwise
@@ -183,14 +197,6 @@ public class Request implements HttpServletRequest{
     protected Context context = null;
 
     /**
-     * Return the Context within which this Request is being processed.
-     */
-    public Context getContext() {
-        return (this.context);
-    }
-
-
-    /**
      * Set the Context within which this Request is being processed.  This
      * must be called as soon as the appropriate Context is identified, because
      * it identifies the value to be returned by <code>getContextPath()</code>,
@@ -230,6 +236,13 @@ public class Request implements HttpServletRequest{
     
     
     /**
+	 * Return the Context within which this Request is being processed.
+	 */
+	public Context getContext() {
+	    return (this.context);
+	}
+
+	/**
      * Get the request path.
      * 
      * @return the request path
@@ -423,6 +436,59 @@ public class Request implements HttpServletRequest{
         return (facade);
     }
     
+    
+    
+    
+    /**
+     * Parse locales.
+     */
+    protected boolean localesParsed = false;
+    
+    /**
+     * The preferred Locales assocaited with this Request.
+     */
+    protected ArrayList locales = new ArrayList();
+    
+    /**
+     * The default Locale if none are specified.
+     */
+    protected static Locale defaultLocale = Locale.getDefault();
+    
+    
+    /**
+     * Return the preferred Locale that the client will accept content in,
+     * based on the value for the first <code>Accept-Language</code> header
+     * that was encountered.  If the request did not specify a preferred
+     * language, the server's default Locale is returned.
+     */
+    public Locale getLocale() {
+    	
+    	 if (!localesParsed)
+             parseLocales();
+    	 
+    	 if (locales.size() > 0) {
+             return ((Locale) locales.get(0));
+         } else {
+             return (defaultLocale);
+         }
+    }
+    
+    
+    /**
+     * Parse request locales.
+     */
+    protected void parseLocales() {
+
+        localesParsed = true;
+
+        Enumeration values = getHeaders("accept-language");
+
+        while (values.hasMoreElements()) {
+            String value = values.nextElement().toString();
+          //  parseLocalesHeader(value);
+        }
+
+    }
     
     
     
