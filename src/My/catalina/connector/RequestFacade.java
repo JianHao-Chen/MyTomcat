@@ -3,6 +3,7 @@ package My.catalina.connector;
 import java.util.Enumeration;
 import java.util.Locale;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -106,6 +107,20 @@ public class RequestFacade implements HttpServletRequest{
     	 
     	 return request.getLocale();
     	
+    }
+    
+    
+    public Cookie[] getCookies() {
+    	
+    	if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+
+        Cookie[] ret = null;
+        
+        ret = request.getCookies();
+        
+        return ret;
     }
 	
 }
