@@ -47,6 +47,35 @@ public interface HttpServletResponse extends ServletResponse{
    
    
    
+   /**
+    * Sends an error response to the client using the specified
+    * status.  The server defaults to creating the
+    * response to look like an HTML-formatted server error page
+    * containing the specified message, setting the content type
+    * to "text/html", leaving cookies and other headers unmodified.
+    *
+    * If an error-page declaration has been made for the web application
+    * corresponding to the status code passed in, it will be served back in 
+    * preference to the suggested msg parameter. 
+    *
+    * <p>If the response has already been committed, this method throws 
+    * an IllegalStateException.
+    * After using this method, the response should be considered
+    * to be committed and should not be written to.
+    *
+    * @param	sc	the error status code
+    * @param	msg	the descriptive message
+    * @exception	IOException	If an input or output exception occurs
+    * @exception	IllegalStateException	If the response was committed
+    */
+  
+   public void sendError(int sc, String msg) throws IOException;
+   
+   
+   
+   
+   
+   
    
    /**
     * Sends an error response to the client using the specified status
@@ -64,6 +93,18 @@ public interface HttpServletResponse extends ServletResponse{
 
    public void sendError(int sc) throws IOException;
     
+   
+   
+   
+   /**
+    * Adds the specified cookie to the response.  This method can be called
+    * multiple times to set more than one cookie.
+    *
+    * @param cookie the Cookie to return to the client
+    *
+    */
+
+   public void addCookie(Cookie cookie);
     
 	
 	 /*

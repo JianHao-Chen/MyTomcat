@@ -110,6 +110,16 @@ public class Connector implements Lifecycle
     protected ProtocolHandler protocolHandler = null;
     
     
+    
+    /**
+     * Maximum size of a POST which will be automatically parsed by the
+     * container. 2MB by default.
+     */
+    protected int maxPostSize = 2 * 1024 * 1024;
+    
+    
+    
+    
     /**
      * Coyote Protocol handler class name.
      * Defaults to the Coyote HTTP/1.1 protocolHandler.
@@ -312,6 +322,32 @@ public class Connector implements Lifecycle
 
         this.protocolHandlerClassName = protocolHandlerClassName;
 
+    }
+    
+    
+    
+    
+    /**
+     * Return the maximum size of a POST which will be automatically
+     * parsed by the container.
+     */
+    public int getMaxPostSize() {
+
+        return (maxPostSize);
+
+    }
+
+
+    /**
+     * Set the maximum size of a POST which will be automatically
+     * parsed by the container.
+     *
+     * @param maxPostSize The new maximum size in bytes of a POST which will
+     * be automatically parsed by the container
+     */
+    public void setMaxPostSize(int maxPostSize) {
+
+        this.maxPostSize = maxPostSize;
     }
     
     

@@ -5,6 +5,7 @@ import java.util.Locale;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 /**
  * Facade class that wraps a Coyote request object.  
@@ -121,6 +122,38 @@ public class RequestFacade implements HttpServletRequest{
         ret = request.getCookies();
         
         return ret;
+    }
+    
+    
+    public String getParameter(String name) {
+    	if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+    	
+    	return request.getParameter(name);
+    }
+    
+    
+    
+    public String getProtocol() {
+    	
+    	if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+    	
+    	return request.getProtocol();
+    }
+    
+    
+    
+    public HttpSession getSession(boolean create) {
+    	
+    	if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+    	
+    	return request.getSession(create);
+    	
     }
 	
 }

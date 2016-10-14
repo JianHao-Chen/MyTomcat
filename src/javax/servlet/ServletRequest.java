@@ -48,4 +48,52 @@ public interface ServletRequest {
    */
 
   public Locale getLocale();
+  
+  
+  
+  /**
+   * Returns the value of a request parameter as a <code>String</code>,
+   * or <code>null</code> if the parameter does not exist. Request parameters
+   * are extra information sent with the request.  For HTTP servlets,
+   * parameters are contained in the query string or posted form data.
+   *
+   * <p>You should only use this method when you are sure the
+   * parameter has only one value. If the parameter might have
+   * more than one value, use {@link #getParameterValues}.
+   *
+   * <p>If you use this method with a multivalued
+   * parameter, the value returned is equal to the first value
+   * in the array returned by <code>getParameterValues</code>.
+   *
+   * <p>If the parameter data was sent in the request body, such as occurs
+   * with an HTTP POST request, then reading the body directly via {@link
+   * #getInputStream} or {@link #getReader} can interfere
+   * with the execution of this method.
+   *
+   * @param name 	a <code>String</code> specifying the 
+   *			name of the parameter
+   *
+   * @return		a <code>String</code> representing the 
+   *			single value of the parameter
+   *
+   * @see 		#getParameterValues
+   *
+   */
+
+  public String getParameter(String name);
+  
+  
+  /**
+   * Returns the name and version of the protocol the request uses
+   * in the form <i>protocol/majorVersion.minorVersion</i>, for 
+   * example, HTTP/1.1. For HTTP servlets, the value
+   * returned is the same as the value of the CGI variable 
+   * <code>SERVER_PROTOCOL</code>.
+   *
+   * @return		a <code>String</code> containing the protocol 
+   *			name and version number
+   *
+   */
+  
+  public String getProtocol();
 }

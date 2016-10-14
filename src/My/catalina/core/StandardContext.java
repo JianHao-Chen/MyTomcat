@@ -25,8 +25,10 @@ import My.catalina.Host;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleException;
 import My.catalina.Loader;
+import My.catalina.Manager;
 import My.catalina.Wrapper;
 import My.catalina.loader.WebappLoader;
+import My.catalina.session.StandardManager;
 import My.catalina.util.RequestUtil;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
@@ -955,6 +957,65 @@ public class StandardContext
     }
     
     
+    
+    /**
+     * Should we attempt to use cookies for session id communication?
+     */
+    private boolean cookies = true;
+
+    /**
+     * Return the "use cookies for session ids" flag.
+     */
+    public boolean getCookies() {
+
+        return (this.cookies);
+    }
+
+    /**
+     * Set the "use cookies for session ids" flag.
+     */
+    public void setCookies(boolean cookies) {
+
+        boolean oldCookies = this.cookies;
+        this.cookies = cookies;
+    }
+    
+    
+    
+    
+    /**
+     * The name to use for session cookies. <code>null</code> indicates that
+     * the name is controlled by the application.
+     */
+    private String sessionCookieName;
+    
+    /**
+     * Gets the name to use for session cookies.
+     * 
+     * @return  The value of the default session cookie name or null if not
+     *          specified
+     */
+    public String getSessionCookieName() {
+        return sessionCookieName;
+    }
+    
+    /**
+     * Sets the name to use for session cookies. Overrides any setting that
+     * may be specified by the application.
+     * 
+     * @param sessionCookieName   The name to use
+     */
+    public void setSessionCookieName(String sessionCookieName) {
+        String oldSessionCookieName = this.sessionCookieName;
+        this.sessionCookieName = sessionCookieName;
+    }
+    
+    
+    
+    
+    
+    
+    
     /**
      * Return the context path for this Context.
      */
@@ -1594,6 +1655,24 @@ public class StandardContext
         		// Notify our interested LifecycleListeners
                 lifecycle.fireLifecycleEvent(START_EVENT, null);
         		
+                
+                
+                // Acquire clustered manager
+                Manager contextManager = null;
+                if (manager == null) {
+                	
+                	// forclustered manager
+                	if ( false) {
+                	}
+                	else
+                		contextManager = new StandardManager();
+                }
+                
+                // Configure default manager if none was specified
+                if (contextManager != null) {
+                	setManager(contextManager);
+                }
+                
         		 
         	 }
          }

@@ -3,12 +3,15 @@ package My.catalina.connector;
 import java.io.IOException;
 
 import My.catalina.Context;
+import My.catalina.Globals;
 import My.catalina.Wrapper;
 import My.coyote.Adapter;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.tomcat.util.buf.ByteChunk;
 import My.tomcat.util.buf.MessageBytes;
+import My.tomcat.util.http.Cookies;
+import My.tomcat.util.http.ServerCookie;
 import My.tomcat.util.http.mapper.MappingData;
 import My.tomcat.util.net.SocketStatus;
 
@@ -225,9 +228,68 @@ public class CoyoteAdapter implements Adapter{
         		(Wrapper) request.getMappingData().wrapper);
         	
     	
+        
+        // Parse session Id
+        String sessionID =
+            request.getPathParameter(Globals.SESSION_PARAMETER_NAME);
+        
+        if (sessionID != null) {
+        	request.setRequestedSessionId(sessionID);
+            request.setRequestedSessionURL(true);
+        }
+        
+        parseSessionCookiesId(req, request);
+        
     	return true;
     	
     }
     
+    
+    
+    /**
+     * Parse session id in URL.
+     */
+    protected void parseSessionCookiesId(My.coyote.Request req, Request request) {
+    	// If session tracking via cookies has been disabled for the current
+        // context, don't go looking for a session ID in a cookie as a cookie
+        // from a parent context with a session ID may be present which would
+        // overwrite the valid session ID encoded in the URL
+    	Context context = (Context) request.getMappingData().context;
+    	if (context != null && !context.getCookies())
+            return;
+    	
+    	// Parse session id from cookies
+    	Cookies serverCookies = req.getCookies();
+    	int count = serverCookies.getCookieCount();
+    	if (count <= 0)
+            return;
+    	
+    	
+    	String sessionCookieName = getSessionCookieName(context);
+    	
+    	for (int i = 0; i < count; i++) {
+    		
+    		ServerCookie scookie = serverCookies.getCookie(i);
+    		if (scookie.getName().equals(sessionCookieName)) {
+    			
+    			// ....
+    		}
+    	}
+    }
+    
+    
+    private String getSessionCookieName(Context context) {
+    	
+    	String result = null;
+        
+        if (context != null) {
+            result = context.getSessionCookieName();
+        }
+        
+        if (result == null) {
+            result = Globals.SESSION_COOKIE_NAME;
+        }
+        return result;
+    }
 	
 }

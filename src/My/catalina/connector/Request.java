@@ -1,21 +1,30 @@
 package My.catalina.connector;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.servlet.FilterChain;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
 
 import My.catalina.Context;
 import My.catalina.Globals;
 import My.catalina.Host;
+import My.catalina.Manager;
+import My.catalina.Session;
 import My.catalina.Wrapper;
 import My.catalina.core.ApplicationFilterFactory;
 import My.tomcat.util.buf.MessageBytes;
+import My.tomcat.util.http.Cookies;
 import My.tomcat.util.http.FastHttpDateFormat;
+import My.tomcat.util.http.Parameters;
 import My.tomcat.util.http.mapper.MappingData;
 
 /**
@@ -144,6 +153,31 @@ public class Request implements HttpServletRequest{
      */
     protected InputBuffer inputBuffer = new InputBuffer();
     
+    /**
+     * ServletInputStream.
+     */
+    protected CoyoteInputStream inputStream = 
+        new CoyoteInputStream(inputBuffer);
+    
+    
+    /**
+     * Using stream flag.
+     */
+    protected boolean usingInputStream = false;
+
+
+    /**
+     * Using writer flag.
+     */
+    protected boolean usingReader = false;
+    
+    
+    
+    /**
+     * Post data buffer.
+     */
+    protected static int CACHED_POST_LEN = 8192;
+    protected byte[] postData = null;
     
 	
 	// --------------- Request Methods ---------------
@@ -395,6 +429,225 @@ public class Request implements HttpServletRequest{
     }
     
     
+    /**
+     * Return the character encoding for this Request.
+     */
+    public String getCharacterEncoding() {
+      return (coyoteRequest.getCharacterEncoding());
+    }
+    
+    
+    
+    /**
+     * Return the content length for this Request.
+     */
+    public int getContentLength() {
+        return (coyoteRequest.getContentLength());
+    }
+
+
+    /**
+     * Return the content type for this Request.
+     */
+    public String getContentType() {
+        return (coyoteRequest.getContentType());
+    }
+    
+    
+    
+    
+    /**
+     * Path parameters
+     */
+    protected Map<String,String> pathParameters = new HashMap<String, String>();
+    
+    protected void addPathParameter(String name, String value) {
+        pathParameters.put(name, value);
+    }
+
+    protected String getPathParameter(String name) {
+        return pathParameters.get(name);
+    }
+    
+    
+    
+    
+    /**
+     * The requested session ID (if any) for this request.
+     */
+    protected String requestedSessionId = null;
+    
+    
+    /**
+     * Set the requested session ID for this request.  This is normally called
+     * by the HTTP Connector, when it parses the request headers.
+     *
+     * @param id The new session id
+     */
+    public void setRequestedSessionId(String id) {
+
+        this.requestedSessionId = id;
+
+    }
+
+    
+    
+    /**
+     * Was the requested session ID received in a URL?
+     */
+    protected boolean requestedSessionURL = false;
+
+    /**
+     * Set a flag indicating whether or not the requested session ID for this
+     * request came in through a URL.  This is normally called by the
+     * HTTP Connector, when it parses the request headers.
+     *
+     * @param flag The new flag
+     */
+    public void setRequestedSessionURL(boolean flag) {
+
+        this.requestedSessionURL = flag;
+
+    }
+    
+    
+    
+    /**
+     * Request parameters parsed flag.
+     */
+    protected boolean parametersParsed = false;
+    
+    /**
+     * Return the value of the specified request parameter, if any; otherwise,
+     * return <code>null</code>.  If there is more than one value defined,
+     * return only the first one.
+     *
+     * @param name Name of the desired request parameter
+     */
+    public String getParameter(String name) {
+
+        if (!parametersParsed)
+            parseParameters();
+
+        return coyoteRequest.getParameters().getParameter(name);
+
+    }
+    
+    
+    /**
+     * Parse request parameters.
+     */
+    protected void parseParameters() {
+    	parametersParsed = true;
+    	
+    	Parameters parameters = coyoteRequest.getParameters();
+    	
+    	
+    	// getCharacterEncoding() may have been overridden to search for
+        // hidden form field containing request encoding
+        String enc = getCharacterEncoding();
+    	
+    	parameters.setEncoding
+        	(My.coyote.Constants.DEFAULT_CHARACTER_ENCODING);
+    	
+    	
+    	parameters.handleQueryParameters();
+    	
+    	if (usingInputStream || usingReader)
+            return;
+    	
+    	if (!getMethod().equalsIgnoreCase("POST"))
+            return;
+    	
+    	String contentType = getContentType();
+    	if (contentType == null)
+            contentType = "";
+    	
+    	int semicolon = contentType.indexOf(';');
+    	if (semicolon >= 0) {
+            contentType = contentType.substring(0, semicolon).trim();
+        } else {
+            contentType = contentType.trim();
+        }
+    	
+    	if (!("application/x-www-form-urlencoded".equals(contentType)))
+            return;
+    	 
+    	 
+    	int len = getContentLength();
+    	
+    	if (len > 0) {
+    		int maxPostSize = connector.getMaxPostSize();
+    		if ((maxPostSize > 0) && (len > maxPostSize)) {
+    			// log error
+    			return;
+    		}
+    		
+    		byte[] formData = null;
+    		if (len < CACHED_POST_LEN) {
+                if (postData == null)
+                    postData = new byte[CACHED_POST_LEN];
+                formData = postData;
+            } else {
+                formData = new byte[len];
+            }
+    		
+    		
+    		try {
+    			if (readPostBody(formData, len) != len) {
+    				return;
+    			}
+    		}catch (IOException e) {
+    			return;
+    		}
+    		
+    		parameters.processParameters(formData, 0, len);
+    		
+    	}
+    }
+    
+    
+    /**
+     * Read post body in an array.
+     */
+    protected int readPostBody(byte body[], int len)
+        throws IOException {
+    	
+    	int offset = 0;
+    	do {
+    		int inputLen = getStream().read(body, offset, len - offset);
+    		if (inputLen <= 0) {
+                return offset;
+            }
+    		offset += inputLen;
+    	}
+    	while ((len - offset) > 0);
+    	
+    	return len;
+    }
+    
+    
+    
+    
+    /**
+     * Return the input stream associated with this Request.
+     */
+    public InputStream getStream() {
+        if (inputStream == null) {
+            inputStream = new CoyoteInputStream(inputBuffer);
+        }
+        return inputStream;
+    }
+    
+    
+    
+    /**
+     * Return the protocol and version used to make this Request.
+     */
+    public String getProtocol() {
+        return coyoteRequest.protocol().toString();
+    }
+    
     
     
     /**
@@ -436,6 +689,62 @@ public class Request implements HttpServletRequest{
         return (facade);
     }
     
+    
+    
+    
+    
+    
+    /**
+     * The currently active session for this request.
+     */
+    protected Session session = null;
+    
+    
+    /**
+     * Return the session associated with this Request, creating one
+     * if necessary.
+     */
+    public HttpSession getSession() {
+    	
+    	return null;
+    }
+    
+    
+    /**
+     * Return the session associated with this Request, creating one
+     * if necessary and requested.
+     *
+     * @param create Create a new session if one does not exist
+     */
+    public HttpSession getSession(boolean create) {
+    	Session session = doGetSession(create);
+    	
+    	
+    	return null;
+    }
+    
+    
+    protected Session doGetSession(boolean create) {
+    	
+    	// There cannot be a session if no context has been assigned yet
+        if (context == null)
+            return (null);
+        
+        // Return the current session if it exists and is valid
+        if ((session != null) && !session.isValid())
+        	session = null;
+        if (session != null)
+            return (session);
+        
+        // Return the requested session if it exists and is valid
+        Manager manager = null;
+        
+        if (context != null)
+            manager = context.getManager();
+        
+        
+        return null;
+    }
     
     
     
@@ -493,6 +802,58 @@ public class Request implements HttpServletRequest{
     
     
     /**
+     * Cookies parsed flag.
+     */
+    protected boolean cookiesParsed = false;
+    
+    
+    /**
+     * The set of cookies associated with this Request.
+     */
+    protected Cookie[] cookies = null;
+    
+    /**
+     * Return the set of Cookies received with this Request.
+     */
+    public Cookie[] getCookies() {
+
+        if (!cookiesParsed)
+            parseCookies();
+
+        return cookies;
+
+    }
+
+
+    /**
+     * Set the set of cookies recieved with this Request.
+     */
+    public void setCookies(Cookie[] cookies) {
+
+        this.cookies = cookies;
+
+    }
+    
+    
+    /**
+     * Parse cookies.
+     */
+    protected void parseCookies() {
+    	
+    	cookiesParsed = true;
+    	
+    	Cookies serverCookies = coyoteRequest.getCookies();
+    	int count = serverCookies.getCookieCount();
+        if (count <= 0)
+            return;
+        
+        
+        
+    }
+    
+    
+    
+    /**
      * Release all object references, and initialize instance variables, in
      * preparation for reuse of this object.
      */
@@ -500,6 +861,10 @@ public class Request implements HttpServletRequest{
     	
     	context = null;
         wrapper = null;
+        
+
+        parametersParsed = false;
+        cookiesParsed = false;
         
         inputBuffer.recycle();
 

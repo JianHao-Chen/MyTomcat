@@ -143,6 +143,95 @@ public abstract class HttpServlet
     }
     
     
+    
+    /**
+     * Called by the server (via the <code>service</code> method)
+     * to allow a servlet to handle a POST request.
+     *
+     * The HTTP POST method allows the client to send
+     * data of unlimited length to the Web server a single time
+     * and is useful when posting information such as
+     * credit card numbers.
+     *
+     * <p>When overriding this method, read the request data,
+     * write the response headers, get the response's writer or output
+     * stream object, and finally, write the response data. It's best 
+     * to include content type and encoding. When using a
+     * <code>PrintWriter</code> object to return the response, set the 
+     * content type before accessing the <code>PrintWriter</code> object. 
+     *
+     * <p>The servlet container must write the headers before committing the
+     * response, because in HTTP the headers must be sent before the 
+     * response body.
+     *
+     * <p>Where possible, set the Content-Length header (with the
+     * {@link javax.servlet.ServletResponse#setContentLength} method),
+     * to allow the servlet container to use a persistent connection 
+     * to return its response to the client, improving performance.
+     * The content length is automatically set if the entire response fits
+     * inside the response buffer.  
+     *
+     * <p>When using HTTP 1.1 chunked encoding (which means that the response
+     * has a Transfer-Encoding header), do not set the Content-Length header. 
+     *
+     * <p>This method does not need to be either safe or idempotent.
+     * Operations requested through POST can have side effects for
+     * which the user can be held accountable, for example, 
+     * updating stored data or buying items online.
+     *
+     * <p>If the HTTP POST request is incorrectly formatted,
+     * <code>doPost</code> returns an HTTP "Bad Request" message.
+     *
+     *
+     * @param req   an {@link HttpServletRequest} object that
+     *                  contains the request the client has made
+     *                  of the servlet
+     *
+     * @param resp  an {@link HttpServletResponse} object that
+     *                  contains the response the servlet sends
+     *                  to the client
+     * 
+     * @exception IOException   if an input or output error is 
+     *                              detected when the servlet handles
+     *                              the request
+     *
+     * @exception ServletException  if the request for the POST
+     *                                  could not be handled
+     *
+     * @see javax.servlet.ServletOutputStream
+     * @see javax.servlet.ServletResponse#setContentType
+     */
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp)
+        throws ServletException, IOException {
+    	
+    	String protocol = req.getProtocol();
+    	String msg = "HTTP method POST is not supported by this URL";
+        if (protocol.endsWith("1.1")) {
+            resp.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, msg);
+        } else {
+            resp.sendError(HttpServletResponse.SC_BAD_REQUEST, msg);
+        }
+    	
+    	
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /**
      * Returns the time the <code>HttpServletRequest</code>
      * object was last modified,
@@ -210,6 +299,12 @@ public abstract class HttpServlet
     		 else {
     			 
     		 }
+    	}
+    	else if (method.equals(METHOD_HEAD)) {
+    		//...
+    	}
+    	else if (method.equals(METHOD_POST)) {
+    		doPost(req, resp);
     	}
     }
     

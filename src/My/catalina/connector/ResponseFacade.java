@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
 /**
@@ -150,4 +151,27 @@ public class ResponseFacade implements HttpServletResponse{
         response.setBufferSize(size);
 
     }
+	
+	
+	
+	 public void sendError(int sc, String msg)
+     throws IOException {
+		 
+		 if (isCommitted())
+	            throw new IllegalStateException();
+	            
+	     response.setAppCommitted(true);      
+		 
+	     response.sendError(sc, msg);
+	 }
+	 
+	 
+	 public void addCookie(Cookie cookie) {
+
+	 	if (isCommitted())
+	    	return;
+
+	    response.addCookie(cookie);
+
+	}
 }

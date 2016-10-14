@@ -4,6 +4,8 @@ import java.io.IOException;
 
 import My.tomcat.util.buf.ByteChunk;
 import My.tomcat.util.buf.MessageBytes;
+import My.tomcat.util.http.ContentType;
+import My.tomcat.util.http.Cookies;
 import My.tomcat.util.http.MimeHeaders;
 import My.tomcat.util.http.Parameters;
 
@@ -65,6 +67,10 @@ public final class Request {
     private long contentLength = -1;
     private MessageBytes contentTypeMB = null;
     
+    private String charEncoding = null;
+    
+    private Cookies cookies = new Cookies(headers);
+    
     private Parameters parameters = new Parameters();
     
 	
@@ -92,7 +98,7 @@ public final class Request {
 	}
 	
 	public MessageBytes protocol() {
-	        return protoMB;
+	    return protoMB;
 	}
 	
 	public MimeHeaders getMimeHeaders() {
@@ -236,6 +242,26 @@ public final class Request {
     }
     
     
+    
+    /**
+     * Get the character encoding used for this request.
+     */
+    public String getCharacterEncoding() {
+
+        if (charEncoding != null)
+            return charEncoding;
+
+        charEncoding = ContentType.getCharsetFromContentType(getContentType());
+        return charEncoding;
+
+    }
+
+
+    public void setCharacterEncoding(String enc) {
+        this.charEncoding = enc;
+    }
+    
+    
     // -------------------- Per-Request "notes" --------------------
 
 
@@ -275,6 +301,14 @@ public final class Request {
         return parameters;
     }
 	
+    
+    
+    // -------------------- Cookies --------------------
+
+
+    public Cookies getCookies() {
+        return cookies;
+    }
     
     
     

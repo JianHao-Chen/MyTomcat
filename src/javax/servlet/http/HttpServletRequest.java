@@ -142,5 +142,21 @@ public String getHeader(String name);
 */
 
 public long getDateHeader(String name);
+
+
+/**
+*
+* Returns an array containing all of the <code>Cookie</code>
+* objects the client sent with this request.
+* This method returns <code>null</code> if no cookies were sent.
+*
+* @return		an array of all the <code>Cookies</code>
+*			included with this request, or <code>null</code>
+*			if the request has no cookies
+*
+*
+*/
+
+public Cookie[] getCookies();
  
 }

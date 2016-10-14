@@ -238,4 +238,38 @@ public interface Context extends Container{
      */
     public void setPrivileged(boolean privileged);
     
+    
+    
+    /**
+     * Return the "use cookies for session ids" flag.
+     */
+    public boolean getCookies();
+
+
+    /**
+     * Set the "use cookies for session ids" flag.
+     *
+     * @param cookies The new flag
+     */
+    public void setCookies(boolean cookies);
+    
+    
+    /**
+     * Gets the name to use for session cookies. Overrides any setting that
+     * may be specified by the application.
+     * 
+     * @return  The value of the default session cookie name or null if not
+     *          specified
+     */
+    public String getSessionCookieName();
+    
+    
+    /**
+     * Sets the name to use for session cookies. Overrides any setting that
+     * may be specified by the application.
+     * 
+     * @param sessionCookieName   The name to use
+     */
+    public void setSessionCookieName(String sessionCookieName);
+    
 }

@@ -4,7 +4,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import javax.servlet.ServletOutputStream;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
+
+import My.catalina.Wrapper;
+import My.tomcat.util.http.ServerCookie;
 
 public class Response implements HttpServletResponse{
 
@@ -378,6 +382,67 @@ public class Response implements HttpServletResponse{
     public void sendError(int status, String message) 
         throws IOException {
     	
+    	if (isCommitted())
+            throw new IllegalStateException
+                ("coyoteResponse.sendError.ise");
+    	
+    	Wrapper wrapper = getRequest().getWrapper();
+    	if (wrapper != null) {
+            //wrapper.incrementErrorCount();
+        } 
+    	
+    	setError();
+    	
+    	coyoteResponse.setStatus(status);
+    	coyoteResponse.setMessage(message);
+    	
+    	// Clear any data content that has been buffered
+        resetBuffer();
+        
+        // Cause the response to be finished (from the application perspective)
+        setSuspended(true);
+        
+    }
+    
+    
+    
+    /**
+     * Reset the data buffer but not any status or header information.
+     *
+     * @exception IllegalStateException if the response has already
+     *  been committed
+     */
+    public void resetBuffer() {
+        resetBuffer(false);
+    }
+    
+    
+    
+    /**
+     * Reset the data buffer and the using Writer/Stream flags but not any
+     * status or header information.
+     *
+     * @param resetWriterStreamFlags <code>true</code> if the internal
+     *        <code>usingWriter</code>, <code>usingOutputStream</code>,
+     *        <code>isCharacterEncodingSet</code> flags should also be reset
+     * 
+     * @exception IllegalStateException if the response has already
+     *  been committed
+     */
+    public void resetBuffer(boolean resetWriterStreamFlags) {
+    	
+    	if (isCommitted())
+            throw new IllegalStateException
+                ("coyoteResponse.resetBuffer.ise");
+    	
+    	outputBuffer.reset();
+    	
+    	if(resetWriterStreamFlags) {
+            usingOutputStream = false;
+            usingWriter = false;
+            isCharacterEncodingSet = false;
+        }
+    	
     }
     
     
@@ -445,6 +510,66 @@ public class Response implements HttpServletResponse{
     
     
     /**
+     * Add the specified Cookie to those that will be included with
+     * this Response.
+     *
+     * @param cookie Cookie to be added
+     */
+    public void addCookie(final Cookie cookie) {
+    	
+    	addCookieInternal(cookie);
+    }
+    
+    
+    /**
+     * Add the specified Cookie to those that will be included with
+     * this Response.
+     *
+     * @param cookie Cookie to be added
+     */
+    public void addCookieInternal(final Cookie cookie) {
+        addCookieInternal(cookie, false);
+    }
+    
+    
+    /**
+     * Add the specified Cookie to those that will be included with
+     * this Response.
+     *
+     * @param cookie    Cookie to be added
+     * @param httpOnly  Should the httpOnly falg be set on this cookie
+     */
+    public void addCookieInternal(final Cookie cookie, final boolean httpOnly) {
+    	
+    	if (isCommitted())
+            return;
+    	
+    	final StringBuffer sb = generateCookieString(cookie, httpOnly);
+    	
+    	//if we reached here, no exception, cookie is valid
+        // the header name is Set-Cookie for both "old" and v.1 ( RFC2109 )
+        // RFC2965 is not supported by browsers and the Servlet spec
+        // asks for 2109.
+        addHeader("Set-Cookie", sb.toString());
+    }
+    
+    
+    public StringBuffer generateCookieString(final Cookie cookie, 
+            final boolean httpOnly) {
+    	
+    	final StringBuffer sb = new StringBuffer();
+    	
+    	ServerCookie.appendCookieValue
+        (sb, cookie.getVersion(), cookie.getName(), cookie.getValue(),
+             cookie.getPath(), cookie.getDomain(), cookie.getComment(), 
+             cookie.getMaxAge(), cookie.getSecure(), httpOnly);
+    	
+    	return sb;
+    	
+    }
+    
+    
+    /**
      * Send an acknowledgment of a request.
      * 
      * @exception IOException if an input/output error occurs
@@ -453,6 +578,25 @@ public class Response implements HttpServletResponse{
         throws IOException {
     	
     	coyoteResponse.acknowledge();
+    }
+    
+    
+    /**
+     * Add the specified header to the specified value.
+     *
+     * @param name Name of the header to set
+     * @param value Value to be set
+     */
+    public void addHeader(String name, String value) {
+    	
+    	if (name == null || name.length() == 0 || value == null) {
+            return;
+        }
+
+        if (isCommitted())
+            return;
+        
+        coyoteResponse.addHeader(name, value);
     }
 
     

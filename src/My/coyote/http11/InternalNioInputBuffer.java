@@ -254,6 +254,38 @@ public class InternalNioInputBuffer implements InputBuffer{
     
     
     
+	// ------------------------------------------------------ Protected Methods
+
+    /**
+     * Fill the internal buffer using data from the undelying input stream.
+     * 
+     * @return false if at end of stream
+     */
+    protected boolean fill(boolean timeout, boolean block)
+        throws IOException, EOFException {
+    	
+    	boolean read = false;
+
+        if (parsingHeader) {
+
+            if (lastValid == buf.length) {
+                throw new IllegalArgumentException
+                    ("iib.requestheadertoolarge.error");
+            }
+
+            // Do a simple read with a short timeout
+            read = readSocket(timeout,block)>0;
+        } else {
+            lastValid = pos = end;
+            // Do a simple read with a short timeout
+            read = readSocket(timeout, block)>0;
+        }
+        return read;
+    	
+    }
+    
+    
+    
     
 	// ------------------ InputBuffer Methods ------------------
     /**
@@ -261,11 +293,9 @@ public class InternalNioInputBuffer implements InputBuffer{
      */
     public int doRead(ByteChunk chunk, Request req) 
         throws IOException {
+
+    	return inputStreamInputBuffer.doRead(chunk, req);
     	
-    	if (lastActiveFilter == -1)
-            return inputStreamInputBuffer.doRead(chunk, req);
-        else
-            return activeFilters[lastActiveFilter].doRead(chunk,req);
     }
     
     
@@ -294,7 +324,16 @@ public class InternalNioInputBuffer implements InputBuffer{
     	public int doRead(ByteChunk chunk, Request req ) 
     		throws IOException {
     		
-    		return 0;
+    		if (pos >= lastValid) {
+                if (!fill(true,true)) //read body, must be blocking, as the thread is inside the app
+                    return -1;
+            }
+
+            int length = lastValid - pos;
+            chunk.setBytes(buf, pos, length);
+            pos = lastValid;
+
+            return (length);
     	}
     	
     }

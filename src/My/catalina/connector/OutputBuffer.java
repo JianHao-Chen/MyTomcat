@@ -429,5 +429,17 @@ public class OutputBuffer extends Writer
     }
 
 	
+    
+    
+    public void reset() {
+
+        bb.recycle();
+        bytesWritten = 0;
+        charsWritten = 0;
+        gotEnc = false;
+        enc = null;
+        initial = true;
+        
+    }
 	
 }

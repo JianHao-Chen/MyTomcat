@@ -34,4 +34,9 @@ public interface Manager {
      * @param container The newly associated Container
      */
     public void setContainer(Container container);
+    
+    
+    
+    
+    
 }
