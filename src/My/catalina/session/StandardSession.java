@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import My.catalina.Context;
 import My.catalina.Manager;
 import My.catalina.Session;
+import My.catalina.util.Enumerator;
 
 /**
  * Standard implementation of the <b>Session</b> interface.  This object is
@@ -254,15 +255,26 @@ public class StandardSession
 
 	@Override
 	public long getCreationTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		if (!isValidInternal())
+            throw new IllegalStateException
+                ("standardSession.getCreationTime.ise");
+
+        return (this.creationTime);
 	}
 
-
-	@Override
+	 /**
+     * Return the last time the client sent a request associated with this
+     * session, as the number of milliseconds since midnight, January 1, 1970
+     * GMT.  Actions that your application takes, such as getting or setting
+     * a value associated with the session, do not affect the access time.
+     */
 	public long getLastAccessedTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		if (!isValidInternal()) {
+            throw new IllegalStateException
+                ("standardSession.getLastAccessedTime.ise");
+        }
+
+        return (this.lastAccessedTime);
 	}
 
 
@@ -309,8 +321,11 @@ public class StandardSession
 
 	@Override
 	public Enumeration getAttributeNames() {
-		// TODO Auto-generated method stub
-		return null;
+		if (!isValidInternal())
+            throw new IllegalStateException
+                ("standardSession.getAttributeNames.ise");
+
+        return (new Enumerator(attributes.keySet(), true));
 	}
 
 
@@ -387,6 +402,17 @@ public class StandardSession
         sb.append("]");
         return (sb.toString());
 
+    }
+    
+    
+    
+	// ------------------ HttpSession Protected Methods-------------------
+    /**
+     * Return the <code>isValid</code> flag for this session without any expiration
+     * check.
+     */
+    protected boolean isValidInternal() {
+        return (this.isValid || this.expiring);
     }
     
 }

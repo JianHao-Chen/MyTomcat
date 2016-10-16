@@ -812,6 +812,27 @@ public class Request implements HttpServletRequest{
     
     
     /**
+     * Return the session associated with this Request, creating one
+     * if necessary and requested.
+     *
+     * @param create Create a new session if one does not exist
+     */
+    public Session getSessionInternal(boolean create) {
+        return doGetSession(create);
+    }
+    
+    
+    /**
+     * Return the session associated with this Request, creating one
+     * if necessary.
+     */
+    public Session getSessionInternal() {
+        return doGetSession(true);
+    }
+    
+    
+    
+    /**
      * Configures the given JSESSIONID cookie.
      *
      * @param cookie The JSESSIONID cookie to be configured
@@ -855,8 +876,27 @@ public class Request implements HttpServletRequest{
     }
 
     	
+    /**
+     * Return the scheme used to make this Request.
+     */
+    public String getScheme() {
+        return (coyoteRequest.scheme().toString());
+    }
     
     
+    /**
+     * Return the server name responding to this Request.
+     */
+    public String getServerName() {
+        return (coyoteRequest.serverName().toString());
+    }
+    
+    /**
+     * Return the server port responding to this Request.
+     */
+    public int getServerPort() {
+        return (coyoteRequest.getServerPort());
+    }
     
     /**
      * Parse locales.
@@ -960,6 +1000,19 @@ public class Request implements HttpServletRequest{
         
         
     }
+    
+    
+    
+    
+    /**
+     * Get the decoded request URI.
+     * 
+     * @return the URL decoded request URI
+     */
+    public String getDecodedRequestURI() {
+        return (coyoteRequest.decodedURI().toString());
+    }
+    
     
     
     

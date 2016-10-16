@@ -173,4 +173,13 @@ public class ResponseFacade implements HttpServletResponse{
 	    response.addCookie(cookie);
 
 	}
+	 
+	 
+	 public String encodeURL(String url) {
+		 if (response == null) {
+	            throw new IllegalStateException("responseFacade.nullResponse");
+	        }
+
+	        return response.encodeURL(url);
+	 }
 }

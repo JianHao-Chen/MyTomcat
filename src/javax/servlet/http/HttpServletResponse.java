@@ -106,6 +106,27 @@ public interface HttpServletResponse extends ServletResponse{
 
    public void addCookie(Cookie cookie);
     
+   
+   /**
+    * Encodes the specified URL by including the session ID in it,
+    * or, if encoding is not needed, returns the URL unchanged.
+    * The implementation of this method includes the logic to
+    * determine whether the session ID needs to be encoded in the URL.
+    * For example, if the browser supports cookies, or session
+    * tracking is turned off, URL encoding is unnecessary.
+    * 
+    * <p>For robust session tracking, all URLs emitted by a servlet 
+    * should be run through this
+    * method.  Otherwise, URL rewriting cannot be used with browsers
+    * which do not support cookies.
+    *
+    * @param	url	the url to be encoded.
+    * @return		the encoded URL if encoding is needed;
+    * 			the unchanged URL otherwise.
+    */
+
+   public String encodeURL(String url);
+   
 	
 	 /*
      * Server status codes; see RFC 2068.

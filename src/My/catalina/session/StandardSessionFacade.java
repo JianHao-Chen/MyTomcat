@@ -43,85 +43,77 @@ public class StandardSessionFacade implements HttpSession {
     
 	@Override
 	public long getCreationTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getCreationTime();
 	}
 
 
 	@Override
 	public String getId() {
-		// TODO Auto-generated method stub
-		return null;
+		return session.getId();
 	}
 
 
 	@Override
 	public long getLastAccessedTime() {
-		// TODO Auto-generated method stub
-		return 0;
+		 return session.getLastAccessedTime();
 	}
 
 
 	@Override
 	public ServletContext getServletContext() {
-		// TODO Auto-generated method stub
-		return null;
+		return session.getServletContext();
 	}
 
 
 	@Override
 	public void setMaxInactiveInterval(int interval) {
-		// TODO Auto-generated method stub
+		session.setMaxInactiveInterval(interval);
 		
 	}
 
 
 	@Override
 	public int getMaxInactiveInterval() {
-		// TODO Auto-generated method stub
-		return 0;
+		return session.getMaxInactiveInterval();
 	}
 
 
 	@Override
 	public Object getAttribute(String name) {
-		// TODO Auto-generated method stub
-		return null;
+		return session.getAttribute(name);
 	}
 
 
 	@Override
 	public void setAttribute(String name, Object value) {
-		// TODO Auto-generated method stub
+		session.setAttribute(name, value);
 		
 	}
 
 
 	@Override
 	public void removeAttribute(String name) {
-		// TODO Auto-generated method stub
+		session.removeAttribute(name);
 		
 	}
 
 
 	@Override
 	public Enumeration getAttributeNames() {
-		// TODO Auto-generated method stub
-		return null;
+		return session.getAttributeNames();
 	}
 
 
 	@Override
 	public void invalidate() {
-		// TODO Auto-generated method stub
+		session.invalidate();
 		
 	}
 
 
 	@Override
 	public boolean isNew() {
-		// TODO Auto-generated method stub
-		return false;
+		return session.isNew();
 	}
     
     

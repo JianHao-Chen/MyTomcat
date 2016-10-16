@@ -2,6 +2,7 @@ package My.catalina.connector;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -9,9 +10,15 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
+import My.catalina.Context;
+import My.catalina.Globals;
+import My.catalina.Session;
 import My.catalina.Wrapper;
+import My.tomcat.util.buf.CharChunk;
+import My.tomcat.util.buf.UEncoder;
 import My.tomcat.util.http.MimeHeaders;
 import My.tomcat.util.http.ServerCookie;
+import My.tomcat.util.net.URL;
 
 public class Response implements HttpServletResponse{
 
@@ -99,6 +106,12 @@ public class Response implements HttpServletResponse{
     private boolean isCharacterEncodingSet = false;
     
     
+    /**
+     * Recyclable buffer to hold the redirect URL.
+     */
+    protected CharChunk redirectURLCC = new CharChunk();
+    
+    
     
     /**
      * Using output stream flag.
@@ -111,6 +124,11 @@ public class Response implements HttpServletResponse{
      */
     protected boolean usingWriter = false;
     
+    
+    /**
+     * URL encoder.
+     */
+    protected UEncoder urlEncoder = new UEncoder();
     
     /**
      * Coyote response.
@@ -667,7 +685,12 @@ public class Response implements HttpServletResponse{
     }
 
     
-    
+    /**
+     * Return the Context within which this Request is being processed.
+     */
+    public Context getContext() {
+        return (request.getContext());
+    }
     
     
     /**
@@ -737,6 +760,72 @@ public class Response implements HttpServletResponse{
 	}
 	
 	
+	
+	/**
+     * Encode the session identifier associated with this response
+     * into the specified URL, if necessary.
+     *
+     * @param url URL to be encoded
+     */
+    public String encodeURL(String url) {
+    	
+    	String absolute = toAbsolute(url);
+    	if (isEncodeable(absolute)) {
+    		// W3c spec clearly said 
+            if (url.equalsIgnoreCase("")){
+                url = absolute;
+            }
+            
+            return (toEncoded(url, request.getSessionInternal().getIdInternal()));
+    	}
+    	else 
+    		return url;
+    }
+    
+    
+    /**
+     * Return the specified URL with the specified session identifier
+     * suitably encoded.
+     *
+     * @param url URL to be encoded with the session id
+     * @param sessionId Session id to be included in the encoded URL
+     */
+    protected String toEncoded(String url, String sessionId) {
+    	
+    	if ((url == null) || (sessionId == null))
+            return (url);
+    	
+    	String path = url;
+        String query = "";
+        String anchor = "";
+        
+        int question = url.indexOf('?');
+        if (question >= 0) {
+            path = url.substring(0, question);
+            query = url.substring(question);
+        }
+        
+        int pound = path.indexOf('#');
+        if (pound >= 0) {
+            anchor = path.substring(pound);
+            path = path.substring(0, pound);
+        }
+        
+        StringBuffer sb = new StringBuffer(path);
+        if( sb.length() > 0 ) { // jsessionid can't be first.
+            sb.append(";");
+            sb.append(Globals.SESSION_PARAMETER_NAME);
+            sb.append("=");
+            sb.append(sessionId);
+        }
+        
+        sb.append(anchor);
+        sb.append(query);
+        return (sb.toString());
+        
+    }
+	
+	
 	// ---------------------- Public Methods ----------------------
 	
 	/**
@@ -749,6 +838,179 @@ public class Response implements HttpServletResponse{
     	usingOutputStream = false;
     	usingWriter = false;
     	
+    }
+    
+    
+    
+    
+    /**
+     * Convert (if necessary) and return the absolute URL that represents the
+     * resource referenced by this possibly relative URL.  If this URL is
+     * already absolute, return it unchanged.
+     *
+     * @param location URL to be (possibly) converted and then returned
+     *
+     * @exception IllegalArgumentException if a MalformedURLException is
+     *  thrown when converting the relative URL to an absolute one
+     */
+    private String toAbsolute(String location) {
+    	if (location == null)
+            return (location);
+
+        boolean leadingSlash = location.startsWith("/");
+
+        if (leadingSlash || !hasScheme(location)) {
+        	redirectURLCC.recycle();
+        	
+        	String scheme = request.getScheme();
+            String name = request.getServerName();
+            int port = request.getServerPort();
+            
+            try {
+            	redirectURLCC.append(scheme, 0, scheme.length());
+                redirectURLCC.append("://", 0, 3);
+                redirectURLCC.append(name, 0, name.length());
+                
+                if ((scheme.equals("http") && port != 80)
+                        || (scheme.equals("https") && port != 443)) {
+                	redirectURLCC.append(':');
+                    String portS = port + "";
+                    redirectURLCC.append(portS, 0, portS.length());
+                }
+                
+                if (!leadingSlash) {
+                	String relativePath = request.getDecodedRequestURI();
+                    int pos = relativePath.lastIndexOf('/');
+                    relativePath = relativePath.substring(0, pos);
+                    
+                    String encodedURI = null;
+                    final String frelativePath = relativePath;
+                    
+                    encodedURI = urlEncoder.encodeURL(relativePath);
+                    
+                    redirectURLCC.append(encodedURI, 0, encodedURI.length());
+                    redirectURLCC.append('/');
+                }
+                
+                redirectURLCC.append(location, 0, location.length());
+            }catch (IOException e) {
+            	
+            }
+            
+            return redirectURLCC.toString();
+        }
+        else 
+        	return (location);
+
+    }
+    
+    
+    /**
+     * Return <code>true</code> if the specified URL should be encoded with
+     * a session identifier.  This will be true if all of the following
+     * conditions are met:
+     * <ul>
+     * <li>The request we are responding to asked for a valid session
+     * <li>The requested session ID was not received via a cookie
+     * <li>The specified URL points back to somewhere within the web
+     *     application that is responding to this request
+     * <li>If URL rewriting hasn't been disabled for this context
+     * </ul>
+     *
+     * @param location Absolute URL to be validated
+     */
+    protected boolean isEncodeable(final String location) {
+    	
+    	if (getContext().isDisableURLRewriting())
+            return (false);
+    	
+    	if (location == null)
+            return (false);
+    	
+    	// Is this an intra-document reference?
+        if (location.startsWith("#"))
+            return (false);
+
+        // Are we in a valid session that is not using cookies?
+        final Request hreq = request;
+        final Session session = hreq.getSessionInternal(false);
+        if (session == null)
+            return (false);
+        
+        if (hreq.isRequestedSessionIdFromCookie())
+            return (false);
+        
+        return doIsEncodeable(hreq, session, location);
+    }
+    
+    
+    private boolean doIsEncodeable(Request hreq, Session session, 
+            String location) {
+    	
+    	// Is this a valid absolute URL?
+        URL url = null;
+        try {
+            url = new URL(location);
+        } catch (MalformedURLException e) {
+            return (false);
+        }
+        
+        // Does this URL match down to (and including) the context path?
+        if (!hreq.getScheme().equalsIgnoreCase(url.getProtocol()))
+            return (false);
+        
+        if (!hreq.getServerName().equalsIgnoreCase(url.getHost()))
+            return (false);
+        
+        int serverPort = hreq.getServerPort();
+        if (serverPort == -1) {
+            if ("https".equals(hreq.getScheme()))
+                serverPort = 443;
+            else
+                serverPort = 80;
+        }
+        
+        int urlPort = url.getPort();
+        
+        if (urlPort == -1) {
+            if ("https".equals(url.getProtocol()))
+                urlPort = 443;
+            else
+                urlPort = 80;
+        }
+        
+        if (serverPort != urlPort)
+            return (false);
+        
+        String contextPath = getContext().getPath();
+        if (contextPath != null) {
+            String file = url.getFile();
+            if ((file == null) || !file.startsWith(contextPath))
+                return (false);
+            String tok = ";" + Globals.SESSION_PARAMETER_NAME + "=" + session.getIdInternal();
+            if( file.indexOf(tok, contextPath.length()) >= 0 )
+                return (false);
+        }
+        
+        // This URL belongs to our web application, so it is encodeable
+        return (true);
+    }
+    
+    
+    /**
+     * Determine if a URI string has a <code>scheme</code> component.
+     */
+    private boolean hasScheme(String uri) {
+        int len = uri.length();
+        for(int i=0; i < len ; i++) {
+            char c = uri.charAt(i);
+            if(c == ':') {
+                return i > 0;
+            } else if(!URL.isSchemeChar(c)) {
+                return false;
+            }
+        }
+        return false;
     }
     	
     
