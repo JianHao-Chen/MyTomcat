@@ -91,7 +91,6 @@ public class ResponseFacade implements HttpServletResponse{
     }
     
     
-    
     public void setStatus(int sc) {
 
         if (isCommitted())

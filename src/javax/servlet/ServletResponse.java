@@ -178,4 +178,22 @@ public interface ServletResponse {
      */
 
     public void setBufferSize(int size);
+    
+    
+    /**
+     * Returns a boolean indicating if the response has been
+     * committed.  A committed response has already had its status 
+     * code and headers written.
+     *
+     * @return		a boolean indicating if the response has been
+     *  		committed
+     *
+     * @see 		#setBufferSize
+     * @see 		#getBufferSize
+     * @see 		#flushBuffer
+     * @see 		#reset
+     *
+     */
+
+    public boolean isCommitted();
 }

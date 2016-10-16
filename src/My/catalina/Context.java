@@ -137,6 +137,24 @@ public interface Context extends Container{
     
     
     /**
+     * Gets the value of the use HttpOnly cookies for session cookies flag.
+     * 
+     * @return <code>true</code> if the HttpOnly flag should be set on session
+     *         cookies
+     */
+    public boolean getUseHttpOnly();
+
+
+    /**
+     * Sets the use HttpOnly cookies for session cookies flag.
+     * 
+     * @param useHttpOnly   Set to <code>true</code> to use HttpOnly cookies
+     *                          for session cookies
+     */
+    public void setUseHttpOnly(boolean useHttpOnly);
+    
+    
+    /**
      * Return the context path for this web application.
      */
     public String getPath();
@@ -271,5 +289,47 @@ public interface Context extends Container{
      * @param sessionCookieName   The name to use
      */
     public void setSessionCookieName(String sessionCookieName);
+    
+    
+    /**
+     * Return the default session timeout (in minutes) for this
+     * web application.
+     */
+    public int getSessionTimeout();
+
+
+    /**
+     * Set the default session timeout (in minutes) for this
+     * web application.
+     *
+     * @param timeout The new default session timeout
+     */
+    public void setSessionTimeout(int timeout);
+    
+    
+    
+    /**
+     * Gets the path to use for session cookies. Overrides any setting that
+     * may be specified by the application.
+     * 
+     * @return  The value of the default session cookie path or null if not
+     *          specified
+     */
+    public String getSessionCookiePath();
+    
+    
+    /**
+     * Sets the path to use for session cookies. Overrides any setting that
+     * may be specified by the application.
+     * 
+     * @param sessionCookiePath   The path to use
+     */
+    public void setSessionCookiePath(String sessionCookiePath);
+    
+    
+    /**
+     * Return the URL encoded context path, using UTF-8.
+     */
+    public String getEncodedPath();
     
 }

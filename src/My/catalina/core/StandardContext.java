@@ -583,6 +583,37 @@ public class StandardContext
     }
     
     
+    
+    
+    
+    /**
+     * The flag that indicates that session cookies should use HttpOnly
+     */
+    private boolean useHttpOnly = false;
+    
+    /**
+     * Gets the value of the use HttpOnly cookies for session cookies flag.
+     * 
+     * @return <code>true</code> if the HttpOnly flag should be set on session
+     *         cookies
+     */
+    public boolean getUseHttpOnly() {
+        return useHttpOnly;
+    }
+
+
+    /**
+     * Sets the use HttpOnly cookies for session cookies flag.
+     * 
+     * @param useHttpOnly   Set to <code>true</code> to use HttpOnly cookies
+     *                          for session cookies
+     */
+    public void setUseHttpOnly(boolean useHttpOnly) {
+        boolean oldUseHttpOnly = this.useHttpOnly;
+        this.useHttpOnly = useHttpOnly;
+    }
+
+    
     /**
      * Return a File object representing the base directory for the
      * entire servlet container (i.e. the Engine container if present).
@@ -1013,6 +1044,60 @@ public class StandardContext
     
     
     
+    /**
+     * The session timeout (in minutes) for this web application.
+     */
+    private int sessionTimeout = 30;
+    
+    /**
+     * Return the default session timeout (in minutes) for this
+     * web application.
+     */
+    public int getSessionTimeout() {
+
+        return (this.sessionTimeout);
+
+    }
+    
+    /**
+     * Set the default session timeout (in minutes) for this
+     * web application.
+     *
+     * @param timeout The new default session timeout
+     */
+    public void setSessionTimeout(int timeout) {
+    	int oldSessionTimeout = this.sessionTimeout;
+        
+        this.sessionTimeout = (timeout == 0) ? -1 : timeout;
+    }
+    
+    
+    
+    /**
+     * The path to use for session cookies. <code>null</code> indicates that
+     * the path is controlled by the application.
+     */
+    private String sessionCookiePath;
+    
+    /**
+     * Gets the path to use for session cookies.
+     * 
+     * @return  The value of the default session cookie path or null if not
+     *          specified
+     */
+    public String getSessionCookiePath() {
+        return sessionCookiePath;
+    }
+    
+    /**
+     * Sets the path to use for session cookies.
+     * 
+     * @param sessionCookiePath   The path to use
+     */
+    public void setSessionCookiePath(String sessionCookiePath) {
+        String oldSessionCookiePath = this.sessionCookiePath;
+        this.sessionCookiePath = sessionCookiePath;
+    }
     
     
     
@@ -1038,6 +1123,22 @@ public class StandardContext
         // XXX Use host in name
         setName(path);
 
+    }
+    
+    public void setName( String name ) {
+        super.setName( name );
+        encodedPath = (name);
+    }
+    
+    
+    
+    /**
+     * Encoded path.
+     */
+    private String encodedPath = null;
+    
+    public String getEncodedPath() {
+        return encodedPath;
     }
     
     

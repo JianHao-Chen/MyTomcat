@@ -145,6 +145,15 @@ public class RequestFacade implements HttpServletRequest{
     }
     
     
+    public HttpSession getSession() {
+
+        if (request == null) {
+            throw new IllegalStateException("requestFacade.nullRequest");
+        }
+
+        return getSession(true);
+    }
+    
     
     public HttpSession getSession(boolean create) {
     	

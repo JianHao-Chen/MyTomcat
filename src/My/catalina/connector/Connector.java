@@ -326,6 +326,28 @@ public class Connector implements Lifecycle
     
     
     
+    /**
+     * Return the "empty session path" flag.
+     */
+    public boolean getEmptySessionPath() {
+
+        return (this.emptySessionPath);
+
+    }
+
+
+    /**
+     * Set the "empty session path" flag.
+     *
+     * @param emptySessionPath The new "empty session path" flag value
+     */
+    public void setEmptySessionPath(boolean emptySessionPath) {
+
+        this.emptySessionPath = emptySessionPath;
+        setProperty("emptySessionPath", String.valueOf(emptySessionPath));
+    }
+    
+    
     
     /**
      * Return the maximum size of a POST which will be automatically

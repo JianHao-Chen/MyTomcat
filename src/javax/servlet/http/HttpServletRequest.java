@@ -158,5 +158,60 @@ public long getDateHeader(String name);
 */
 
 public Cookie[] getCookies();
+
+
+
+/**
+*
+* Returns the current <code>HttpSession</code>
+* associated with this request or, if there is no
+* current session and <code>create</code> is true, returns 
+* a new session.
+*
+* <p>If <code>create</code> is <code>false</code>
+* and the request has no valid <code>HttpSession</code>,
+* this method returns <code>null</code>.
+*
+* <p>To make sure the session is properly maintained,
+* you must call this method before 
+* the response is committed. If the container is using cookies
+* to maintain session integrity and is asked to create a new session
+* when the response is committed, an IllegalStateException is thrown.
+*
+*
+*
+*
+* @param create	<code>true</code> to create
+*			a new session for this request if necessary; 
+*			<code>false</code> to return <code>null</code>
+*			if there's no current session
+*			
+*
+* @return 		the <code>HttpSession</code> associated 
+*			with this request or <code>null</code> if
+* 			<code>create</code> is <code>false</code>
+*			and the request has no valid session
+*
+* @see	#getSession()
+*
+*
+*/
+
+public HttpSession getSession(boolean create);
+
+
+/**
+*
+* Returns the current session associated with this request,
+* or if the request does not have a session, creates one.
+* 
+* @return		the <code>HttpSession</code> associated
+*			with this request
+*
+* @see	#getSession(boolean)
+*
+*/
+
+public HttpSession getSession();
  
 }

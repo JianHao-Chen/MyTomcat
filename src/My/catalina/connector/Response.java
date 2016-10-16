@@ -2,12 +2,15 @@ package My.catalina.connector;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 
 import My.catalina.Wrapper;
+import My.tomcat.util.http.MimeHeaders;
 import My.tomcat.util.http.ServerCookie;
 
 public class Response implements HttpServletResponse{
@@ -70,6 +73,12 @@ public class Response implements HttpServletResponse{
      * The application commit flag.
      */
     protected boolean appCommitted = false;
+    
+    
+    /**
+     * The set of Cookies associated with this Response.
+     */
+    protected ArrayList<Cookie> cookies = new ArrayList<Cookie>();
     
     
     /**
@@ -567,6 +576,64 @@ public class Response implements HttpServletResponse{
     	return sb;
     	
     }
+    
+    
+    
+    
+    /**
+     * Special method for adding a session cookie as we should be overriding 
+     * any previous 
+     * @param cookie
+     */
+    public void addSessionCookieInternal(final Cookie cookie,
+            boolean httpOnly) {
+    	
+    	if (isCommitted())
+            return;
+    	
+    	String name = cookie.getName();
+        final String headername = "Set-Cookie";
+        final String startsWith = name + "=";
+        
+        final StringBuffer sb = generateCookieString(cookie, httpOnly);
+        
+        boolean set = false;
+        
+        MimeHeaders headers = coyoteResponse.getMimeHeaders();
+        
+        int n = headers.size();
+        for (int i = 0; i < n; i++) {
+        	
+        	if (headers.getName(i).toString().equals(headername)) {
+                if (headers.getValue(i).toString().startsWith(startsWith)) {
+                    headers.getValue(i).setString(sb.toString());
+                    set = true;
+                }
+            }
+        }
+        
+        if (set) {
+        	Iterator<Cookie> iter = cookies.iterator();
+            while (iter.hasNext()) {
+            	Cookie c = iter.next();
+                if (name.equals(c.getName())) {
+                    iter.remove();
+                    break;
+                }
+            }
+        }
+        else {
+            addHeader(headername, sb.toString());
+        }
+        cookies.add(cookie);
+    }
+    
+    
+    
+    
+    
+    
+    
     
     
     /**

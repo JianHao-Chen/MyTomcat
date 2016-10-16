@@ -36,7 +36,35 @@ public interface Manager {
     public void setContainer(Container container);
     
     
+    /**
+     * Add this Session to the set of active Sessions for this Manager.
+     *
+     * @param session Session to be added
+     */
+    public void add(Session session);
+    
+    /**
+     * Remove this Session from the active Sessions for this Manager.
+     *
+     * @param session Session to be removed
+     */
+    public void remove(Session session);
     
     
+    /**
+     * Construct and return a new session object, based on the default
+     * settings specified by this Manager's properties.  The session
+     * id specified will be used as the session id.
+     * If a new session cannot be created for any reason, return 
+     * <code>null</code>.
+     * 
+     * @param sessionId The session id which should be used to create the
+     *  new session; if <code>null</code>, the session
+     *  id will be assigned by this method, and available via the getId()
+     *  method of the returned session.
+     * @exception IllegalStateException if a new session cannot be
+     *  instantiated for any reason
+     */
+    public Session createSession(String sessionId);
     
 }

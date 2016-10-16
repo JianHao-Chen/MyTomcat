@@ -477,6 +477,11 @@ public class Request implements HttpServletRequest{
      */
     protected String requestedSessionId = null;
     
+    /**
+     * Was the requested session ID received in a cookie?
+     */
+    protected boolean requestedSessionCookie = false;
+    
     
     /**
      * Set the requested session ID for this request.  This is normally called
@@ -490,6 +495,12 @@ public class Request implements HttpServletRequest{
 
     }
 
+    /**
+     * Return the session identifier included in this request, if any.
+     */
+    public String getRequestedSessionId() {
+        return (requestedSessionId);
+    }
     
     
     /**
@@ -719,8 +730,11 @@ public class Request implements HttpServletRequest{
     public HttpSession getSession(boolean create) {
     	Session session = doGetSession(create);
     	
-    	
-    	return null;
+    	if (session != null) {
+            return session.getSession();
+        } else {
+            return null;
+        }
     }
     
     
@@ -742,9 +756,105 @@ public class Request implements HttpServletRequest{
         if (context != null)
             manager = context.getManager();
         
+        if (manager == null)
+            return (null);      // Sessions are not supported
         
-        return null;
+        if (requestedSessionId != null) {
+        	//...
+        }
+        
+        
+        // Create a new session if requested and the response is not committed
+        if (!create)
+            return (null);
+        
+        if ((context != null) && (response != null) &&
+                context.getCookies() &&
+                response.getResponse().isCommitted()) {
+        	
+        	throw new IllegalStateException("coyoteRequest.sessionCreateCommitted");
+        }
+        
+        
+        // Attempt to reuse session id if one was submitted in a cookie
+        // Do not reuse the session id if it is from a URL, to prevent possible
+        // phishing attacks
+        if (connector.getEmptySessionPath() 
+                && isRequestedSessionIdFromCookie()) {
+        	
+        	session = manager.createSession(getRequestedSessionId());
+        }
+        else
+        	session = manager.createSession(null);
+        
+        
+        // Creating a new session cookie based on that session
+        if ((session != null) && (getContext() != null)
+                && getContext().getCookies()) {
+        	
+        	String scName = context.getSessionCookieName();
+        	if (scName == null) {
+                scName = Globals.SESSION_COOKIE_NAME;
+            }
+        	
+        	Cookie cookie = new Cookie(scName, session.getIdInternal());
+        	configureSessionCookie(cookie);
+        	response.addSessionCookieInternal(cookie, context.getUseHttpOnly());
+        }
+        
+        if (session != null) {
+        	session.access();
+            return (session);
+        }
+        else
+        	return null;
     }
+    
+    
+    /**
+     * Configures the given JSESSIONID cookie.
+     *
+     * @param cookie The JSESSIONID cookie to be configured
+     */
+    protected void configureSessionCookie(Cookie cookie) {
+    	
+    	cookie.setMaxAge(-1);
+    	
+    	Context ctxt = getContext();
+    	
+    	String contextPath = null;
+    	
+    	if (ctxt != null && !getConnector().getEmptySessionPath()) {
+            if (ctxt.getSessionCookiePath() != null) {
+                contextPath = ctxt.getSessionCookiePath();
+            } else {
+                contextPath = ctxt.getEncodedPath();
+            }
+        }
+    	
+    	if ((contextPath != null) && (contextPath.length() > 0)) {
+            cookie.setPath(contextPath);
+        } else {
+            cookie.setPath("/");
+        }
+    	
+    	
+    	
+    }
+    
+    
+    /**
+     * Return <code>true</code> if the session identifier included in this
+     * request came from a cookie.
+     */
+    public boolean isRequestedSessionIdFromCookie() {
+    	if (requestedSessionId != null)
+            return (requestedSessionCookie);
+        else
+            return (false);
+    }
+
+    	
     
     
     
