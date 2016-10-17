@@ -130,4 +130,12 @@ public interface Session {
      * is the facade.
      */
     public HttpSession getSession();
+    
+    /**
+     * End access to the session.
+     */
+    public void endAccess();
+    
+    
+    
 }

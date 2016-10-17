@@ -26,6 +26,9 @@ public class StandardEngine extends ContainerBase implements Engine{
 	public StandardEngine() {
 		super();
         pipeline.setBasic(new StandardEngineValve());
+        
+        // By default, the engine will hold the reloading thread
+        backgroundProcessorDelay = 10;
 	}
 	
 	

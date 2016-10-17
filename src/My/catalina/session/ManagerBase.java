@@ -39,7 +39,10 @@ public class ManagerBase implements Manager{
 
     private int sessionIdCount = -1;
     
-    
+    /**
+     * Processing time during session expiration.
+     */
+    protected long processingTime = 0;
     
     
     /**
@@ -106,6 +109,12 @@ public class ManagerBase implements Manager{
      * @param interval The new default value
      */
     public void setMaxInactiveInterval(int interval) {
+    	/*
+    	 * currently ,set session timeout is 30 seconds
+    	 */
+    	
+    	interval = 30;
+    	
     	int oldMaxInactiveInterval = this.maxInactiveInterval;
         this.maxInactiveInterval = interval;
     }
@@ -133,6 +142,118 @@ public class ManagerBase implements Manager{
             sessionExpirationTiming.add(null);
         }
     	
+    }
+    
+    
+    
+    /**
+     * Iteration count for background processing.
+     */
+    private int count = 0;
+    
+    /**
+     * Frequency of the session expiration, and related manager operations.
+     * Manager operations will be done once for the specified amount of
+     * backgrondProcess calls (ie, the lower the amount, the most often the
+     * checks will occur).
+     */
+    protected int processExpiresFrequency = 6;
+    
+
+	public void backgroundProcess() {
+		count = (count + 1) % processExpiresFrequency;
+        if (count == 0)
+            processExpires();
+	}
+    
+	
+	/**
+     * Invalidate all sessions that have expired.
+     */
+    public void processExpires() {
+    	long timeNow = System.currentTimeMillis();
+        Session sessions[] = findSessions();
+        int expireHere = 0 ;
+        
+        for (int i = 0; i < sessions.length; i++) {
+        	if (sessions[i]!=null && !sessions[i].isValid()) {
+        		expireHere++;
+        	}
+        }
+        long timeEnd = System.currentTimeMillis();
+        
+        processingTime += ( timeEnd - timeNow );
+        
+    }
+    
+    
+    
+    /**
+     * Number of sessions that have expired.
+     */
+    protected int expiredSessions = 0;
+    
+    /**
+     * Gets the number of sessions that have expired.
+     *
+     * @return Number of sessions that have expired
+     */
+    public int getExpiredSessions() {
+        return expiredSessions;
+    }
+
+
+    /**
+     * Sets the number of sessions that have expired.
+     *
+     * @param expiredSessions Number of sessions that have expired
+     */
+    public void setExpiredSessions(int expiredSessions) {
+        this.expiredSessions = expiredSessions;
+    }
+    
+    
+    /**
+     * Average time (in seconds) that expired sessions had been alive.
+     */
+    protected int sessionAverageAliveTime;
+    
+    /**
+     * Gets the average time (in seconds) that expired sessions had been
+     * alive.
+     *
+     * @return Average time (in seconds) that expired sessions had been
+     * alive.
+     */
+    public int getSessionAverageAliveTime() {
+        return sessionAverageAliveTime;
+    }
+
+
+    /**
+     * Sets the average time (in seconds) that expired sessions had been
+     * alive.
+     *
+     * @param sessionAverageAliveTime Average time (in seconds) that expired
+     * sessions had been alive.
+     */
+    public void setSessionAverageAliveTime(int sessionAverageAliveTime) {
+        this.sessionAverageAliveTime = sessionAverageAliveTime;
+    }
+    
+    
+    
+	
+	
+    
+    /**
+     * Return the set of active Sessions associated with this Manager.
+     * If this Manager has no active Sessions, a zero-length array is returned.
+     */
+    public Session[] findSessions() {
+
+        return sessions.values().toArray(new Session[0]);
+
     }
     
     
@@ -236,6 +357,56 @@ public class ManagerBase implements Manager{
     
     
     
+    /**
+     * Return the active Session, associated with this Manager, with the
+     * specified session id (if any); otherwise return <code>null</code>.
+     *
+     * @param id The session id for the session to be returned
+     *
+     * @exception IllegalStateException if a new session cannot be
+     *  instantiated for any reason
+     * @exception IOException if an input/output error occurs while
+     *  processing this request
+     */
+    public Session findSession(String id) throws IOException {
+
+        if (id == null)
+            return (null);
+        return (Session) sessions.get(id);
+
+    }
+    
+    
+    /**
+     * The longest time (in seconds) that an expired session had been alive.
+     */
+    protected int sessionMaxAliveTime;
+    
+    /**
+     * Gets the longest time (in seconds) that an expired session had been
+     * alive.
+     *
+     * @return Longest time (in seconds) that an expired session had been
+     * alive.
+     */
+    public int getSessionMaxAliveTime() {
+        return sessionMaxAliveTime;
+    }
+
+
+    /**
+     * Sets the longest time (in seconds) that an expired session had been
+     * alive.
+     *
+     * @param sessionMaxAliveTime Longest time (in seconds) that an expired
+     * session had been alive.
+     */
+    public void setSessionMaxAliveTime(int sessionMaxAliveTime) {
+        this.sessionMaxAliveTime = sessionMaxAliveTime;
+    }
+    
+    
+    
 	// -----------------Protected Methods -------------------------
     
     /**
@@ -288,6 +459,15 @@ public class ManagerBase implements Manager{
             return duration;
         }
     }
+
+
+
+
+
+
+
+
+	
 
 
   

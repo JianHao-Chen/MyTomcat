@@ -1354,6 +1354,51 @@ public class StandardContext
         }
 
     }
+    
+    
+    
+    
+    /**
+     * The set of application listener class names configured for this
+     * application, in the order they were encountered in the web.xml file.
+     */
+    private String applicationListeners[] = new String[0];
+    
+    private final Object applicationListenersLock = new Object();
+    
+    /**
+     * Return the set of application listener class names configured
+     * for this application.
+     */
+    public String[] findApplicationListeners() {
+
+        return (applicationListeners);
+
+    }
+    
+    
+    /**
+     * Add a new Listener class name to the set of Listeners
+     * configured for this application.
+     *
+     * @param listener Java class name of a listener class
+     */
+    public void addApplicationListener(String listener) {
+    	synchronized (applicationListenersLock) {
+    		String results[] =new String[applicationListeners.length + 1];
+            for (int i = 0; i < applicationListeners.length; i++) {
+                if (listener.equals(applicationListeners[i])) {
+                    log.info("standardContext.duplicateListener");
+                    return;
+                }
+                results[i] = applicationListeners[i];
+            }
+            results[applicationListeners.length] = listener;
+            applicationListeners = results;
+        }
+        fireContainerEvent("addApplicationListener", listener);
+    	
+    }
 
     
     
@@ -1675,13 +1720,18 @@ public class StandardContext
     	// Notify our interested LifecycleListeners
         lifecycle.fireLifecycleEvent(INIT_EVENT, null);
         
-     // Send j2ee.state.starting notification 
+        // Send j2ee.state.starting notification 
         if (this.getObjectName() != null) {
             Notification notification = new Notification("j2ee.state.starting", 
                                                         this.getObjectName(), 
                                                         sequenceNumber++);
             broadcaster.sendNotification(notification);
         }
+        
+        
+        
+        // add listener manually
+        addApplicationListener("listeners.SessionListener");
     }
     
     
@@ -1825,6 +1875,15 @@ public class StandardContext
          
          
          
+         // Configure and call application event listeners
+         if (ok) {
+        	 if (!listenerStart()) {
+                 log.error( "Error listenerStart");
+                 ok = false;
+             }
+         }
+         
+         
          
          // Load and initialize all "load on startup" servlets
          if (ok) {
@@ -1940,6 +1999,17 @@ public class StandardContext
     }
     
     
+    
+    /**
+     * Configure the set of instantiated application event listeners
+     * for this Context.  Return <code>true</code> if all listeners wre
+     * initialized successfully, or <code>false</code> otherwise.
+     */
+    public boolean listenerStart() {
+    	
+    	return true;
+        
+    }
     
     
 }

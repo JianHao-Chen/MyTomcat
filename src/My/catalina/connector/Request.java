@@ -455,6 +455,13 @@ public class Request implements HttpServletRequest{
     
     
     
+    /**
+     * Session parsed flag.
+     */
+    protected boolean sessionParsed = false;
+    
+    
+    
     
     /**
      * Path parameters
@@ -481,6 +488,21 @@ public class Request implements HttpServletRequest{
      * Was the requested session ID received in a cookie?
      */
     protected boolean requestedSessionCookie = false;
+    
+    
+    
+    /**
+     * Set a flag indicating whether or not the requested session ID for this
+     * request came in through a cookie.  This is normally called by the
+     * HTTP Connector, when it parses the request headers.
+     *
+     * @param flag The new flag
+     */
+    public void setRequestedSessionCookie(boolean flag) {
+
+        this.requestedSessionCookie = flag;
+
+    }
     
     
     /**
@@ -760,7 +782,19 @@ public class Request implements HttpServletRequest{
             return (null);      // Sessions are not supported
         
         if (requestedSessionId != null) {
-        	//...
+        	try {
+        		session = manager.findSession(requestedSessionId);
+        	}
+        	catch (IOException e) {
+                session = null;
+            }
+        	
+        	if ((session != null) && !session.isValid())
+                session = null;
+            if (session != null) {
+                session.access();
+                return (session);
+            }
         }
         
         
@@ -1029,6 +1063,8 @@ public class Request implements HttpServletRequest{
         parametersParsed = false;
         cookiesParsed = false;
         
+        sessionParsed = false;
+        
         inputBuffer.recycle();
 
         
@@ -1036,6 +1072,21 @@ public class Request implements HttpServletRequest{
         
         
         mappingData.recycle();
+        
+        
+        if (session != null) {
+        	try {
+                session.endAccess();
+            } catch (Throwable t) {
+               
+            }
+        }
+        
+        session = null;
+        
+        requestedSessionCookie = false;
+        requestedSessionId = null;
+        requestedSessionURL = false;
     }
     
     

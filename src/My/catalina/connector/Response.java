@@ -22,6 +22,12 @@ import My.tomcat.util.net.URL;
 
 public class Response implements HttpServletResponse{
 
+	// ----------------------- Constructors ---------------------
+	
+	public Response() {
+        urlEncoder.addSafeCharacter('/');
+    }
+	
 	
 	
 	// -------------------------- Properties --------------------------

@@ -9,6 +9,7 @@ import My.coyote.Adapter;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
 import My.tomcat.util.buf.ByteChunk;
+import My.tomcat.util.buf.CharChunk;
 import My.tomcat.util.buf.MessageBytes;
 import My.tomcat.util.http.Cookies;
 import My.tomcat.util.http.ServerCookie;
@@ -247,6 +248,32 @@ public class CoyoteAdapter implements Adapter{
     
     
     /**
+     * Character conversion of the a US-ASCII MessageBytes.
+     */
+    protected void convertMB(MessageBytes mb) {
+
+        // This is of course only meaningful for bytes
+        if (mb.getType() != MessageBytes.T_BYTES)
+            return;
+        
+        ByteChunk bc = mb.getByteChunk();
+        CharChunk cc = mb.getCharChunk();
+        int length = bc.getLength();
+        cc.allocate(length, -1);
+
+        // Default encoding: fast conversion
+        byte[] bbuf = bc.getBuffer();
+        char[] cbuf = cc.getBuffer();
+        int start = bc.getStart();
+        for (int i = 0; i < length; i++) {
+            cbuf[i] = (char) (bbuf[i + start] & 0xff);
+        }
+        mb.setChars(cbuf, 0, length);
+
+    }
+    
+    
+    /**
      * Parse session id in URL.
      */
     protected void parseSessionCookiesId(My.coyote.Request req, Request request) {
@@ -271,8 +298,16 @@ public class CoyoteAdapter implements Adapter{
     		
     		ServerCookie scookie = serverCookies.getCookie(i);
     		if (scookie.getName().equals(sessionCookieName)) {
-    			
-    			// ....
+    			// Override anything requested in the URL
+                if (!request.isRequestedSessionIdFromCookie()) {
+                	// Accept only the first session id cookie
+                	convertMB(scookie.getValue());
+                	
+                	request.setRequestedSessionId
+                    	(scookie.getValue().toString());
+                	request.setRequestedSessionCookie(true);
+                	request.setRequestedSessionURL(false);
+                }
     		}
     	}
     }

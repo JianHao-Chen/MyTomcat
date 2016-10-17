@@ -997,6 +997,44 @@ public abstract class ContainerBase
     
     
     
+    
+    
+    
+    /**
+     * Execute a periodic task, such as reloading, etc. This method will be
+     * invoked inside the classloading context of this container. Unexpected
+     * throwables will be caught and logged.
+     */
+    public void backgroundProcess() {
+    	
+    	
+    	 if (!started)
+             return;
+    	 
+    	 if (loader != null) {
+    		 /*try {
+                 loader.backgroundProcess();
+             } catch (Exception e) {
+                 log.warn("containerBase.backgroundProcess.loader", loader);                
+             }*/
+    	 }
+    	 
+    	 if (manager != null) {
+    		 try {
+                 manager.backgroundProcess();
+             } 
+    		 catch (Exception e) {
+             }
+    	 }
+    	 
+    	 
+    	 lifecycle.fireLifecycleEvent(Lifecycle.PERIODIC_EVENT, null);
+    }
+    
+    
+    
+    
+    
  // -------------- ContainerExecuteDelay Inner Class --------------
     /**
      * Private thread class to invoke the backgroundProcess method 
@@ -1011,11 +1049,47 @@ public abstract class ContainerBase
     			}catch (InterruptedException e) {;}
     			
     			if (!threadDone) {
-    				//XXX 
-    				//do this latter
+    				Container parent = (Container) getMappingObject();
+    				
+    				ClassLoader cl = 
+                        Thread.currentThread().getContextClassLoader();
+    				
+    				if (parent.getLoader() != null) {
+                        cl = parent.getLoader().getClassLoader();
+                    }
+                    processChildren(parent, cl);
     			}
     		}
     	}
+    	
+    	
+    	protected void processChildren(Container container, ClassLoader cl) {
+    		
+    		try {
+    			if (container.getLoader() != null) {
+                    Thread.currentThread().setContextClassLoader
+                        (container.getLoader().getClassLoader());
+                }
+    			
+    			container.backgroundProcess();
+    		}
+    		catch (Throwable t) {
+                log.error("Exception invoking periodic operation: ", t);
+            }
+    		finally {
+                Thread.currentThread().setContextClassLoader(cl);
+            }
+    		
+    		Container[] children = container.findChildren();
+    		for (int i = 0; i < children.length; i++) {
+                if (children[i].getBackgroundProcessorDelay() <= 0) {
+                    processChildren(children[i], cl);
+                }
+            }
+    	}
+    	
+    	
+    	
     }
     
     

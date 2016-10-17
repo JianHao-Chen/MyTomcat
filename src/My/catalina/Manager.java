@@ -1,5 +1,7 @@
 package My.catalina;
 
+import java.io.IOException;
+
 /**
  * A <b>Manager</b> manages the pool of Sessions that are associated with a
  * particular Container.  Different Manager implementations may support
@@ -67,4 +69,89 @@ public interface Manager {
      */
     public Session createSession(String sessionId);
     
+    
+    /**
+     * Return the active Session, associated with this Manager, with the
+     * specified session id (if any); otherwise return <code>null</code>.
+     *
+     * @param id The session id for the session to be returned
+     *
+     * @exception IllegalStateException if a new session cannot be
+     *  instantiated for any reason
+     * @exception IOException if an input/output error occurs while
+     *  processing this request
+     */
+    public Session findSession(String id) throws IOException;
+    
+    
+    /**
+     * Gets the longest time (in seconds) that an expired session had been
+     * alive.
+     *
+     * @return Longest time (in seconds) that an expired session had been
+     * alive.
+     */
+    public int getSessionMaxAliveTime();
+
+
+    /**
+     * Sets the longest time (in seconds) that an expired session had been
+     * alive.
+     *
+     * @param sessionMaxAliveTime Longest time (in seconds) that an expired
+     * session had been alive.
+     */
+    public void setSessionMaxAliveTime(int sessionMaxAliveTime);
+    
+    
+    
+    /**
+     * Gets the number of sessions that have expired.
+     *
+     * @return Number of sessions that have expired
+     */
+    public int getExpiredSessions();
+
+
+    /**
+     * Sets the number of sessions that have expired.
+     *
+     * @param expiredSessions Number of sessions that have expired
+     */
+    public void setExpiredSessions(int expiredSessions);
+    
+    
+    
+    
+    /**
+     * Gets the average time (in seconds) that expired sessions had been
+     * alive.
+     *
+     * @return Average time (in seconds) that expired sessions had been
+     * alive.
+     */
+    public int getSessionAverageAliveTime();
+
+
+    /**
+     * Sets the average time (in seconds) that expired sessions had been
+     * alive.
+     *
+     * @param sessionAverageAliveTime Average time (in seconds) that expired
+     * sessions had been alive.
+     */
+    public void setSessionAverageAliveTime(int sessionAverageAliveTime);
+    
+    
+    
+    
+    
+    
+    
+    /**
+     * This method will be invoked by the context/container on a periodic
+     * basis and allows the manager to implement
+     * a method that executes periodic tasks, such as expiring sessions etc.
+     */
+    public void backgroundProcess();
 }

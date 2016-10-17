@@ -13,6 +13,7 @@ import javax.servlet.http.HttpSession;
 import My.catalina.Context;
 import My.catalina.Manager;
 import My.catalina.Session;
+import My.catalina.session.ManagerBase.SessionTiming;
 import My.catalina.util.Enumerator;
 
 /**
@@ -248,9 +249,122 @@ public class StandardSession
 
 	@Override
 	public boolean isValid() {
-		// TODO Auto-generated method stub
-		return false;
+		if (this.expiring) {
+            return true;
+        }
+
+        if (!this.isValid) {
+            return false;
+        }
+        
+        if (maxInactiveInterval >= 0) { 
+        	long timeNow = System.currentTimeMillis();
+            int timeIdle = (int) ((timeNow - thisAccessedTime) / 1000L);
+            if (timeIdle >= maxInactiveInterval) {
+                expire(true);
+            }
+        }
+        return (this.isValid);
 	}
+	
+	
+	/**
+     * Perform the internal processing required to invalidate this session,
+     * without triggering an exception if the session has already expired.
+     */
+    public void expire() {
+
+        expire(true);
+
+    }
+    
+    
+    
+    /**
+     * Perform the internal processing required to invalidate this session,
+     * without triggering an exception if the session has already expired.
+     *
+     * @param notify Should we notify listeners about the demise of
+     *  this session?
+     */
+    public void expire(boolean notify) {
+    	
+    	// Check to see if expire is in progress or has previously been called
+        if (expiring || !isValid)
+            return;
+        
+        synchronized (this) {
+        	// Check again, now we are inside the sync so this code only runs once
+            // Double check locking - expiring and isValid need to be volatile
+            if (expiring || !isValid)
+                return;
+
+            if (manager == null)
+                return;
+            
+            // Mark this session as "being expired"
+            expiring = true;
+            
+            // Notify interested application event listeners
+            Context context = (Context) manager.getContainer();
+            
+            
+            setValid(false);
+            
+            
+            /*
+             * Compute how long this session has been alive, and update
+             * session manager's related properties accordingly
+             */
+            long timeNow = System.currentTimeMillis();
+
+            int timeAlive = (int) ((timeNow - creationTime)/1000);
+            
+            synchronized (manager) {
+            	if (timeAlive > manager.getSessionMaxAliveTime()) {
+            		manager.setSessionMaxAliveTime(timeAlive);
+            	}
+            	int numExpired = manager.getExpiredSessions();
+            	
+            	if (numExpired < Integer.MAX_VALUE) {
+            		numExpired++;
+                    manager.setExpiredSessions(numExpired);
+            	}
+            	
+            	 int average = manager.getSessionAverageAliveTime();
+                 // Using long, as otherwise (average * numExpired) might overflow 
+                 average = (int) (((((long) average) * (numExpired - 1)) + timeAlive)
+                         / numExpired);
+                 manager.setSessionAverageAliveTime(average);
+            }
+            
+            if (manager instanceof ManagerBase) {
+            	
+            	ManagerBase mb = (ManagerBase) manager;
+                SessionTiming timing = new SessionTiming(timeNow, timeAlive);
+                synchronized (mb.sessionExpirationTiming) {
+                    mb.sessionExpirationTiming.add(timing);
+                    mb.sessionExpirationTiming.poll();
+                }
+            }
+            
+            // Remove this session from our manager's active sessions
+            manager.remove(this);
+            
+            // Notify interested session event listeners
+            if (notify) {
+                fireSessionEvent(Session.SESSION_DESTROYED_EVENT, null);
+            }
+            
+            
+            // We have completed expire of this session
+            expiring = false;
+            
+        }
+    }
+	
+	
+	
 
 
 	@Override
@@ -356,6 +470,15 @@ public class StandardSession
     }
     
 	
+    
+    /**
+     * End the access.
+     */
+    public void endAccess() {
+
+        isNew = false;
+
+    }
 	
 	
 	// ---------------------- Protected Methods ----------------------------
