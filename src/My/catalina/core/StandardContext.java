@@ -1884,6 +1884,22 @@ public class StandardContext
          }
          
          
+         try {
+             // Start manager
+        	 if ((manager != null) && (manager instanceof Lifecycle)) {
+        		 ((Lifecycle) getManager()).start();
+        	 }
+        	// Start ContainerBackgroundProcessor thread
+             super.threadStart();
+         }
+         catch(Exception e) {
+             log.error("Error manager.start()", e);
+             ok = false;
+         }
+         
+         
+         
+         
          
          // Load and initialize all "load on startup" servlets
          if (ok) {

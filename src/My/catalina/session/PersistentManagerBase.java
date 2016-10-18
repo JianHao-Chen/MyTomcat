@@ -68,7 +68,7 @@ public abstract class PersistentManagerBase
      * to file just on general principle. Setting this to -1 means sessions
      * should not be forced out.
      */
-    protected int maxIdleSwap = -1;
+    protected int maxIdleSwap = 30;
     
     
     /**
@@ -517,10 +517,31 @@ public abstract class PersistentManagerBase
 	}
 
 
-	@Override
+	/**
+     * Prepare for the beginning of active use of the public methods of this
+     * component.  This method should be called after <code>configure()</code>,
+     * and before any of the public methods of the component are utilized.
+     *
+     * @exception LifecycleException if this component detects a fatal error
+     *  that prevents this component from being used
+     */
 	public void start() throws LifecycleException {
-		// TODO Auto-generated method stub
-		
+		// Validate and update our current component state
+        if (started) {
+            log.info("standardManager.alreadyStarted");
+            return;
+        }
+        if( ! initialized )
+            init();
+        
+        started = true;
+        
+        if (store == null)
+            log.error("No Store configured, persistence disabled");
+        else if (store instanceof Lifecycle)
+            ((Lifecycle)store).start();
+        
+        
 	}
 
 

@@ -113,7 +113,7 @@ public class ManagerBase implements Manager{
     	 * currently ,set session timeout is 30 seconds
     	 */
     	
-    	interval = 30;
+    	//interval = 30;
     	
     	int oldMaxInactiveInterval = this.maxInactiveInterval;
         this.maxInactiveInterval = interval;
@@ -157,7 +157,7 @@ public class ManagerBase implements Manager{
      * backgrondProcess calls (ie, the lower the amount, the most often the
      * checks will occur).
      */
-    protected int processExpiresFrequency = 6;
+    protected int processExpiresFrequency = 4;
     
 
 	public void backgroundProcess() {

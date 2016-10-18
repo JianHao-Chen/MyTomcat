@@ -288,7 +288,9 @@ public final class FileStore
                     ((Context) container).getServletContext();
     			
     			File work = (File)
-                servletContext.getAttribute(Globals.WORK_DIR_ATTR);
+                	servletContext.getAttribute(Globals.WORK_DIR_ATTR);
+    			
+    			file = new File(work, this.directory);
     		}
     		else {
                 throw new IllegalArgumentException

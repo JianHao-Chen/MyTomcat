@@ -537,8 +537,7 @@ public class StandardSession
 	}
 
 	public int getMaxInactiveInterval() {
-		// TODO Auto-generated method stub
-		return 0;
+		return (this.maxInactiveInterval);
 	}
 
 
