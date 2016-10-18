@@ -1,5 +1,8 @@
 package My.catalina.session;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -225,8 +228,25 @@ public class StandardSession
     }
 
 
+    /**
+     * Return the Manager within which this Session is valid.
+     */
+    public Manager getManager() {
+
+        return (this.manager);
+
+    }
    
-    
+    /**
+     * Set the Manager within which this Session is valid.
+     *
+     * @param manager The new Manager
+     */
+    public void setManager(Manager manager) {
+
+        this.manager = manager;
+
+    }
     
     
     /**
@@ -362,7 +382,117 @@ public class StandardSession
             
         }
     }
+    
+    
+    
+    /**
+     * Perform the internal processing required to passivate
+     * this session.
+     */
+    public void passivate() {
+    	// listeners
+    }
+    
+    
+    /**
+     * Write a serialized version of the contents of this session object to
+     * the specified object output stream, without requiring that the
+     * StandardSession itself have been serialized.
+     *
+     * @param stream The object output stream to write to
+     *
+     * @exception IOException if an input/output error occurs
+     */
+    public void writeObjectData(ObjectOutputStream stream)
+        throws IOException {
+    	
+    	writeObject(stream);
+    }
 	
+    
+    /**
+     * Write a serialized version of this session object to the specified
+     * object output stream.
+     * <p>
+     * <b>IMPLEMENTATION NOTE</b>:  The owning Manager will not be stored
+     * in the serialized representation of this Session.  After calling
+     * <code>readObject()</code>, you must set the associated Manager
+     * explicitly.
+     * <p>
+     * <b>IMPLEMENTATION NOTE</b>:  Any attribute that is not Serializable
+     * will be unbound from the session, with appropriate actions if it
+     * implements HttpSessionBindingListener.  If you do not want any such
+     * attributes, be sure the <code>distributable</code> property of the
+     * associated Manager is set to <code>true</code>.
+     *
+     * @param stream The output stream to write to
+     *
+     * @exception IOException if an input/output error occurs
+     */
+    protected void writeObject(ObjectOutputStream stream) throws IOException {
+    	
+    	// Write the scalar instance variables (except Manager)
+    	stream.writeObject(new Long(creationTime));
+    	stream.writeObject(new Long(lastAccessedTime));
+        stream.writeObject(new Integer(maxInactiveInterval));
+        stream.writeObject(new Boolean(isNew));
+        stream.writeObject(new Boolean(isValid));
+        stream.writeObject(new Long(thisAccessedTime));
+        stream.writeObject(id);
+        
+        
+        // handle attributes ...
+        
+        
+    }
+    
+    
+    
+    /**
+     * Read a serialized version of the contents of this session object from
+     * the specified object input stream, without requiring that the
+     * StandardSession itself have been serialized.
+     *
+     * @param stream The object input stream to read from
+     *
+     * @exception ClassNotFoundException if an unknown class is specified
+     * @exception IOException if an input/output error occurs
+     */
+    public void readObjectData(ObjectInputStream stream)
+        throws ClassNotFoundException, IOException {
+
+        readObject(stream);
+
+    }
+    
+    
+    /**
+     * Read a serialized version of this session object from the specified
+     * object input stream.
+     * <p>
+     * <b>IMPLEMENTATION NOTE</b>:  The reference to the owning Manager
+     * is not restored by this method, and must be set explicitly.
+     *
+     * @param stream The input stream to read from
+     *
+     * @exception ClassNotFoundException if an unknown class is specified
+     * @exception IOException if an input/output error occurs
+     */
+    protected void readObject(ObjectInputStream stream)
+        throws ClassNotFoundException, IOException {
+    	
+    	creationTime = ((Long) stream.readObject()).longValue();
+        lastAccessedTime = ((Long) stream.readObject()).longValue();
+        maxInactiveInterval = ((Integer) stream.readObject()).intValue();
+        isNew = ((Boolean) stream.readObject()).booleanValue();
+        isValid = ((Boolean) stream.readObject()).booleanValue();
+        thisAccessedTime = ((Long) stream.readObject()).longValue();
+        
+        id = (String) stream.readObject();
+        
+        
+        // handle attributes ...
+    }
 	
 	
 
@@ -478,6 +608,28 @@ public class StandardSession
 
         isNew = false;
 
+    }
+    
+    
+    
+    /**
+     * Release all object references, and initialize instance variables, in
+     * preparation for reuse of this object.
+     */
+    public void recycle() {
+    	
+    	
+    	attributes.clear();
+    	
+    	creationTime = 0L;
+        expiring = false;
+        id = null;
+        lastAccessedTime = 0L;
+        maxInactiveInterval = -1;
+        
+        isNew = false;
+        isValid = false;
+        manager = null;
     }
 	
 	

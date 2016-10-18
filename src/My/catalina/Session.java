@@ -137,5 +137,9 @@ public interface Session {
     public void endAccess();
     
     
-    
+    /**
+     * Release all object references, and initialize instance variables, in
+     * preparation for reuse of this object.
+     */
+    public void recycle();
 }

@@ -1007,27 +1007,13 @@ public class Digester extends DefaultHandler{
             String qName, Attributes list)
     	throws SAXException {
     	
-    	
-    	if(qName.equals("servlet")){
-    		System.out.println("servlet");
+    	if(qName.equals("Context")){
+    		System.out.println("Context");
     	}
     	
-    	if(qName.equals("servlet-name")){
-    		System.out.println("servlet-name");
+    	if(qName.equals("Manager")){
+    		System.out.println("Manager");
     	}
-    	
-    	if(qName.equals("servlet-class")){
-    		System.out.println("servlet-class");
-    	}
-    	
-    	if(qName.equals("servlet-mapping")){
-    		System.out.println("servlet-mapping");
-    	}
-    	
-    	if(qName.equals("surl-pattern")){
-    		System.out.println("url-pattern");
-    	}
-    	
 
     	/*
     	if(qName.equals("Context")){
@@ -1120,26 +1106,14 @@ public class Digester extends DefaultHandler{
     	
     	
     	
-    	if(qName.equals("servlet")){
-    		System.out.println("servlet");
+    	if(qName.equals("Context")){
+    		System.out.println("Context");
     	}
     	
-    	if(qName.equals("servlet-name")){
-    		System.out.println("servlet-name");
+    	if(qName.equals("Manager")){
+    		System.out.println("Manager");
     	}
-    	
-    	if(qName.equals("servlet-class")){
-    		System.out.println("servlet-class");
-    	}
-    	
-    	if(qName.equals("servlet-mapping")){
-    		System.out.println("servlet-mapping");
-    	}
-    	
-    	if(qName.equals("surl-pattern")){
-    		System.out.println("url-pattern");
-    	}
-    	
+
     	
     	// the actual element name is either in localName or qName, depending 
         // on whether the parser is namespace aware

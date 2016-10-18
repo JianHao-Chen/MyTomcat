@@ -81,9 +81,14 @@ public class ContextRuleSet extends RuleSetBase{
     
     public void addRuleInstances(Digester digester) {
     	
-    	digester.addObjectCreate(prefix + "Context",
-                "My.catalina.core.StandardContext", "className");
-        digester.addSetProperties(prefix + "Context");
+    	if (create) {
+    		digester.addObjectCreate(prefix + "Context",
+                    "My.catalina.core.StandardContext", "className");
+            digester.addSetProperties(prefix + "Context");
+    	}
+    	else
+    		digester.addRule(prefix + "Context", new SetContextPropertiesRule());
+    	
         
         
         digester.addRule(prefix + "Context",
@@ -113,5 +118,26 @@ public class ContextRuleSet extends RuleSetBase{
 		digester.addSetNext(prefix + "Context/Loader",
 		             "setLoader",
 		             "My.catalina.Loader");
+		
+		
+		
+		
+		digester.addObjectCreate(prefix + "Context/Manager",
+                "My.catalina.session.StandardManager",
+                "className");
+		digester.addSetProperties(prefix + "Context/Manager");
+		digester.addSetNext(prefix + "Context/Manager",
+				"setManager",
+           "My.catalina.Manager");
+
+
+		digester.addObjectCreate(prefix + "Context/Manager/Store",
+                null, // MUST be specified in the element
+                "className");
+		digester.addSetProperties(prefix + "Context/Manager/Store");
+		digester.addSetNext(prefix + "Context/Manager/Store",
+           "setStore",
+           "My.catalina.Store");
+
     }
 }

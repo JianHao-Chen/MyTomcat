@@ -71,6 +71,14 @@ public interface Manager {
     
     
     /**
+     * Get a session from the recycled ones or create a new empty one.
+     * The PersistentManager manager does not need to create session data
+     * because it reads it from the Store.
+     */                                                                         
+    public Session createEmptySession();
+    
+    
+    /**
      * Return the active Session, associated with this Manager, with the
      * specified session id (if any); otherwise return <code>null</code>.
      *
