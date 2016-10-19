@@ -368,6 +368,55 @@ public abstract class PersistentManagerBase
     	processMaxActiveSwaps();
         processMaxIdleBackups();
     }
+    
+    
+    /**
+     * Return the active Session, associated with this Manager, with the
+     * specified session id (if any); otherwise return <code>null</code>.
+     * This method checks the persistence store if persistence is enabled,
+     * otherwise just uses the functionality from ManagerBase.
+     *
+     * @param id The session id for the session to be returned
+     *
+     * @exception IllegalStateException if a new session cannot be
+     *  instantiated for any reason
+     * @exception IOException if an input/output error occurs while
+     *  processing this request
+     */
+    public Session findSession(String id) throws IOException {
+    	
+    	Session session = super.findSession(id);
+    	
+    	// OK, at this point, we're not sure if another thread is trying to
+        // remove the session or not so the only way around this is to lock it
+        // (or attempt to) and then try to get it by this session id again. If
+        // the other code ran swapOut, then we should get a null back during
+        // this run, and if not, we lock it out so we can access the session
+        // safely.
+    	
+    	if(session != null) {
+    		synchronized(session){
+    			session = super.findSession(session.getIdInternal());
+    			if(session != null){
+                    // To keep any external calling code from messing up the
+                    // concurrency.
+                    session.access();
+                    session.endAccess();
+                 }
+    		}
+    	}
+    	
+    	if (session != null)
+            return (session);
+    	
+    	
+    	// See if the Session is in the Store
+        session = swapIn(id);
+        
+        return (session);
+    }
+    
+    
 
     
     /**
@@ -390,6 +439,107 @@ public abstract class PersistentManagerBase
     
     
 	// ------------------------Protected Methods ---------------------------
+    
+    /**
+     * Look for a session in the Store and, if found, restore
+     * it in the Manager's list of active sessions if appropriate.
+     * The session will be removed from the Store after swapping
+     * in, but will not be added to the active session list if it
+     * is invalid or past its expiration.
+     */
+    protected Session swapIn(String id) throws IOException {
+    	
+    	if (store == null)
+            return null;
+
+        Object swapInLock = null;
+        
+        /*
+         * The purpose of this sync and these locks is to make sure that a
+         * session is only loaded once. It doesn't matter if the lock is removed
+         * and then another thread enters this method and tries to load the same
+         * session. That thread will re-create a swapIn lock for that session,
+         * quickly find that the session is already in sessions, use it and
+         * carry on.
+         */
+        synchronized (this) {
+        	swapInLock = sessionSwapInLocks.get(id);
+        	if (swapInLock == null) {
+                swapInLock = new Object();
+                sessionSwapInLocks.put(id, swapInLock);
+            }
+        }
+        
+        
+        Session session = null;
+
+        synchronized (swapInLock) {
+        	// First check to see if another thread has loaded the session into
+            // the manager
+            session = sessions.get(id);
+            if (session == null) {
+            	
+            	try {
+            		session = store.load(id);
+            	}
+            	catch (ClassNotFoundException e) {
+            		
+            	}
+            	
+            	
+            	if (session != null && !session.isValid()) {
+                	
+            		session.expire();
+                    removeSession(id);
+                    session = null;
+                }
+            	
+            	
+            	if (session != null) {
+            		session.setManager(this);
+            		
+            		add(session);
+            		
+            		((StandardSession)session).activate();
+            		
+            		session.access();
+                    session.endAccess();
+            	}
+            	
+            }
+            
+            
+        }
+        
+        
+        // Make sure the lock is removed
+        synchronized (this) {
+            sessionSwapInLocks.remove(id);
+        }
+        
+        return (session);
+        
+    }
+    
+    
+    
+    /**
+     * Remove this Session from the active Sessions for this Manager,
+     * and from the Store.
+     *
+     * @param id Session's id to be removed
+     */    
+    protected void removeSession(String id){
+    	
+    	try {
+    		store.remove(id);
+    	}
+    	catch (IOException e) {
+            log.error("Exception removing session  " + e.getMessage(), e);
+        }  
+    }
+    
+    
     
     /**
      * Swap idle sessions out to Store if they are idle too long.

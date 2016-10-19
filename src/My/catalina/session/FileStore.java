@@ -200,10 +200,25 @@ public final class FileStore
         
 	}
 
-	@Override
+	
+	
+	/**
+     * Remove the Session with the specified session identifier from
+     * this Store, if present.  If no such Session is present, this method
+     * takes no action.
+     *
+     * @param id Session identifier of the Session to be removed
+     *
+     * @exception IOException if an input/output error occurs
+     */
 	public void remove(String id) throws IOException {
-		// TODO Auto-generated method stub
+		File file = file(id);
 		
+		if (file == null) {
+            return;
+        }
+		
+		file.delete();
 	}
 
 	@Override

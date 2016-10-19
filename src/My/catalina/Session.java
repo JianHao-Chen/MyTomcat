@@ -142,4 +142,26 @@ public interface Session {
      * preparation for reuse of this object.
      */
     public void recycle();
+    
+    
+    /**
+     * Perform the internal processing required to invalidate this session,
+     * without triggering an exception if the session has already expired.
+     */
+    public void expire();
+    
+    
+    
+    /**
+     * Return the Manager within which this Session is valid.
+     */
+    public Manager getManager();
+
+
+    /**
+     * Set the Manager within which this Session is valid.
+     *
+     * @param manager The new Manager
+     */
+    public void setManager(Manager manager);
 }

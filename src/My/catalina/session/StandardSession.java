@@ -395,6 +395,16 @@ public class StandardSession
     
     
     /**
+     * Perform internal processing required to activate this
+     * session.
+     */
+    public void activate() {
+    	
+    	// listeners
+    }
+    
+    
+    /**
      * Write a serialized version of the contents of this session object to
      * the specified object output stream, without requiring that the
      * StandardSession itself have been serialized.

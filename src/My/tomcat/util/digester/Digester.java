@@ -1007,12 +1007,8 @@ public class Digester extends DefaultHandler{
             String qName, Attributes list)
     	throws SAXException {
     	
-    	if(qName.equals("Context")){
-    		System.out.println("Context");
-    	}
-    	
-    	if(qName.equals("Manager")){
-    		System.out.println("Manager");
+    	if(qName.equals("Cluster")){
+    		System.out.println("Cluster");
     	}
 
     	/*
