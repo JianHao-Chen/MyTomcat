@@ -1,6 +1,8 @@
 package My.catalina.ha.tcp;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import My.catalina.Container;
@@ -92,27 +94,69 @@ public class SimpleTcpCluster
     
     protected ClusterManager managerTemplate = new DeltaManager();
 
+    /**
+     * Listeners of messages
+     */
+    protected List clusterListeners = new ArrayList();
     
     
     
     
-	@Override
-	public String getInfo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	// -------------------- Properties --------------------
+    
+    /**
+     * Return descriptive information about this Cluster implementation and the
+     * corresponding version number, in the format
+     * <code>&lt;description&gt;/&lt;version&gt;</code>.
+     */
+    public String getInfo() {
+        return (info);
+    }
 
-	@Override
-	public String getClusterName() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    /**
+     * Set the name of the cluster to join, if no cluster with this name is
+     * present create one.
+     * 
+     * @param clusterName
+     *            The clustername to join
+     */
+    public void setClusterName(String clusterName) {
+        this.clusterName = clusterName;
+    }
 
-	@Override
-	public void setClusterName(String clusterName) {
-		// TODO Auto-generated method stub
-		
-	}
+    /**
+     * Return the name of the cluster that this Server is currently configured
+     * to operate within.
+     * 
+     * @return The name of the cluster associated with this server
+     */
+    public String getClusterName() {
+        if(clusterName == null && container != null)
+            return container.getName() ;
+        return clusterName;
+    }
+    
+    /**
+     * Set the Container associated with our Cluster
+     * 
+     * @param container
+     *            The Container to use
+     */
+    public void setContainer(Container container) {
+        Container oldContainer = this.container;
+        this.container = container;
+    }
+
+    /**
+     * Get the Container associated with our Cluster
+     * 
+     * @return The Container associated with our Cluster
+     */
+    public Container getContainer() {
+        return (this.container);
+    }
+    
+    
 
 	@Override
 	public void lifecycleEvent(LifecycleEvent event) {
