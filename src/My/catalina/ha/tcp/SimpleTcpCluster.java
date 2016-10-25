@@ -2,6 +2,7 @@ package My.catalina.ha.tcp;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -10,9 +11,15 @@ import My.catalina.Lifecycle;
 import My.catalina.LifecycleEvent;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
+import My.catalina.Valve;
 import My.catalina.ha.CatalinaCluster;
+import My.catalina.ha.ClusterListener;
 import My.catalina.ha.ClusterManager;
+import My.catalina.ha.ClusterValve;
+import My.catalina.ha.session.ClusterSessionListener;
 import My.catalina.ha.session.DeltaManager;
+import My.catalina.ha.session.JvmRouteBinderValve;
+import My.catalina.ha.session.JvmRouteSessionIDBinderListener;
 import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelListener;
 import My.catalina.tribes.MembershipListener;
@@ -20,6 +27,7 @@ import My.catalina.tribes.group.GroupChannel;
 import My.catalina.util.LifecycleSupport;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
+import My.tomcat.util.IntrospectionUtils;
 
 /**
  * A <b>Cluster </b> implementation using simple multicast. Responsible for
@@ -99,10 +107,23 @@ public class SimpleTcpCluster
      */
     protected List clusterListeners = new ArrayList();
     
+    private List valves = new ArrayList();
     
     
+    
+    private int channelStartOptions = Channel.DEFAULT;
     
 	// -------------------- Properties --------------------
+    
+    
+    /**
+     *   For Debug
+     */
+    public SimpleTcpCluster() {
+    	System.out.println("SimpleTcpCluster constructor....");
+    }
+    
+    
     
     /**
      * Return descriptive information about this Cluster implementation and the
@@ -135,6 +156,28 @@ public class SimpleTcpCluster
             return container.getName() ;
         return clusterName;
     }
+    
+    
+    /**
+     * Add cluster valve 
+     * Cluster Valves are only add to container when cluster is started!
+     * @param valve The new cluster Valve.
+     */
+    public void addValve(Valve valve) {
+        if (valve instanceof ClusterValve && (!valves.contains(valve)))
+            valves.add(valve);
+    }
+
+    /**
+     * get all cluster valves
+     * @return current cluster valves
+     */
+    public Valve[] getValves() {
+        return (Valve[]) valves.toArray(new Valve[valves.size()]);
+    }
+    
+    
+    
     
     /**
      * Set the Container associated with our Cluster
@@ -181,12 +224,124 @@ public class SimpleTcpCluster
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	
+	/**
+     * Get the cluster listeners associated with this cluster. If this Array has
+     * no listeners registered, a zero-length array is returned.
+     */
+    public ClusterListener[] findClusterListeners() {
+    	if (clusterListeners.size() > 0) {
+    		ClusterListener[] listener = new ClusterListener[clusterListeners.size()];
+            clusterListeners.toArray(listener);
+            return listener;
+    	}
+    	else
+            return new ClusterListener[0];
+    }
 
-	@Override
+    
+    /**
+     * add cluster message listener and register cluster to this listener
+     * 
+     * @see org.apache.catalina.ha.CatalinaCluster#addClusterListener(org.apache.catalina.ha.MessageListener)
+     */
+    public void addClusterListener(ClusterListener listener) {
+    	if (listener != null && !clusterListeners.contains(listener)) {
+            clusterListeners.add(listener);
+            listener.setCluster(this);
+        }
+    }
+	
+	
+	
+	// ------------------------- public ----------------------
+	
+	 /**
+     * Prepare for the beginning of active use of the public methods of this
+     * component. This method should be called after <code>configure()</code>,
+     * and before any of the public methods of the component are utilized. <BR>
+     * Starts the cluster communication channel, this will connect with the
+     * other nodes in the cluster, and request the current session state to be
+     * transferred to this node.
+     * 
+     * @exception IllegalStateException
+     *                if this component has already been started
+     * @exception LifecycleException
+     *                if this component detects a fatal error that prevents this
+     *                component from being used
+     */
 	public void start() throws LifecycleException {
-		// TODO Auto-generated method stub
+		if (started)
+            throw new LifecycleException("cluster.alreadyStarted");
+		if (log.isInfoEnabled()) log.info("Cluster is about to start");
+		
+		try {
+			checkDefaults();
+			registerClusterValve();
+			
+			channel.addMembershipListener(this);
+			channel.addChannelListener(this);
+			channel.start(channelStartOptions);
+			
+		}
+		catch (Exception x) {
+			log.error("Unable to start cluster.", x);
+            throw new LifecycleException(x);
+		}
 		
 	}
+	
+	
+	protected void checkDefaults() {
+		if ( clusterListeners.size() == 0 ) {
+			addClusterListener(new JvmRouteSessionIDBinderListener()); 
+        	addClusterListener(new ClusterSessionListener());
+		}
+		
+		if ( valves.size() == 0 ) {
+			addValve(new JvmRouteBinderValve());
+            addValve(new ReplicationValve());
+		}
+		
+		if ( channel == null ) 
+			channel = new GroupChannel();
+		
+		if ( channel instanceof GroupChannel) 
+			//	&& 
+			//	!((GroupChannel)channel).getInterceptors().hasNext()) 
+		{
+		//	channel.addInterceptor(new MessageDispatch15Interceptor());
+        //    channel.addInterceptor(new TcpFailureDetector());
+		}
+		
+	}
+	
+	
+	/**
+     * register all cluster valve to host or engine
+     * @throws Exception
+     * @throws ClassNotFoundException
+     */
+    protected void registerClusterValve() throws Exception {
+    	
+    	if(container != null ) {
+    		for (Iterator iter = valves.iterator(); iter.hasNext();) {
+    			ClusterValve valve = (ClusterValve) iter.next();
+    			if (valve != null) {
+    				IntrospectionUtils.callMethodN(getContainer(), "addValve",
+                            new Object[] { valve },
+                            new Class[] { My.catalina.Valve.class });
+    			}
+    			valve.setCluster(this);
+    		}
+    	}
+    }
+	
+	
+	
+	
 
 	@Override
 	public void stop() throws LifecycleException {

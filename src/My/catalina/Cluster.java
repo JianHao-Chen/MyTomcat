@@ -36,4 +36,20 @@ public interface Cluster {
      * @param clusterName The clustername to join
      */
     public void setClusterName(String clusterName);
+    
+    
+    
+    /**
+     * Set the Container associated with our Cluster
+     *
+     * @param container The Container to use
+     */
+    public void setContainer(Container container);
+
+    /**
+     * Get the Container associated with our Cluster
+     *
+     * @return The Container associated with our Cluster
+     */
+    public Container getContainer();
 }

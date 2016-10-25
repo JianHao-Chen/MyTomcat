@@ -11,6 +11,7 @@ import javax.management.ObjectName;
 import javax.naming.directory.DirContext;
 import javax.servlet.ServletException;
 
+import My.catalina.Cluster;
 import My.catalina.Container;
 import My.catalina.ContainerEvent;
 import My.catalina.ContainerListener;
@@ -260,6 +261,73 @@ public abstract class ContainerBase
 
         String oldName = this.name;
         this.name = name;
+    }
+    
+    
+    
+    
+    /**
+     * The cluster with which this Container is associated.
+     */
+    protected Cluster cluster = null;
+    
+    /**
+     * Return the Cluster with which this Container is associated.  If there is
+     * no associated Cluster, return the Cluster associated with our parent
+     * Container (if any); otherwise return <code>null</code>.
+     */
+    public Cluster getCluster() {
+        if (cluster != null)
+            return (cluster);
+
+        if (parent != null)
+            return (parent.getCluster());
+
+        return (null);
+    }
+
+
+    /**
+     * Set the Cluster with which this Container is associated.
+     *
+     * @param cluster The newly associated Cluster
+     */
+    public synchronized void setCluster(Cluster cluster) {
+    	// Change components if necessary
+        Cluster oldCluster = this.cluster;
+        if (oldCluster == cluster)
+            return;
+        
+        this.cluster = cluster;
+        
+        // Stop the old component if necessary
+        if (started && (oldCluster != null) &&
+            (oldCluster instanceof Lifecycle)) {
+        	
+        	try {
+                ((Lifecycle) oldCluster).stop();
+            } catch (LifecycleException e) {
+                log.error("ContainerBase.setCluster: stop: ", e);
+            }
+        }
+        
+        
+        // Start the new component if necessary
+        if (cluster != null)
+            cluster.setContainer(this);
+        
+        
+        if (started && (cluster != null) &&
+                (cluster instanceof Lifecycle)) {
+        	
+        	try {
+                ((Lifecycle) cluster).start();
+            } catch (LifecycleException e) {
+                log.error("ContainerBase.setCluster: start: ", e);
+            }
+        }
+        
+        
     }
     
     
@@ -659,6 +727,9 @@ public abstract class ContainerBase
     			realm
     			resources
     	*/
+    	
+    	if ((cluster != null) && (cluster instanceof Lifecycle))
+            ((Lifecycle) cluster).start();
     	
     	
     	// Start our child containers, if any

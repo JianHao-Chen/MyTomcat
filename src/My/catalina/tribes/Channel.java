@@ -50,4 +50,46 @@ package My.catalina.tribes;
 
 public interface Channel {
 
+	/**
+     * Start and stop sequences can be controlled by these constants
+     * This allows you to start separate components of the channel <br>
+     * DEFAULT - starts or stops all components in the channel
+     * @see #start(int)
+     * @see #stop(int)
+     */
+    public static final int DEFAULT = 15;
+	
+	
+	/**
+     * Add a membership listener, will get notified when a new member joins, leaves or crashes
+     * <br>If the membership listener implements the Heartbeat interface
+     * the <code>heartbeat()</code> method will be invoked when the heartbeat runs on the channel
+     * @param listener MembershipListener
+     * @see MembershipListener
+     */
+    public void addMembershipListener(MembershipListener listener);
+    
+    /**
+     * remove a membership listener, listeners are removed based on Object.hashCode and Object.equals
+     * @param listener MembershipListener
+     * @see MembershipListener
+     */
+    public void removeMembershipListener(MembershipListener listener);
+    
+    /**
+     * Add a channel listener, this is a callback object when messages are received
+     * <br>If the channel listener implements the Heartbeat interface
+     * the <code>heartbeat()</code> method will be invoked when the heartbeat runs on the channel
+     * @param listener ChannelListener
+     * @see ChannelListener
+     * @see Heartbeat
+     */
+    public void addChannelListener(ChannelListener listener);
+    
+    /**
+     * remove a channel listener, listeners are removed based on Object.hashCode and Object.equals
+     * @param listener ChannelListener
+     * @see ChannelListener
+     */
+    public void removeChannelListener(ChannelListener listener);
 }
