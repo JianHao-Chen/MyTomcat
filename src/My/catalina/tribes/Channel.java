@@ -59,6 +59,63 @@ public interface Channel {
      */
     public static final int DEFAULT = 15;
 	
+    /**
+     * Start and stop sequences can be controlled by these constants
+     * This allows you to start separate components of the channel <br>
+     * SND_RX_SEQ - starts or stops the data receiver. Start means opening a server socket
+     * in case of a TCP implementation
+     * @see #start(int)
+     * @see #stop(int)
+     */
+    public static final int SND_RX_SEQ = 1;
+    
+    /**
+     * Start and stop sequences can be controlled by these constants
+     * This allows you to start separate components of the channel <br>
+     * SND_TX_SEQ - starts or stops the data sender. This should not open any sockets,
+     * as sockets are opened on demand when a message is being sent
+     * @see #start(int)
+     * @see #stop(int)
+     */
+    public static final int SND_TX_SEQ = 2;
+    
+    
+    /**
+     * Send options, when a message is sent, it can have an option flag
+     * to trigger certain behavior. Most flags are used to trigger channel interceptors
+     * as the message passes through the channel stack. <br>
+     * However, there are five default flags that every channel implementation must implement<br>
+     * SEND_OPTIONS_ASYNCHRONOUS - Message is sent and an ACK is received when the message has been received and 
+     * processed by the recipient<br>
+     * If no ack is received, the message is not considered successful<br>
+     * @see #send(Member[], Serializable , int)
+     * @see #send(Member[], Serializable, int, ErrorHandler)
+     */
+    public static final int SEND_OPTIONS_ASYNCHRONOUS = 0x0008;
+    
+    
+    /**
+     * Adds an interceptor to the channel message chain.
+     * @param interceptor ChannelInterceptor
+     */
+    public void addInterceptor(ChannelInterceptor interceptor);
+    
+    
+    /**
+     * Starts up the channel. This can be called multiple times for individual services to start
+     * The svc parameter can be the logical or value of any constants
+     * @param svc int value of <BR>
+     * DEFAULT - will start all services <BR>
+     * MBR_RX_SEQ - starts the membership receiver <BR>
+     * MBR_TX_SEQ - starts the membership broadcaster <BR>
+     * SND_TX_SEQ - starts the replication transmitter<BR>
+     * SND_RX_SEQ - starts the replication receiver<BR>
+     * <b>Note:</b> In order for the membership broadcaster to 
+     * transmit the correct information, it has to be started after the replication receiver.
+     * @throws ChannelException if a startup error occurs or the service is already started or an error occurs.
+     */
+    public void start(int svc) throws ChannelException;
+    
 	
 	/**
      * Add a membership listener, will get notified when a new member joins, leaves or crashes

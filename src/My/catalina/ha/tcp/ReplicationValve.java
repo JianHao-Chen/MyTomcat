@@ -17,6 +17,10 @@ public class ReplicationValve
 	extends ValveBase 
 	implements ClusterValve, Lifecycle{
 
+	
+	private CatalinaCluster cluster = null ;
+	
+	
 	@Override
 	public void addLifecycleListener(LifecycleListener listener) {
 		// TODO Auto-generated method stub
@@ -47,17 +51,19 @@ public class ReplicationValve
 		
 	}
 
-	@Override
-	public CatalinaCluster getCluster() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setCluster(CatalinaCluster cluster) {
-		// TODO Auto-generated method stub
-		
-	}
+	/**
+     * @return Returns the cluster.
+     */
+    public CatalinaCluster getCluster() {
+        return cluster;
+    }
+    
+    /**
+     * @param cluster The cluster to set.
+     */
+    public void setCluster(CatalinaCluster cluster) {
+        this.cluster = cluster;
+    }
 
 	@Override
 	public void invoke(Request request, Response response) throws IOException,

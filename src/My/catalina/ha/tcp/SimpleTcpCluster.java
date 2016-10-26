@@ -24,6 +24,8 @@ import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelListener;
 import My.catalina.tribes.MembershipListener;
 import My.catalina.tribes.group.GroupChannel;
+import My.catalina.tribes.group.interceptors.MessageDispatch15Interceptor;
+import My.catalina.tribes.group.interceptors.TcpFailureDetector;
 import My.catalina.util.LifecycleSupport;
 import My.juli.logging.Log;
 import My.juli.logging.LogFactory;
@@ -308,12 +310,12 @@ public class SimpleTcpCluster
 		if ( channel == null ) 
 			channel = new GroupChannel();
 		
-		if ( channel instanceof GroupChannel) 
-			//	&& 
-			//	!((GroupChannel)channel).getInterceptors().hasNext()) 
+		if ( channel instanceof GroupChannel
+				&& 
+				!((GroupChannel)channel).getInterceptors().hasNext()) 
 		{
-		//	channel.addInterceptor(new MessageDispatch15Interceptor());
-        //    channel.addInterceptor(new TcpFailureDetector());
+			channel.addInterceptor(new MessageDispatch15Interceptor());
+            channel.addInterceptor(new TcpFailureDetector());
 		}
 		
 	}
