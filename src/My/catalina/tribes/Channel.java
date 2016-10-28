@@ -85,6 +85,45 @@ public interface Channel {
      * to trigger certain behavior. Most flags are used to trigger channel interceptors
      * as the message passes through the channel stack. <br>
      * However, there are five default flags that every channel implementation must implement<br>
+     * SEND_OPTIONS_BYTE_MESSAGE - The message is a pure byte message and no marshalling or unmarshalling will
+     * be performed.<br>
+     * 
+     * @see #send(Member[], Serializable , int)
+     * @see #send(Member[], Serializable, int, ErrorHandler)
+     */
+    public static final int SEND_OPTIONS_BYTE_MESSAGE = 0x0001;
+    
+    /**
+     * Send options, when a message is sent, it can have an option flag
+     * to trigger certain behavior. Most flags are used to trigger channel interceptors
+     * as the message passes through the channel stack. <br>
+     * However, there are five default flags that every channel implementation must implement<br>
+     * SEND_OPTIONS_USE_ACK - Message is sent and an ACK is received when the message has been received by the recipient<br>
+     * If no ack is received, the message is not considered successful<br>
+     * @see #send(Member[], Serializable , int)
+     * @see #send(Member[], Serializable, int, ErrorHandler)
+     */
+    public static final int SEND_OPTIONS_USE_ACK = 0x0002;
+    
+    /**
+     * Send options, when a message is sent, it can have an option flag
+     * to trigger certain behavior. Most flags are used to trigger channel interceptors
+     * as the message passes through the channel stack. <br>
+     * However, there are five default flags that every channel implementation must implement<br>
+     * SEND_OPTIONS_SYNCHRONIZED_ACK - Message is sent and an ACK is received when the message has been received and 
+     * processed by the recipient<br>
+     * If no ack is received, the message is not considered successful<br>
+     * @see #send(Member[], Serializable , int)
+     * @see #send(Member[], Serializable, int, ErrorHandler)
+     */
+    public static final int SEND_OPTIONS_SYNCHRONIZED_ACK = 0x0004;
+    
+    
+    /**
+     * Send options, when a message is sent, it can have an option flag
+     * to trigger certain behavior. Most flags are used to trigger channel interceptors
+     * as the message passes through the channel stack. <br>
+     * However, there are five default flags that every channel implementation must implement<br>
      * SEND_OPTIONS_ASYNCHRONOUS - Message is sent and an ACK is received when the message has been received and 
      * processed by the recipient<br>
      * If no ack is received, the message is not considered successful<br>
