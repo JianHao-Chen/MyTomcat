@@ -34,7 +34,7 @@ import My.tomcat.util.IntrospectionUtils;
 /**
  * A <b>Cluster </b> implementation using simple multicast. Responsible for
  * setting up a cluster and provides callers with a valid multicast
- * receiver/sender.
+ * receiver/sender!
  */
 
 public class SimpleTcpCluster 
