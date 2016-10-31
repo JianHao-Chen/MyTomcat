@@ -2,7 +2,9 @@ package My.catalina.tribes.group;
 
 import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelException;
+import My.catalina.tribes.ChannelReceiver;
 import My.catalina.tribes.MessageListener;
+import My.catalina.tribes.transport.nio.NioReceiver;
 
 public class ChannelCoordinator 
 	extends ChannelInterceptorBase implements MessageListener{
