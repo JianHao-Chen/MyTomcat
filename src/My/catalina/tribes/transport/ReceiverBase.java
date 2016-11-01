@@ -154,6 +154,15 @@ public abstract class ReceiverBase
         return pool;
     }
     
+    public String getHost() {
+        return getAddress();
+    }
+    public String getAddress() {
+        getBind();
+        return this.host;
+    }
+    
+    
     public int getPort() {
         return port;
     }
@@ -168,6 +177,24 @@ public abstract class ReceiverBase
         this.autoBind = autoBind;
         if ( this.autoBind <= 0 ) 
         	this.autoBind = 1;
+    }
+    
+    
+    public boolean isListening() {
+        return listen;
+    }
+    public boolean doListen() {
+        return listen;
+    }
+    public void setListen(boolean doListen) {
+        this.listen = doListen;
+    }
+
+    public long getSelectorTimeout() {
+        return tcpSelectorTimeout;
+    }
+    public void setSelectorTimeout(long selTimeout) {
+        tcpSelectorTimeout = selTimeout;
     }
     
     

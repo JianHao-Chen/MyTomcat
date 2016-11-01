@@ -11,6 +11,7 @@ public class ChannelCoordinator
 
 	private ChannelReceiver clusterReceiver = new NioReceiver();
 	
+	private MembershipService membershipService = new McastService();
 	
 	//override optionflag
     protected int optionFlag = Channel.SEND_OPTIONS_BYTE_MESSAGE|Channel.SEND_OPTIONS_USE_ACK|Channel.SEND_OPTIONS_SYNCHRONIZED_ACK;
@@ -78,9 +79,31 @@ public class ChannelCoordinator
             //    SND_RX_SEQ - starts or stops the data receiver
             if ( Channel.SND_RX_SEQ==(svc & Channel.SND_RX_SEQ) ) {
             	clusterReceiver.setMessageListener(this);
+            	clusterReceiver.start();
+            	
+            	membershipService.setLocalMemberProperties(
+            			getClusterReceiver().getHost(), 
+            			getClusterReceiver().getPort());
+            	
+            	valid = true;
             }
             
     	}
+    	catch ( ChannelException cx ) {
+            throw cx;
+        }catch ( Exception x ) {
+            throw new ChannelException(x);
+        }
+    }
+    
+    
+    
+    public ChannelReceiver getClusterReceiver() {
+        return clusterReceiver;
+    }
+    
+    public void setClusterReceiver(ChannelReceiver clusterReceiver) {
+    	
     }
 
 }

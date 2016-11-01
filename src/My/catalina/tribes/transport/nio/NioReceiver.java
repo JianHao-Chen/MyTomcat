@@ -2,9 +2,13 @@ package My.catalina.tribes.transport.nio;
 
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Set;
 
 import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.ChannelReceiver;
@@ -21,6 +25,7 @@ public class NioReceiver extends ReceiverBase implements Runnable, ChannelReceiv
 	private Selector selector = null;
     private ServerSocketChannel serverChannel = null;
     
+    protected LinkedList events = new LinkedList();
     
     public NioReceiver() {
     }
@@ -76,6 +81,44 @@ public class NioReceiver extends ReceiverBase implements Runnable, ChannelReceiv
         // register the ServerSocketChannel with the Selector
         serverChannel.register(selector, SelectionKey.OP_ACCEPT);
     }
+    
+    
+    
+    
+    public void events() {
+    	if ( events.size() == 0 ) 
+    		return;
+    }
+    
+    
+    
+    
+    
+    protected long lastCheck = System.currentTimeMillis();
+    protected void socketTimeouts() {
+    	long now = System.currentTimeMillis();
+    	if ( (now-lastCheck) < getSelectorTimeout() ) 
+    		return;
+    	
+    	//timeout
+        Selector tmpsel = selector;
+        Set keys =  (isListening()&&tmpsel!=null)?tmpsel.keys():null;
+        if ( keys == null ) return;
+        for (Iterator iter = keys.iterator(); iter.hasNext(); ) {
+        	SelectionKey key = (SelectionKey) iter.next();
+        	try {
+        		
+        		if ( key.interestOps() == 0 ) {
+        			
+        		}
+        	}
+        	catch ( CancelledKeyException ckx ) {
+        		
+        	}
+        }
+        lastCheck = System.currentTimeMillis();
+        
+    }
 	
 	
 	@Override
@@ -102,7 +145,27 @@ public class NioReceiver extends ReceiverBase implements Runnable, ChannelReceiv
      * send it to cluster
      */
 	protected void listen() throws Exception {
+		if (doListen()) {
+			log.warn("ServerSocketChannel already started");
+            return;
+		}
+		setListen(true);
 		
+		while (doListen() && selector != null) {
+			// this may block for a long time, upon return the
+            // selected set contains keys of the ready channels
+			try {
+				events();
+				socketTimeouts();
+				int n = selector.select(getSelectorTimeout());
+				if (n == 0) {
+					continue; // nothing to do
+				}
+			}
+			catch (Throwable x) {
+				
+			}
+		}
 	}
 	
 
