@@ -3,14 +3,18 @@ package My.catalina.tribes.group;
 import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelReceiver;
+import My.catalina.tribes.ChannelSender;
+import My.catalina.tribes.MembershipService;
 import My.catalina.tribes.MessageListener;
+import My.catalina.tribes.membership.McastService;
+import My.catalina.tribes.transport.ReplicationTransmitter;
 import My.catalina.tribes.transport.nio.NioReceiver;
 
 public class ChannelCoordinator 
 	extends ChannelInterceptorBase implements MessageListener{
 
 	private ChannelReceiver clusterReceiver = new NioReceiver();
-	
+	private ChannelSender clusterSender = new ReplicationTransmitter();
 	private MembershipService membershipService = new McastService();
 	
 	//override optionflag
@@ -86,6 +90,10 @@ public class ChannelCoordinator
             			getClusterReceiver().getPort());
             	
             	valid = true;
+            }
+            if ( Channel.SND_TX_SEQ==(svc & Channel.SND_TX_SEQ) ) {
+            	clusterSender.start();
+                valid = true;
             }
             
     	}
