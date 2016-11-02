@@ -112,5 +112,132 @@ public class McastService implements MembershipService,MembershipListener{
             }
         }
     }
+    
+    
+    
+    /**
+     * A membership listener delegate (should be the cluster :)
+     */
+    protected MembershipListener listener;
+    
+    
+    /**
+     * Add a membership listener, this version only supports one listener per service,
+     * so calling this method twice will result in only the second listener being active.
+     * @param listener The listener
+     */
+    public void setMembershipListener(MembershipListener listener) {
+        this.listener = listener;
+    }
+    
+    
+    
+    /**
+    *
+    * @param properties
+    * <BR/>All are required<BR />
+    * 1. mcastPort - the port to listen to<BR>
+    * 2. mcastAddress - the mcast group address<BR>
+    * 4. bindAddress - the bind address if any - only one that can be null<BR>
+    * 5. memberDropTime - the time a member is gone before it is considered gone.<BR>
+    * 6. mcastFrequency - the frequency of sending messages<BR>
+    * 7. tcpListenPort - the port this member listens to<BR>
+    * 8. tcpListenHost - the bind address of this member<BR>
+    * @exception java.lang.IllegalArgumentException if a property is missing.
+    */
+   public void setProperties(Properties properties) {
+       hasProperty(properties,"mcastPort");
+       hasProperty(properties,"mcastAddress");
+       hasProperty(properties,"memberDropTime");
+       hasProperty(properties,"mcastFrequency");
+       hasProperty(properties,"tcpListenPort");
+       hasProperty(properties,"tcpListenHost");
+       this.properties = properties;
+   }
+
+   /**
+    * Return the properties, see setProperties
+    */
+   public Properties getProperties() {
+       return properties;
+   }
+    
+    /**
+     * Check if a required property is available.
+     * @param properties The set of properties
+     * @param name The property to check for
+     */
+    protected void hasProperty(Properties properties, String name){
+        if ( properties.getProperty(name)==null) 
+        	throw new IllegalArgumentException("McastService:Required property \""+name+"\" is missing.");
+    }
+    
+    
+    /**
+     * Start broadcasting and listening to membership pings
+     * @throws java.lang.Exception if a IO error occurs
+     */
+    public void start() throws java.lang.Exception {
+    	
+    }
+    
+    
+    public void start(int level) throws java.lang.Exception {
+    	hasProperty(properties,"mcastPort");
+        hasProperty(properties,"mcastAddress");
+        hasProperty(properties,"memberDropTime");
+        hasProperty(properties,"mcastFrequency");
+        hasProperty(properties,"tcpListenPort");
+        hasProperty(properties,"tcpListenHost");
+        
+        if ( impl != null ) {
+         //   impl.start(level);
+            return;
+        }
+        
+        
+        String host = getProperties().getProperty("tcpListenHost");
+        int port = Integer.parseInt(
+        		getProperties().getProperty("tcpListenPort"));
+        
+        if ( localMember == null ) {
+        	//...
+        }
+        else{
+        	localMember.setHostname(host);
+        	localMember.setPort(port);
+        	localMember.setMemberAliveTime(100);
+        }
+        
+        if ( this.payload != null ) 
+        	localMember.setPayload(payload);
+        
+        if ( this.domain != null ) 
+        	localMember.setDomain(domain);
+        
+        localMember.setServiceStartTime(System.currentTimeMillis());
+        
+        java.net.InetAddress bind = null;
+        
+        int ttl = -1;
+        int soTimeout = -1;
+        
+        impl = new McastServiceImpl(
+        		(MemberImpl)localMember,
+        		Long.parseLong(properties.getProperty("mcastFrequency")),
+                Long.parseLong(properties.getProperty("memberDropTime")),
+                Integer.parseInt(properties.getProperty("mcastPort")),
+                bind,
+                java.net.InetAddress.getByName(properties.getProperty("mcastAddress")),
+                ttl,
+                soTimeout,
+                this);
+        
+    }
+    
+    
+    
+    
+    
 	
 }

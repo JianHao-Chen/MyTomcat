@@ -114,6 +114,47 @@ public class MemberImpl implements Member, java.io.Externalizable{
     }
     
     
+    
+    /**
+     * Return the listen port of this member
+     * @return - tcp listen port
+     */
+    public int getPort()  {
+        return this.port;
+    }
+    
+    public void setPort(int port) {
+        this.port = port;
+        this.dataPkg = null;
+    }
+    
+    
+    
+    /**
+     * Contains information on how long this member has been online.
+     * The result is the number of milli seconds this member has been
+     * broadcasting its membership to the cluster.
+     * @return nr of milliseconds since this member started.
+     */
+    public long getMemberAliveTime() {
+       return memberAliveTime;
+    }
+    
+    public void setMemberAliveTime(long time) {
+        memberAliveTime=time;
+    }
+    
+    
+    public long getServiceStartTime() {
+        return serviceStartTime;
+    }
+    
+    public void setServiceStartTime(long serviceStartTime) {
+        this.serviceStartTime = serviceStartTime;
+    }
+    
+    
+    
     public void setPayload(byte[] payload) {
     	byte[] oldpayload = this.payload;
     	this.payload = payload!=null?payload:new byte[0];
@@ -132,12 +173,7 @@ public class MemberImpl implements Member, java.io.Externalizable{
         this.uniqueId = uniqueId!=null?uniqueId:new byte[16];
         getData(true,true);
     }
-    
-    
-    public long getServiceStartTime() {
-        return serviceStartTime;
-    }
-    
+
     
     public byte[] getDomain() {
         return domain;

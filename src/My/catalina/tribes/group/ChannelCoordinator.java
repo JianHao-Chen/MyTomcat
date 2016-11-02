@@ -95,6 +95,10 @@ public class ChannelCoordinator
             	clusterSender.start();
                 valid = true;
             }
+            if ( Channel.MBR_RX_SEQ==(svc & Channel.MBR_RX_SEQ) ) {
+            	membershipService.setMembershipListener(this);
+            	membershipService.start(MembershipService.MBR_RX);
+            }
             
     	}
     	catch ( ChannelException cx ) {

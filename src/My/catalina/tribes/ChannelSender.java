@@ -9,4 +9,12 @@ package My.catalina.tribes;
 
 public interface ChannelSender extends Heartbeat{
 
+	
+	/**
+     * Start the channel sender
+     * @throws IOException if preprocessing takes place and an error happens
+     */
+    public void start() throws java.io.IOException;
+    
+    
 }

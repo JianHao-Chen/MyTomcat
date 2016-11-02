@@ -81,6 +81,28 @@ public interface Channel {
     
     
     /**
+     * Start and stop sequences can be controlled by these constants
+     * This allows you to start separate components of the channel <br>
+     * MBR_RX_SEQ - starts or stops the membership listener. In a multicast implementation
+     * this will open a datagram socket and join a group and listen for membership messages
+     * members joining
+     * @see #start(int)
+     * @see #stop(int)
+     */
+    public static final int MBR_RX_SEQ = 4;
+
+    /**
+     * Start and stop sequences can be controlled by these constants
+     * This allows you to start separate components of the channel <br>
+     * MBR_TX_SEQ - starts or stops the membership broadcaster. In a multicast implementation
+     * this will open a datagram socket and join a group and broadcast the local member information
+     * @see #start(int)
+     * @see #stop(int)
+     */
+    public static final int MBR_TX_SEQ = 8;
+    
+    
+    /**
      * Send options, when a message is sent, it can have an option flag
      * to trigger certain behavior. Most flags are used to trigger channel interceptors
      * as the message passes through the channel stack. <br>
