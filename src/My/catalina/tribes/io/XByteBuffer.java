@@ -127,5 +127,62 @@ public class XByteBuffer {
         b[offset+0] = (byte) (n);
         return b;
     }
+    
+    
+    /**
+     * Similar to a String.IndexOf, but uses pure bytes
+     * @param src - the source bytes to be searched
+     * @param srcOff - offset on the source buffer
+     * @param find - the string to be found within src
+     * @return - the index of the first matching byte. -1 if the find array is not found
+     */
+    public static int firstIndexOf(byte[] src, int srcOff, byte[] find){
+    	int result = -1;
+        if (find.length > src.length) 
+        	return result;
+        
+        if (find.length == 0 || src.length == 0) 
+        	return result;
+        
+        if (srcOff >= src.length ) 
+        	throw new java.lang.ArrayIndexOutOfBoundsException();
+        
+        boolean found = false;
+        int srclen = src.length;
+        int findlen = find.length;
+        byte first = find[0];
+        int pos = srcOff;
+        
+        while (!found) {
+        	//find the first byte
+        	while (pos < srclen){
+        		if (first == src[pos])
+                    break;
+        		pos++;
+        	}
+        	if (pos >= srclen)
+                return -1;
+        	
+        	//we found the first character
+            //match the rest of the bytes - they have to match
+            if ( (srclen - pos) < findlen)
+                return -1;
+            
+            //assume it does exist
+            found = true;
+            for (int i = 1; ( (i < findlen) && found); i++)
+                found = found && (find[i] == src[pos + i]);
+            if (found)
+                result = pos;
+            else if ( (srclen - pos) < findlen)
+                return -1; //no more matches possible
+            else
+                pos++;
+        }
+        
+        return result;
+        
+    }
+    
 	
 }

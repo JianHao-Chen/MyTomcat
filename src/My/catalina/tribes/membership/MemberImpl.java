@@ -3,6 +3,7 @@ package My.catalina.tribes.membership;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.util.Arrays;
 
 import My.catalina.tribes.Member;
 import My.catalina.tribes.io.XByteBuffer;
@@ -102,10 +103,26 @@ public class MemberImpl implements Member, java.io.Externalizable{
         this.memberAliveTime=aliveTime;
     }
 	
-    
+    /**
+     * Return the TCP listen host for this member
+     * @return IP address or host name
+     */
+    public byte[] getHost()  {
+        return host;
+    }
     
     public void setHost(byte[] host) {
         this.host = host;
+    }
+    
+    
+    public String getHostname() {
+    	if ( this.hostname != null ) 
+    		return hostname;
+    	else {
+    		return null;
+    	}
+    	
     }
     
     public void setHostname(String host) throws IOException {
@@ -165,6 +182,18 @@ public class MemberImpl implements Member, java.io.Externalizable{
     }
     
     
+    public byte[] getCommand() {
+        return command;
+    }
+    
+    public void setCommand(byte[] command) {
+        this.command = command!=null?command:new byte[0];
+        getData(true,true);
+    }
+    
+    
+    
+    
     public byte[] getUniqueId() {
         return uniqueId;
     }
@@ -184,6 +213,35 @@ public class MemberImpl implements Member, java.io.Externalizable{
         getData(true,true);
     }
     
+    
+    
+    /**
+     * Increment the message count.
+     */
+    protected void inc() {
+        msgCount++;
+    }
+    
+    
+    
+    /**
+     * Create a data package to send over the wire representing this member.
+     * This is faster than serialization.
+     * @return - the bytes for this member deserialized
+     * @throws Exception
+     */
+    public byte[] getData()  {
+        return getData(true);
+    }
+    /**
+     * Highly optimized version of serializing a member into a byte array
+     * Returns a cached byte[] reference, do not modify this data
+     * @param getalive boolean
+     * @return byte[]
+     */
+    public byte[] getData(boolean getalive)  {
+        return getData(getalive,false);
+    }
     
     
     public int getDataLength() {
@@ -305,6 +363,184 @@ public class MemberImpl implements Member, java.io.Externalizable{
         dataPkg = data;
         return data;
     }
+    
+    
+    
+    /**
+     * Deserializes a member from data sent over the wire
+     * @param data - the bytes received
+     * @return a member object.
+     */
+    public static MemberImpl getMember(byte[] data, MemberImpl member) {
+        return getMember(data,0,data.length,member);
+    }
+    
+    public static MemberImpl getMember(byte[] data) {
+    	return getMember(data,new MemberImpl());
+    }
+    
+    public static MemberImpl getMember(byte[] data, int offset, int length, MemberImpl member) {
+    	
+    	/*
+    	package looks like:
+        	start package TRIBES_MBR_BEGIN.length
+        	package length - 4 bytes
+        	alive - 8 bytes
+        	port - 4 bytes
+        	host length - 1 byte
+        	host - host length bytes
+        	command len - 4 bytes
+        	command - command len bytes
+        	domain len - 4 bytes
+        	domain - domain len bytes
+        	uniqueId - 16 bytes
+        	payload length - 4 bytes
+        	payload -  payload len bytes
+        	end package TRIBES_MBR_END.length
+    	*/
+    	
+    	int pos = offset;
+    	
+    	if (XByteBuffer.firstIndexOf(data,offset,TRIBES_MBR_BEGIN)!=pos) {
+            throw new IllegalArgumentException("Invalid package, error start byte");
+        }
+    	
+    	if ( length < (TRIBES_MBR_BEGIN.length+4) ) {
+            throw new ArrayIndexOutOfBoundsException("Member package to small to validate.");
+        }
+    	
+    	pos += TRIBES_MBR_BEGIN.length;
+    	
+    	int packagelength = XByteBuffer.toInt(data,pos);
+    	pos += 4;
+    	
+    	if ( length < (packagelength+4+TRIBES_MBR_BEGIN.length+TRIBES_MBR_END.length) ) {
+            throw new ArrayIndexOutOfBoundsException("Not enough bytes in member package.");
+        }
+    	
+    	int endpos = pos+packagelength;
+    	if (XByteBuffer.firstIndexOf(data,endpos,TRIBES_MBR_END)!=endpos) {
+            throw new IllegalArgumentException("Invalid package,error end byte");
+        }
+    	
+    	byte[] alived = new byte[8];
+    	System.arraycopy(data, pos, alived, 0, 8);
+    	pos += 8;
+    	
+    	byte[] portd = new byte[4];
+        System.arraycopy(data, pos, portd, 0, 4);
+        pos += 4;
+        
+        byte hostlength = data[pos++];
+        byte[] addr = new byte[hostlength];
+        System.arraycopy(data, pos, addr, 0, hostlength);
+        pos += hostlength;
+        
+        int cl = XByteBuffer.toInt(data, pos);
+        pos += 4;
+        
+        byte[] command = new byte[cl];
+        System.arraycopy(data, pos, command, 0, command.length);
+        pos += command.length;
+        
+        int domainl = XByteBuffer.toInt(data, pos);
+        pos += 4;
+    
+        byte[] domain = new byte[domainl];
+        System.arraycopy(data, pos, domain, 0, domain.length);
+        pos += domain.length;
+    	
+        
+        byte[] uniqueId = new byte[16];
+        System.arraycopy(data, pos, uniqueId, 0, 16);
+        pos += 16;
+        
+        int pl = XByteBuffer.toInt(data, pos);
+        pos += 4;
+    
+        byte[] payload = new byte[pl];
+        System.arraycopy(data, pos, payload, 0, payload.length);
+        pos += payload.length;
+        
+        member.setHost(addr);
+        member.setPort(XByteBuffer.toInt(portd, 0));
+        member.setMemberAliveTime(XByteBuffer.toLong(alived, 0));
+        member.setUniqueId(uniqueId);
+        member.payload = payload;
+        member.domain = domain;
+        member.command = command;
+    	
+        member.dataPkg = new byte[length];
+        System.arraycopy(data, offset, member.dataPkg, 0, length);
+    
+        return member;
+    }
+    
+    
+    
+    
+    
+    /**
+     * String representation of this object
+     */
+    public String toString()  {
+    	
+    	StringBuffer buf = new StringBuffer("org.apache.catalina.tribes.membership.MemberImpl[");
+        buf.append(getName()).append(",");
+        buf.append(getHostname()).append(",");
+        buf.append(port).append(", alive=");
+        buf.append(memberAliveTime).append(",");
+        buf.append("id=").append(bToS(this.uniqueId)).append(", ");
+        buf.append("payload=").append(bToS(this.payload,8)).append(", ");
+        buf.append("command=").append(bToS(this.command,8)).append(", ");
+        buf.append("domain=").append(bToS(this.domain,8)).append(", ");
+        buf.append("]");
+        return buf.toString();
+    }
+    
+    public static String bToS(byte[] data) {
+        return bToS(data,data.length);
+    }
+    public static String bToS(byte[] data, int max) {
+        StringBuffer buf = new StringBuffer(4*16);
+        buf.append("{");
+        for (int i=0; data!=null && i<data.length; i++ ) {
+            buf.append(String.valueOf(data[i])).append(" ");
+            if ( i==max ) {
+                buf.append("...("+data.length+")");
+                break;
+            }
+        }
+        buf.append("}");
+        return buf.toString();
+    }
+    
+    
+    /**
+     * @see java.lang.Object#hashCode()
+     * @return The hash code
+     */
+    public int hashCode() {
+        return getHost()[0]+getHost()[1]+getHost()[2]+getHost()[3];
+    }
+    
+    /**
+     * Returns true if the param o is a McastMember with the same name
+     * @param o
+     */
+    public boolean equals(Object o) {
+    	 if ( o instanceof MemberImpl )    {
+             return 
+             	Arrays.equals(this.getHost(),((MemberImpl)o).getHost()) 
+             	&&
+            	this.getPort() == ((MemberImpl)o).getPort() 
+            	&&
+            	Arrays.equals(this.getUniqueId(),((MemberImpl)o).getUniqueId());
+         }
+         else
+             return false;
+    }
+    
     
 	
 	

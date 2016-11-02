@@ -91,13 +91,22 @@ public class ChannelCoordinator
             	
             	valid = true;
             }
+            /*	SND_TX_SEQ - starts or stops the data sender */
             if ( Channel.SND_TX_SEQ==(svc & Channel.SND_TX_SEQ) ) {
             	clusterSender.start();
                 valid = true;
             }
+            
+            /*  MBR_RX_SEQ - starts or stops the membership listener */
             if ( Channel.MBR_RX_SEQ==(svc & Channel.MBR_RX_SEQ) ) {
             	membershipService.setMembershipListener(this);
             	membershipService.start(MembershipService.MBR_RX);
+            	valid = true;
+            }
+            /*  MBR_TX_SEQ - starts or stops the membership broadcaster */
+            if ( Channel.MBR_TX_SEQ==(svc & Channel.MBR_TX_SEQ) ) {
+            	 membershipService.start(MembershipService.MBR_TX);
+                 valid = true;
             }
             
     	}

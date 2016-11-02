@@ -178,7 +178,8 @@ public class McastService implements MembershipService,MembershipListener{
      * @throws java.lang.Exception if a IO error occurs
      */
     public void start() throws java.lang.Exception {
-    	
+    	start(MembershipService.MBR_RX);
+        start(MembershipService.MBR_TX);
     }
     
     
@@ -191,7 +192,7 @@ public class McastService implements MembershipService,MembershipListener{
         hasProperty(properties,"tcpListenHost");
         
         if ( impl != null ) {
-         //   impl.start(level);
+            impl.start(level);
             return;
         }
         
@@ -233,6 +234,7 @@ public class McastService implements MembershipService,MembershipListener{
                 soTimeout,
                 this);
         
+        impl.start(level);
     }
     
     

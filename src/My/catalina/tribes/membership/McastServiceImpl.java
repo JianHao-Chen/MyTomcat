@@ -1,8 +1,14 @@
 package My.catalina.tribes.membership;
 
 import java.io.IOException;
+import java.net.DatagramPacket;
 import java.net.InetAddress;
+import java.net.MulticastSocket;
+import java.net.SocketTimeoutException;
+import java.util.Arrays;
 
+import My.catalina.tribes.Channel;
+import My.catalina.tribes.Member;
 import My.catalina.tribes.MembershipListener;
 
 public class McastServiceImpl {
@@ -131,6 +137,196 @@ public class McastServiceImpl {
 	}
 	
 	 public void init() throws IOException {
+		 setupSocket();
+		 sendPacket = new DatagramPacket(new byte[MAX_PACKET_SIZE],MAX_PACKET_SIZE);
+		 sendPacket.setAddress(address);
+		 sendPacket.setPort(port);
+		 
+		 receivePacket = new DatagramPacket(new byte[MAX_PACKET_SIZE],MAX_PACKET_SIZE);
+	     receivePacket.setAddress(address);
+	     receivePacket.setPort(port);
+	     
+	     member.setCommand(new byte[0]);
+	     member.getData(true, true);
+	     if ( membership == null ) 
+	    	 membership = new Membership(member);
+	 }
+	 
+	 protected void setupSocket() throws IOException {
+		 
+		 if (mcastBindAddress != null) {
+			 //...
+		 }
+		 else {
+	     	socket = new MulticastSocket(port);
+	     }
+		 socket.setLoopbackMode(false);
+		 
+		 if (mcastBindAddress != null) {
+			 //...
+		 }
+		 
+		//force a so timeout so that we don't block forever
+	    if ( mcastSoTimeout <= 0 ) 
+	    	mcastSoTimeout = (int)sendFrequency;
+	    
+	    if(log.isInfoEnabled())
+            log.info("Setting cluster mcast soTimeout to "+mcastSoTimeout);
+	    
+	    socket.setSoTimeout(mcastSoTimeout);
+	 }
+	 
+	 
+	 
+	 /**
+	 * Start the service
+	 * @param level 1 starts the receiver, level 2 starts the sender
+	 * @throws IOException if the service fails to start
+	 * @throws IllegalStateException if the service is already started
+	 */
+	 public synchronized void start(int level) throws IOException {
+		 boolean valid = false;
+		 
+		 if ( (level & Channel.MBR_RX_SEQ)==Channel.MBR_RX_SEQ ) {
+			 if ( receiver != null ) 
+				 throw new IllegalStateException("McastService.receive already running.");
+			 
+			 if ( sender == null ) 
+				 socket.joinGroup(address);
+			 
+			 doRunReceiver = true;
+			 
+			 receiver = new ReceiverThread();
+			 receiver.setDaemon(true);
+	         receiver.start();
+	         valid = true;
+		 }
+		 if ( (level & Channel.MBR_TX_SEQ)==Channel.MBR_TX_SEQ ) {
+			 if ( sender != null ) 
+				 throw new IllegalStateException("McastService.send already running.");
+			 if ( receiver == null ) 
+				 socket.joinGroup(address);
+			 //make sure at least one packet gets out there
+	         send(false);
+			 
+			 
+		 }
+		 if (!valid) {
+			 throw new IllegalArgumentException("Invalid start level. Only acceptable levels are Channel.MBR_RX_SEQ and Channel.MBR_TX_SEQ");
+	     }
+		 
+		 //pause, once or twice
+		 waitForMembers(level);
+		 startLevel = (startLevel | level);
+	 }
+	 
+	 private void waitForMembers(int level) {
+		 long memberwait = sendFrequency*2;
+		 if(log.isInfoEnabled())
+	     	log.info("Sleeping for "+memberwait+" milliseconds to establish cluster membership, start level:"+level);
+		 
+		 try {
+			 Thread.sleep(memberwait);
+		 }
+		 catch (InterruptedException ignore){}
+		 
+		 if(log.isInfoEnabled())
+	     	log.info("Done sleeping, membership established, start level:"+level);
+	 }
+	 
+	 
+	 
+	 /**
+	  * Receive a datagram packet, locking wait
+	  * @throws IOException
+	  */
+	public void receive() throws IOException {
+		try {
+			socket.receive(receivePacket);
+			if(receivePacket.getLength() > MAX_PACKET_SIZE) {
+				log.error("Multicast packet received was too long, dropping package:"+receivePacket.getLength());
+			}
+			else {
+				byte[] data = new byte[receivePacket.getLength()];
+				System.arraycopy(receivePacket.getData(), receivePacket.getOffset(), data, 0, data.length);
+				
+				final MemberImpl m = MemberImpl.getMember(data);
+				
+				Thread t = null;
+				if (Arrays.equals(m.getCommand(), Member.SHUTDOWN_PAYLOAD)) {
+					//...
+				}
+				else if (membership.memberAlive(m)) {
+					
+				}
+				
+				if ( t != null ) 
+					t.start();
+				
+			}
+		}
+		catch (SocketTimeoutException x ) { 
+			
+			//do nothing, this is normal, we don't want to block forever
+            //since the receive thread is the same thread
+            //that does membership expiration
+		}
+		checkExpired();
+	}
+	
+	protected Object expiredMutex = new Object();
+    protected void checkExpired() {
+    	synchronized (expiredMutex) {
+    		MemberImpl[] expired = membership.expire(timeToExpiration);
+    		
+    	}
+    }
+    
+    
+    
+    /**
+     * Send a ping
+     * @throws Exception
+     */ 
+    public void send(boolean checkexpired) throws IOException{
+    	//ignore if we haven't started the sender
+    	member.inc();
+    	
+    	byte[] data = member.getData();
+    	DatagramPacket p = new DatagramPacket(data,data.length);
+    	
+    	p.setAddress(address);
+    	p.setPort(port);
+    	socket.send(p);
+    	if ( checkexpired ) 
+    		checkExpired();
+    }
+	 
+
+	 
+	public class ReceiverThread extends Thread {
+		int errorCounter = 0;
+		public ReceiverThread() {
+			super();
+			setName("Tribes-MembershipReceiver");
+		}
+		
+		public void run() {
+			while ( doRunReceiver ) {
+				try {
+					receive();
+                    errorCounter=0;
+				}
+				catch ( Exception x ) {
+					
+				}
+			}
+		}
+	 }
+	 
+	 public class SenderThread extends Thread {
 		 
 	 }
+	 
+	 
 }
