@@ -4,10 +4,12 @@ import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelReceiver;
 import My.catalina.tribes.ChannelSender;
+import My.catalina.tribes.Member;
 import My.catalina.tribes.MembershipService;
 import My.catalina.tribes.MessageListener;
 import My.catalina.tribes.membership.McastService;
 import My.catalina.tribes.transport.ReplicationTransmitter;
+import My.catalina.tribes.transport.SenderState;
 import My.catalina.tribes.transport.nio.NioReceiver;
 
 public class ChannelCoordinator 
@@ -119,12 +121,36 @@ public class ChannelCoordinator
     
     
     
+    public void memberAdded(Member member){
+    	SenderState.getSenderState(member);
+    	super.memberAdded(member);
+    }
+    
+    
+    /**
+     * Return the member that represents this node.
+     *
+     * @return Member
+     */
+    public Member getLocalMember(boolean incAlive) {
+    	return this.getMembershipService().getLocalMember(incAlive);
+    }
+    
+    
+    
+    
+    
     public ChannelReceiver getClusterReceiver() {
         return clusterReceiver;
     }
     
     public void setClusterReceiver(ChannelReceiver clusterReceiver) {
     	
+    }
+    
+    
+    public MembershipService getMembershipService() {
+        return membershipService;
     }
 
 }

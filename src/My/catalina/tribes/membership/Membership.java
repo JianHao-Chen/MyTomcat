@@ -1,7 +1,10 @@
 package My.catalina.tribes.membership;
 
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+
+import My.catalina.tribes.Member;
 
 /**
  * A <b>membership</b> implementation using simple multicast.
@@ -87,8 +90,17 @@ public class Membership {
         if (  member.equals(local) ) 
         	return result;
         
-        
-        //...
+        //return true if the membership has changed
+        MbrEntry entry = (MbrEntry)map.get(member);
+        if ( entry == null ) {
+        	entry = addMember(member);
+        	result = true;
+        }
+        else {
+        	//update the member alive time
+        	//..
+        }
+        entry.accessed();
         
         return result;
         
@@ -102,7 +114,51 @@ public class Membership {
      */
     public synchronized MbrEntry addMember(MemberImpl member) {
     	
-    	return null;
+    	synchronized (membersLock) {
+    		MbrEntry entry = new MbrEntry(member);
+    		if (!map.containsKey(member) ) {
+    			 map.put(member, entry);
+    			 MemberImpl results[] = new MemberImpl[members.length + 1];
+    			 for (int i = 0; i < members.length; i++) 
+    				 results[i] = members[i];
+    			 
+    			 results[members.length] = member;
+    			 members = results;
+    			 
+    			 Arrays.sort(members, memberComparator);
+    		}
+    		return entry;
+    	}
+    }
+    
+    
+    /**
+     * Remove a member from this component.
+     * 
+     * @param member The member to remove
+     */
+    public void removeMember(MemberImpl member) {
+    	map.remove(member);
+    	synchronized (membersLock) {
+    		int n = -1;
+    		for (int i = 0; i < members.length; i++) {
+    			if (members[i] == member || members[i].equals(member)) {
+    				n = i;
+                    break;
+    			}
+    		}
+    		if (n < 0) return;
+    		
+    		MemberImpl results[] = new MemberImpl[members.length - 1];
+    		int j = 0;
+            for (int i = 0; i < members.length; i++) {
+                if (i != n)
+                    results[j++] = members[i];
+            }
+            
+            members = results;
+    	}
+    	
     }
     
     
@@ -127,6 +183,20 @@ public class Membership {
      */
     public boolean hasMembers() {
         return members.length > 0 ;
+    }
+    
+    
+    public MemberImpl getMember(Member mbr) {
+        if(hasMembers()) {
+            MemberImpl result = null;
+            for ( int i=0; i<this.members.length && result==null; i++ ) {
+                if ( members[i].equals(mbr) ) 
+                	result = members[i];
+            }//for
+            return result;
+        } else {
+            return null;
+        }
     }
     
     

@@ -7,6 +7,7 @@ import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelInterceptor;
 import My.catalina.tribes.ChannelListener;
 import My.catalina.tribes.ManagedChannel;
+import My.catalina.tribes.Member;
 import My.catalina.tribes.MembershipListener;
 
 /**
@@ -227,7 +228,20 @@ public class GroupChannel
    
    
    
-   
+   /**
+    * memberAdded gets invoked by the interceptor below the channel
+    * and the channel will broadcast it to the membership listeners
+    * @param member Member - the new member
+    */
+	public void memberAdded(Member member) {
+		//notify upwards
+		for (int i=0; i<membershipListeners.size(); i++ ) {
+			MembershipListener membershipListener = 
+				(MembershipListener)membershipListeners.get(i);
+			if (membershipListener != null) 
+				membershipListener.memberAdded(member);
+		}
+   }
    
    
    

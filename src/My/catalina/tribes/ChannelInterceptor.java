@@ -58,6 +58,36 @@ public interface ChannelInterceptor
      */
     public ChannelInterceptor getPrevious();
     
+    /**
+     * Intercepts the <code>Channel.hasMembers()</code> method
+     * @return boolean - if the channel has members in its membership group
+     * @see Channel#hasMembers()
+     */
+    public boolean hasMembers() ;
+
+    /**
+     * Intercepts the code>Channel.getMembers()</code> method
+     * @return Member[]
+     * @see Channel#getMembers()
+     */
+    public Member[] getMembers() ;
+
+    /**
+     * Intercepts the code>Channel.getMember(Member)</code> method
+     * @param mbr Member
+     * @return Member - the actual member information, including stay alive
+     * @see Channel#getMember(Member)
+     */
+    public Member getMember(Member mbr);
+    
+    /**
+     * Intercepts the code>Channel.getLocalMember(boolean)</code> method
+     * @param incAliveTime boolean
+     * @return Member
+     * @see Channel#getLocalMember(boolean)
+     */
+    public Member getLocalMember(boolean incAliveTime) ;
+    
     
     /**
      * Starts up the channel. This can be called multiple times for individual services to start

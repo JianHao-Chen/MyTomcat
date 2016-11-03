@@ -2,6 +2,7 @@ package My.catalina.tribes.group;
 
 import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelInterceptor;
+import My.catalina.tribes.Member;
 
 public abstract class ChannelInterceptorBase 
 	implements ChannelInterceptor{
@@ -50,6 +51,64 @@ public abstract class ChannelInterceptorBase
         if (getNext() != null) 
         	getNext().heartbeat();
     }
+    
+    
+    
+    public void memberAdded(Member member) {
+    	//notify upwards
+    	if (getPrevious() != null)
+    		getPrevious().memberAdded(member);
+    }
+    
+    
+    /**
+     * has members
+     */
+    public boolean hasMembers() {
+        if ( getNext()!=null )return getNext().hasMembers();
+        else return false;
+    }
+    
+    
+    /**
+     * Get all current cluster members
+     * @return all members or empty array
+     */
+    public Member[] getMembers() {
+        if ( getNext()!=null ) return getNext().getMembers();
+        else return null;
+    }
+    
+    /**
+    *
+    * @param mbr Member
+    * @return Member
+    */
+   public Member getMember(Member mbr) {
+       if ( getNext()!=null) return getNext().getMember(mbr);
+       else return null;
+   }
+
+    /**
+     * Return the member that represents this node.
+     *
+     * @return Member
+     */
+    public Member getLocalMember(boolean incAlive) {
+    	if ( getNext()!=null ) 
+    		return getNext().getLocalMember(incAlive);
+        else return null;
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     /**

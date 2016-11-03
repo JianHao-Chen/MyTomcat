@@ -210,4 +210,42 @@ public interface Channel {
      * @see ChannelListener
      */
     public void removeChannelListener(ChannelListener listener);
+    
+    /**
+     * Returns true if there are any members in the group,
+     * this call is the same as <code>getMembers().length>0</code>
+     * @return boolean - true if there are any members automatically discovered
+     */
+    public boolean hasMembers() ;
+
+    /**
+     * Get all current group members
+     * @return all members or empty array, never null 
+     */
+    public Member[] getMembers() ;
+
+    /**
+     * Return the member that represents this node. This is also the data
+     * that gets broadcasted through the membership broadcaster component
+     * @param incAlive - optimization, true if you want it to calculate alive time
+     * since the membership service started.
+     * @return Member
+     */
+    public Member getLocalMember(boolean incAlive);
+    
+    
+    /**
+     * Returns the member from the membership service with complete and 
+     * recent data. Some implementations might serialize and send 
+     * membership information along with a message, and instead of sending
+     * complete membership details, only send the primary identifier for the member
+     * but not the payload or other information. When such message is received
+     * the application can retrieve the cached member through this call.<br>
+     * In most cases, this is not necessary.
+     * @param mbr Member
+     * @return Member
+     */
+    public Member getMember(Member mbr);
+    
+    
 }

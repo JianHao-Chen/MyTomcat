@@ -22,6 +22,7 @@ import My.catalina.ha.session.JvmRouteBinderValve;
 import My.catalina.ha.session.JvmRouteSessionIDBinderListener;
 import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelListener;
+import My.catalina.tribes.Member;
 import My.catalina.tribes.MembershipListener;
 import My.catalina.tribes.group.GroupChannel;
 import My.catalina.tribes.group.interceptors.MessageDispatch15Interceptor;
@@ -350,6 +351,58 @@ public class SimpleTcpCluster
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	
+	/**
+     * has members
+     */
+    protected boolean hasMembers = false;
+    public boolean hasMembers() {
+        return hasMembers;
+    }
+    
+    
+    /**
+     * Get all current cluster members
+     * @return all members or empty array 
+     */
+    public Member[] getMembers() {
+        return channel.getMembers();
+    }
+
+    /**
+     * Return the member that represents this node.
+     * 
+     * @return Member
+     */
+    public Member getLocalMember() {
+        return channel.getLocalMember(true);
+    }
+	
+	
+	/**
+     * New cluster member is registered
+     * 
+     * @see org.apache.catalina.ha.MembershipListener#memberAdded(org.apache.catalina.ha.Member)
+     */
+    public void memberAdded(Member member) {
+    	try {
+    		hasMembers = channel.hasMembers();
+    		if (log.isInfoEnabled()) 
+    			log.info("Replication member added:" + member);
+    		
+    		// Notify our interested LifecycleListeners
+            lifecycle.fireLifecycleEvent(BEFORE_MEMBERREGISTER_EVENT, member);
+    		
+            // Notify our interested LifecycleListeners
+            lifecycle.fireLifecycleEvent(AFTER_MEMBERREGISTER_EVENT, member);
+    	}
+    	catch (Exception x) {
+            log.error("Unable to connect to replication system.", x);
+        }
+    	
+    }
     
     
 }

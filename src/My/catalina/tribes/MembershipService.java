@@ -40,4 +40,11 @@ public interface MembershipService {
      */
     public void setMembershipListener(MembershipListener listener);
     
+    
+    
+    /**
+     * Returns the member object that defines this member
+     */
+    public Member getLocalMember(boolean incAliveTime);
+    
 }

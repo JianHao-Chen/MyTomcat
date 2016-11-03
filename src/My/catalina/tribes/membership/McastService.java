@@ -3,6 +3,7 @@ package My.catalina.tribes.membership;
 import java.io.IOException;
 import java.util.Properties;
 
+import My.catalina.tribes.Member;
 import My.catalina.tribes.MembershipListener;
 import My.catalina.tribes.MembershipService;
 import My.catalina.tribes.util.UUIDGenerator;
@@ -48,6 +49,18 @@ public class McastService implements MembershipService,MembershipListener{
         properties.setProperty("mcastAddress","228.0.0.4");
         properties.setProperty("memberDropTime","3000");
         properties.setProperty("mcastFrequency","500");
+    }
+    
+    
+    
+    /**
+     * Return the local member
+     */
+    public Member getLocalMember(boolean alive) {
+        if ( alive && localMember != null && impl != null) 
+        	localMember.setMemberAliveTime(
+        		System.currentTimeMillis()-impl.getServiceStartTime());
+        return localMember;
     }
     
     
@@ -129,6 +142,18 @@ public class McastService implements MembershipService,MembershipListener{
     public void setMembershipListener(MembershipListener listener) {
         this.listener = listener;
     }
+    
+    
+    public void memberAdded(Member member) {
+        if ( listener!=null ) 
+        	listener.memberAdded(member);
+    }
+    
+    
+    
+    
+    
+    
     
     
     

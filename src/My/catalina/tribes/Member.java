@@ -23,4 +23,26 @@ public interface Member {
      * Returns the name of this node, should be unique within the group.
      */
     public String getName();
+    
+    
+    /**
+     * Returns the listen host for the ChannelReceiver implementation
+     * @return IPv4 or IPv6 representation of the host address this member listens to incoming data
+     * @see ChannelReceiver
+     */
+    public byte[] getHost();
+
+    /**
+     * Returns the listen port for the ChannelReceiver implementation
+     * @return the listen port for this member, -1 if its not listening on an unsecure port
+     * @see ChannelReceiver
+     */
+    public int getPort();
+    
+    
+    /**
+     * returns the command associated with this member
+     * @return byte[]
+     */
+    public byte[] getCommand();
 }

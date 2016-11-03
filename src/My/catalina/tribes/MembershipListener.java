@@ -8,4 +8,10 @@ package My.catalina.tribes;
 
 public interface MembershipListener {
 
+	/**
+     * A member was added to the group
+     * @param member Member - the member that was added
+     */
+    public void memberAdded(Member member);
+    
 }

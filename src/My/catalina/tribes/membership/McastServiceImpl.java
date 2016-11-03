@@ -257,7 +257,13 @@ public class McastServiceImpl {
 					//...
 				}
 				else if (membership.memberAlive(m)) {
+					log.debug("Mcast add member " + m);
 					
+					t = new Thread() {
+						public void run() {
+                            service.memberAdded(m);
+                        }
+					};
 				}
 				
 				if ( t != null ) 
@@ -300,6 +306,10 @@ public class McastServiceImpl {
     	socket.send(p);
     	if ( checkexpired ) 
     		checkExpired();
+    }
+    
+    public long getServiceStartTime() {
+        return this.serviceStartTime;
     }
 	 
 

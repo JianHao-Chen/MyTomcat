@@ -15,8 +15,145 @@ public class XByteBuffer {
 	public static My.juli.logging.Log log =
         My.juli.logging.LogFactory.getLog( XByteBuffer.class );
 	
-	
-	
+	/**
+     * This is a package header, 7 bytes (FLT2002)
+     */
+    public static final byte[] START_DATA = {70,76,84,50,48,48,50};
+    
+    /**
+     * This is the package footer, 7 bytes (TLF2003)
+     */
+    public static final byte[] END_DATA = {84,76,70,50,48,48,51};
+ 
+    /**
+     * Default size on the initial byte buffer
+     */
+    private static final int DEF_SIZE = 2048;
+ 
+    /**
+     * Default size to extend the buffer with
+     */
+    private static final int DEF_EXT  = 1024;
+    
+    /**
+     * Variable to hold the data
+     */
+    protected byte[] buf = null;
+    
+    /**
+     * Current length of data in the buffer
+     */
+    protected int bufSize = 0;
+    
+    /**
+     * Flag for discarding invalid packages
+     * If this flag is set to true, and append(byte[],...) is called,
+     * the data added will be inspected, and if it doesn't start with 
+     * <code>START_DATA</code> it will be thrown away.
+     * 
+     */
+    protected boolean discard = true;
+
+    /**
+     * Constructs a new XByteBuffer
+     * @param size - the initial size of the byte buffer
+     * @todo use a pool of byte[] for performance
+     */
+    public XByteBuffer(int size, boolean discard) {
+        buf = new byte[size];
+        this.discard = discard;
+    }
+    
+    public XByteBuffer(byte[] data,boolean discard) {
+        this(data,data.length+128,discard);
+    }
+    
+    public XByteBuffer(byte[] data, int size,boolean discard) {
+        int length = Math.max(data.length,size);
+        buf = new byte[length];
+        System.arraycopy(data,0,buf,0,data.length);
+        bufSize = data.length;
+        this.discard = discard;
+    }
+    
+    
+    public int getLength() {
+        return bufSize;
+    }
+
+    public void setLength(int size) {
+        if ( size > buf.length ) throw new ArrayIndexOutOfBoundsException("Size is larger than existing buffer.");
+        bufSize = size;
+    }
+    
+    
+    public byte[] getBytesDirect() {
+        return this.buf;
+    }
+    
+    
+    /**
+     * Returns the bytes in the buffer, in its exact length
+     */
+    public byte[] getBytes() {
+        byte[] b = new byte[bufSize];
+        System.arraycopy(buf,0,b,0,bufSize);
+        return b;
+    }
+    
+    /**
+     * Resets the buffer
+     */
+    public void clear() {
+        bufSize = 0;
+    }
+    
+    
+    
+    
+    /**
+     * Creates a complete data package
+     * @param indata - the message data to be contained within the package
+     * @param compressed - compression flag for the indata buffer
+     * @return - a full package (header,size,data,footer)
+     * 
+     */
+    public static byte[] createDataPackage(ChannelData cdata) {
+    	int dlength = cdata.getDataPackageLength();
+    	
+    	int length = getDataPackageLength(dlength);
+    	byte[] data = new byte[length];
+    	
+    	int offset = 0;
+        System.arraycopy(START_DATA, 0, data, offset, START_DATA.length);
+        offset += START_DATA.length;
+        
+        toBytes(dlength,data, START_DATA.length);
+        offset += 4;
+        cdata.getDataPackage(data,offset);
+        offset += dlength;
+        System.arraycopy(END_DATA, 0, data, offset, END_DATA.length);
+        offset += END_DATA.length;
+        return data;
+    }
+    
+    public static int getDataPackageLength(int datalength) {
+        int length = 
+            START_DATA.length + //header length
+            4 + //data length indicator
+            datalength + //actual data length
+            END_DATA.length; //footer length
+        return length;
+
+    }
+    
+    
+    
+    
+    
+    
+    
+    
 	
 	
 	/**
