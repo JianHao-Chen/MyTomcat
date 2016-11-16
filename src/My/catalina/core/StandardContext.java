@@ -226,7 +226,10 @@ public class StandardContext
      */
     private String defaultWebXml;
     
-    
+    /**
+     * The distributable flag for this web application.
+     */
+    private boolean distributable = false;
     
     private transient DirContext webappResources = null;
     
@@ -770,6 +773,28 @@ public class StandardContext
      */
     public void setReloadable(boolean reloadable) {
     	this.reloadable = reloadable;
+    }
+    
+    
+    
+    /**
+     * Return the distributable flag for this web application.
+     */
+    public boolean getDistributable() {
+
+        return (this.distributable);
+
+    }
+    
+    /**
+     * Set the distributable flag for this web application.
+     *
+     * @param distributable The new distributable flag
+     */
+    public void setDistributable(boolean distributable) {
+    	
+    	this.distributable = distributable;
+    	
     }
     
     
@@ -1849,7 +1874,15 @@ public class StandardContext
                 if (manager == null) {
                 	
                 	// forclustered manager
-                	if ( false) {
+                	if ( manager == null ) {
+                		if ( (getCluster() != null) && distributable) {
+                			try {
+                				contextManager = getCluster().createManager(getName());
+                			}
+                			catch (Exception ex) {
+                				
+                			}
+                		}
                 	}
                 	else
                 		contextManager = new StandardManager();

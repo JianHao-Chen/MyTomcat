@@ -52,4 +52,14 @@ public interface Cluster {
      * @return The Container associated with our Cluster
      */
     public Container getContainer();
+    
+    
+    /**
+     * Create a new manager which will use this cluster to replicate its
+     * sessions.
+     *
+     * @param name Name (key) of the application with which the manager is
+     * associated
+     */
+    public Manager createManager(String name);
 }

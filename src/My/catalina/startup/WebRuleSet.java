@@ -89,6 +89,9 @@ public class WebRuleSet extends RuleSetBase{
                    "addChild",
                    "My.catalina.Container");
 		
+		digester.addRule(prefix + "web-app/distributable",
+                new SetDistributableRule());
+		
 		
 		digester.addCallMethod(prefix + "web-app/servlet/init-param",
                 "addInitParameter", 2);
@@ -336,6 +339,26 @@ final class IgnoreAnnotationsRule extends Rule {
          //   context.setIgnoreAnnotations(false);
         }
         
+        
+    }
+
+}
+
+
+/**
+ * Class that calls <code>setDistributable(true)</code> for the top object
+ * on the stack, which must be a <code>org.apache.catalina.Context</code>.
+ */
+
+final class SetDistributableRule extends Rule {
+
+    public SetDistributableRule() {
+    }
+
+    public void begin(String namespace, String name, Attributes attributes)
+        throws Exception {
+        Context context = (Context) digester.peek();
+        context.setDistributable(true);
         
     }
 

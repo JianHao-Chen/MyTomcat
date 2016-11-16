@@ -11,6 +11,7 @@ import My.catalina.Lifecycle;
 import My.catalina.LifecycleEvent;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
+import My.catalina.Manager;
 import My.catalina.Valve;
 import My.catalina.ha.CatalinaCluster;
 import My.catalina.ha.ClusterListener;
@@ -203,6 +204,33 @@ public class SimpleTcpCluster
     }
     
     
+    /**
+     * Create new Manager without add to cluster (comes with start the manager)
+     * 
+     * @param name
+     *            Context Name of this manager
+     * @see org.apache.catalina.Cluster#createManager(java.lang.String)
+     * @see #addManager(String, Manager)
+     * @see DeltaManager#start()
+     */
+    public synchronized Manager createManager(String name) {
+    	
+    	Manager manager = null;
+    	try {
+    		manager = managerTemplate.cloneFromTemplate();
+    		((ClusterManager)manager).setName(name);
+    	}
+    	catch (Exception x) {
+    		manager = new My.catalina.ha.session.DeltaManager();
+    	}
+    	finally {
+    		if ( manager != null && (manager instanceof ClusterManager))
+    			((ClusterManager)manager).setCluster(this);
+    	}
+    	return manager;
+    }
+    
+    
 
 	@Override
 	public void lifecycleEvent(LifecycleEvent event) {
@@ -284,9 +312,9 @@ public class SimpleTcpCluster
 			checkDefaults();
 			registerClusterValve();
 			
-			channel.addMembershipListener(this);
+			/*channel.addMembershipListener(this);
 			channel.addChannelListener(this);
-			channel.start(channelStartOptions);
+			channel.start(channelStartOptions);*/
 			
 		}
 		catch (Exception x) {

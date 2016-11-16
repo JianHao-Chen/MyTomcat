@@ -362,4 +362,18 @@ public interface Context extends Container{
      */
     public String getEncodedPath();
     
+    
+    /**
+     * Return the distributable flag for this web application.
+     */
+    public boolean getDistributable();
+
+
+    /**
+     * Set the distributable flag for this web application.
+     *
+     * @param distributable The new distributable flag
+     */
+    public void setDistributable(boolean distributable);
+    
 }
