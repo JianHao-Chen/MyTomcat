@@ -1,5 +1,8 @@
 package My.catalina.ha.session;
 
+import org.apache.catalina.ha.session.SessionMessage;
+import org.apache.catalina.ha.session.SessionMessageImpl;
+
 import My.catalina.Cluster;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
@@ -137,7 +140,14 @@ public class DeltaManager extends ClusterManagerBase{
      */
     protected void sendCreateSession(String sessionId, DeltaSession session) {
     	if(cluster.getMembers().length > 0 ) {
-    		// implements latter..
+    		SessionMessage msg = 
+                new SessionMessageImpl(getName(),
+                                       SessionMessage.EVT_SESSION_CREATED, 
+                                       null, 
+                                       sessionId,
+                                       sessionId + "-" + System.currentTimeMillis());
+    		
+    		
     	}
     }
     	

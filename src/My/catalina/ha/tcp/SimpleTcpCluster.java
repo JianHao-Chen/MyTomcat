@@ -349,9 +349,11 @@ public class SimpleTcpCluster
 			checkDefaults();
 			registerClusterValve();
 			
-			/*channel.addMembershipListener(this);
+			channel.addMembershipListener(this);
 			channel.addChannelListener(this);
-			channel.start(channelStartOptions);*/
+			channel.start(channelStartOptions);
+			
+			this.started = true;
 			
 		}
 		catch (Exception x) {

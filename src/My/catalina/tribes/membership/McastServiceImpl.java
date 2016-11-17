@@ -209,6 +209,13 @@ public class McastServiceImpl {
 			 //make sure at least one packet gets out there
 	         send(false);
 			 
+	         doRunSender = true;
+	         serviceStartTime = System.currentTimeMillis();
+	         sender = new SenderThread(sendFrequency);
+	         sender.setDaemon(true);
+	         sender.start();
+	         //we have started the receiver, but not yet waited for membership to establish
+	         valid = true;
 			 
 		 }
 		 if (!valid) {
@@ -335,6 +342,31 @@ public class McastServiceImpl {
 	 }
 	 
 	 public class SenderThread extends Thread {
+		 long time;
+		 int errorCounter=0;
+		 public SenderThread(long time) {
+			 this.time = time;
+			 setName("Tribes-MembershipSender");
+		 }
+		 
+		 public void run() {
+			 while ( doRunSender ) {
+				 try {
+					 send(true);
+	                 errorCounter = 0;
+				 }
+				 catch ( Exception x ) {
+					 if (errorCounter==0) 
+						 log.warn("Unable to send mcast message.",x);
+				 }
+				 
+				 try { 
+					 Thread.sleep(time); 
+				 } 
+				 catch ( Exception ignore ) {}
+			 }
+		 }
+		 
 		 
 	 }
 	 
