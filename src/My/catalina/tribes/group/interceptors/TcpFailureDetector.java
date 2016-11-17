@@ -87,6 +87,19 @@ public class TcpFailureDetector extends ChannelInterceptorBase{
 	 }
 	 
 	 
+	 public boolean hasMembers() {
+	        if ( membership == null ) 
+	        	setupMembership();
+	        return membership.hasMembers();
+	    }
+
+	    public Member[] getMembers() {
+	        if ( membership == null ) 
+	        	setupMembership();
+	        return membership.getMembers();
+	    }
+	 
+	 
 	 
 	 protected synchronized void setupMembership() {
 		 if ( membership == null ) {

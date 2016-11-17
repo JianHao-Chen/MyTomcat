@@ -185,6 +185,18 @@ public class Membership {
         return members.length > 0 ;
     }
     
+    /**
+     * Returning a list of all the members in the membership
+     * We not need a copy: add and remove generate new arrays.
+     */
+    public MemberImpl[] getMembers() {
+        if(hasMembers()) {
+            return members;
+        } else {
+            return EMPTY_MEMBERS;
+        }
+    }
+    
     
     public MemberImpl getMember(Member mbr) {
         if(hasMembers()) {

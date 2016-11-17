@@ -1,7 +1,9 @@
 package My.catalina.ha.session;
 
+import My.catalina.Cluster;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
+import My.catalina.Session;
 import My.catalina.ha.CatalinaCluster;
 import My.catalina.ha.ClusterManager;
 import My.catalina.util.LifecycleSupport;
@@ -36,8 +38,16 @@ public class DeltaManager extends ClusterManagerBase{
      */
     protected LifecycleSupport lifecycle = new LifecycleSupport(this);
 	
+    /**
+     * The maximum number of active Sessions allowed, or -1 for no limit.
+     */
+    private int maxActiveSessions = -1;
+    
+    
     
     protected String name = null;
+    
+    protected boolean defaultMode = false;
     
     private CatalinaCluster cluster = null;
     
@@ -71,6 +81,66 @@ public class DeltaManager extends ClusterManagerBase{
         this.cluster = cluster;
     }
     
+    public void setDefaultMode(boolean defaultMode) {
+        this.defaultMode = defaultMode;
+    }
+    
+    public boolean isDefaultMode() {
+        return defaultMode;
+    }
+    
+    
+    
+	// ---------------------- Public Methods ----------------------
+    
+    /**
+     * Construct and return a new session object, based on the default settings
+     * specified by this Manager's properties. The session id will be assigned
+     * by this method, and available via the getId() method of the returned
+     * session. If a new session cannot be created for any reason, return
+     * <code>null</code>.
+     */
+    public Session createSession(String sessionId) {
+    	return createSession(sessionId, true);
+    }
+    
+    /**
+     * create new session with check maxActiveSessions and send session creation
+     * to other cluster nodes.
+     */
+    public Session createSession(String sessionId, boolean distribute) {
+    	if ((maxActiveSessions >= 0) && (sessions.size() >= maxActiveSessions)) {
+    		throw new IllegalStateException("deltaManager.createSession.ise");
+    	}
+    	
+    	DeltaSession session = (DeltaSession) super.createSession(sessionId) ;
+    	
+    	if (distribute) {
+    		sendCreateSession(session.getId(), session);
+    	}
+    	
+    	return (session);
+    }
+    
+    public Session createEmptySession() {
+        return getNewDeltaSession() ;
+    }
+    
+    protected DeltaSession getNewDeltaSession() {
+        return new DeltaSession(this);
+    }
+    
+    
+    
+    /**
+     * Send create session evt to all backup node
+     */
+    protected void sendCreateSession(String sessionId, DeltaSession session) {
+    	if(cluster.getMembers().length > 0 ) {
+    		// implements latter..
+    	}
+    }
+    	
     
 	
 	@Override
@@ -101,9 +171,44 @@ public class DeltaManager extends ClusterManagerBase{
      *                component from being used
      */
 	public void start() throws LifecycleException {
-		if (!initialized) init();
+		if (!initialized) 
+			init();
 		
+		// Validate and update our current component state
+		if (started) {
+            return;
+        }
+		started = true;
+        lifecycle.fireLifecycleEvent(START_EVENT, null);
+        
+        
+        // Load unloaded sessions, if any
+        try {
+        	//the channel is already running
+        	Cluster cluster = getCluster() ;
+        	
+        	cluster.registerManager(this);
+        	
+        	getAllClusterSessions();
+        }
+        catch (Throwable t) {
+        	log.error("deltaManager.managerLoad");
+        }
+        
 	}
+	
+	/**
+     * get from first session master the backup from all clustered sessions
+     * @see #findSessionMasterMember()
+     */
+    public synchronized void getAllClusterSessions() {
+    	if (cluster != null && cluster.getMembers().length > 0) {
+    		
+    	}
+    	else
+    		if (log.isInfoEnabled()) 
+    			log.info("deltaManager.noMembers");
+    }
 
 	@Override
 	public void stop() throws LifecycleException {

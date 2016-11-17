@@ -74,8 +74,8 @@ public class JvmRouteBinderValve
 	@Override
 	public void invoke(Request request, Response response) throws IOException,
 			ServletException {
-		// TODO Auto-generated method stub
-		
+		// Pass this request on to the next valve in our pipeline
+        getNext().invoke(request, response);
 	}
 
 }

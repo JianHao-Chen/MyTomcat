@@ -151,7 +151,21 @@ public interface Manager {
     public void setSessionAverageAliveTime(int sessionAverageAliveTime);
     
     
-    
+    /**
+     * Return the distributable flag for the sessions supported by
+     * this Manager.
+     */
+    public boolean getDistributable();
+
+
+    /**
+     * Set the distributable flag for the sessions supported by this
+     * Manager.  If this flag is set, all user data objects added to
+     * sessions associated with this manager must implement Serializable.
+     *
+     * @param distributable The new distributable flag
+     */
+    public void setDistributable(boolean distributable);
     
     
     

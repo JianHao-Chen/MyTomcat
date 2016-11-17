@@ -7,6 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import My.catalina.Container;
+import My.catalina.Context;
+import My.catalina.Engine;
+import My.catalina.Host;
 import My.catalina.Lifecycle;
 import My.catalina.LifecycleEvent;
 import My.catalina.LifecycleException;
@@ -228,6 +231,40 @@ public class SimpleTcpCluster
     			((ClusterManager)manager).setCluster(this);
     	}
     	return manager;
+    }
+    
+    public void registerManager(Manager manager) {
+    	if (! (manager instanceof ClusterManager)) {
+            log.warn("Manager [ " + manager + "] does not implement ClusterManager, addition to cluster has been aborted.");
+            return;
+        }
+    	
+    	ClusterManager cmanager = (ClusterManager) manager ;
+    	cmanager.setDistributable(true);
+    	
+    	String clusterName = getManagerName(cmanager.getName(), manager);
+    	cmanager.setName(clusterName);
+        cmanager.setCluster(this);
+        cmanager.setDefaultMode(false);
+        
+        managers.put(clusterName, manager);
+        
+    }
+    
+    public String getManagerName(String name, Manager manager) {
+    	String clusterName = name ;
+    	if ( clusterName == null ) 
+    		clusterName = manager.getContainer().getName();
+    	
+    	if(getContainer() instanceof Engine) {
+    		Container context = manager.getContainer() ;
+    		if(context != null && context instanceof Context) {
+    			Container host = ((Context)context).getParent();
+    			if(host != null && host instanceof Host && clusterName!=null && !(clusterName.indexOf("#")>=0))
+                    clusterName = host.getName() +"#" + clusterName ;
+    		}
+    	}
+    	return clusterName;
     }
     
     

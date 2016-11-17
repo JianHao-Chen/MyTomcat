@@ -12,5 +12,9 @@ public interface ClusterManager extends Manager{
 	
 	public void setCluster(CatalinaCluster cluster);
 	
+	public void setDefaultMode(boolean mode);
+	
+	public boolean isDefaultMode();
+	
 	public ClusterManager cloneFromTemplate();
 }

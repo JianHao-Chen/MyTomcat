@@ -407,6 +407,36 @@ public class ManagerBase implements Manager{
     
     
     
+    /**
+     * The distributable flag for Sessions created by this Manager.  If this
+     * flag is set to <code>true</code>, any user attributes added to a
+     * session controlled by this Manager must be Serializable.
+     */
+    protected boolean distributable;
+    
+    /**
+     * Return the distributable flag for the sessions supported by
+     * this Manager.
+     */
+    public boolean getDistributable() {
+
+        return (this.distributable);
+
+    }
+
+    /**
+     * Set the distributable flag for the sessions supported by this
+     * Manager.  If this flag is set, all user data objects added to
+     * sessions associated with this manager must implement Serializable.
+     *
+     * @param distributable The new distributable flag
+     */
+    public void setDistributable(boolean distributable) {
+    	this.distributable = distributable;
+    }
+    
+    
+    
 	// -----------------Protected Methods -------------------------
     
     /**

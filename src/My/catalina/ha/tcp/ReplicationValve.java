@@ -68,7 +68,8 @@ public class ReplicationValve
 	@Override
 	public void invoke(Request request, Response response) throws IOException,
 			ServletException {
-		// TODO Auto-generated method stub
+		
+		getNext().invoke(request, response);
 		
 	}
 
