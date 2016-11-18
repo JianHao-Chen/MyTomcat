@@ -486,6 +486,13 @@ public class SimpleTcpCluster
         send(msg,null);
     } 
     
+    /**
+     * send message to all cluster members
+     */
+	public void send(ClusterMessage msg) {
+		send(msg, null);
+	}
+    
     
     /**
      * send a cluster message to one member
@@ -494,7 +501,7 @@ public class SimpleTcpCluster
     	try {
     		msg.setAddress(getLocalMember());
     		if (dest != null) {
-    			
+    			//...
     		}
     		else {
     			if (channel.getMembers().length>0)
@@ -507,6 +514,29 @@ public class SimpleTcpCluster
     		log.error("Unable to send message through cluster sender.", x);
     	}
     }
+
+
+
+    /**
+     * Cluster member is gone
+     */
+	public void memberDisappeared(Member member) {
+		try {
+			hasMembers = channel.hasMembers(); 
+			
+			if (log.isInfoEnabled()) log.info("Received member disappeared:" + member);
+            // Notify our interested LifecycleListeners
+            lifecycle.fireLifecycleEvent(BEFORE_MEMBERUNREGISTER_EVENT, member);
+            // Notify our interested LifecycleListeners
+            lifecycle.fireLifecycleEvent(AFTER_MEMBERUNREGISTER_EVENT, member);
+        } 
+		catch (Exception x) {
+            log.error("Unable remove cluster node from replication system.", x);
+        }
+	}
+
+
+	
     
     
 }

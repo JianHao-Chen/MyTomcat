@@ -178,6 +178,12 @@ public class Membership {
     }
     
     
+    
+    public boolean contains(Member mbr) { 
+        return getMember(mbr)!=null;
+    }
+    
+    
     /**
      * Returning that service has members or not
      */

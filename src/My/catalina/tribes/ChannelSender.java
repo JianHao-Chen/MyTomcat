@@ -17,4 +17,14 @@ public interface ChannelSender extends Heartbeat{
     public void start() throws java.io.IOException;
     
     
+    /**
+     * Send a message to one or more recipients.
+     * @param message ChannelMessage - the message to be sent
+     * @param destination Member[] - the destinations
+     * @throws ChannelException - if an error happens, the ChannelSender MUST report
+     * individual send failures on a per member basis, using ChannelException.addFaultyMember
+     * @see ChannelException#addFaultyMember(Member,java.lang.Exception)
+     */
+    public void sendMessage(ChannelMessage message, Member[] destination) throws ChannelException;
+    
 }

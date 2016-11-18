@@ -47,4 +47,11 @@ public interface MembershipService {
      */
     public Member getLocalMember(boolean incAliveTime);
     
+    
+    /**
+     * Returns a list of all the members in the cluster.
+     */
+    
+    public Member[] getMembers();
+    
 }

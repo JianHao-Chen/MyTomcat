@@ -7,4 +7,6 @@ public interface DataSender {
 	public void connect() throws IOException;
 	public void disconnect();
     public boolean isConnected();
+    
+    public boolean keepalive();
 }

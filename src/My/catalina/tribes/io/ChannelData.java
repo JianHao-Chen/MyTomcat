@@ -132,6 +132,19 @@ public class ChannelData implements ChannelMessage{
     
     
     
+    /**
+     * Serializes the ChannelData object into a byte[] array
+     * @return byte[]
+     */
+    public byte[] getDataPackage()  {
+    	int length = getDataPackageLength();
+        byte[] data = new byte[length];
+        int offset = 0;
+        return getDataPackage(data,offset);
+    }
+    
+    
+    
     public byte[] getDataPackage(byte[] data, int offset)  {
     	byte[] addr = ((MemberImpl)address).getData(false);
     	
@@ -174,6 +187,36 @@ public class ChannelData implements ChannelMessage{
     
     
     
+    public static ChannelData getDataFromPackage(byte[] b)  {
+    	ChannelData data = new ChannelData(false);
+    	
+    	int offset = 0;
+        data.setOptions(XByteBuffer.toInt(b,offset));
+        offset += 4; //options
+        data.setTimestamp(XByteBuffer.toLong(b,offset));
+        offset += 8; //timestamp
+        data.uniqueId = new byte[XByteBuffer.toInt(b,offset)];
+        offset += 4; //uniqueId length
+        System.arraycopy(b,offset,data.uniqueId,0,data.uniqueId.length);
+        offset += data.uniqueId.length; //uniqueId data
+        byte[] addr = new byte[XByteBuffer.toInt(b,offset)];
+        offset += 4; //addr length
+        System.arraycopy(b,offset,addr,0,addr.length);
+        data.setAddress(MemberImpl.getMember(addr));
+        offset += addr.length; //addr data
+        int xsize = XByteBuffer.toInt(b,offset);
+        //data.message = new XByteBuffer(new byte[xsize],false);
+        data.message = BufferPool.getBufferPool().getBuffer(xsize,false);
+        offset += 4; //message length
+        System.arraycopy(b,offset,data.message.getBytesDirect(),0,xsize);
+        data.message.append(b,offset,xsize);
+        offset += xsize; //message data
+        return data;
+    	
+    }
+    
+    
+    
     /**
      * Generates a UUID and invokes setUniqueId
      */
@@ -181,6 +224,29 @@ public class ChannelData implements ChannelMessage{
         byte[] data = new byte[16];
         UUIDGenerator.randomUUID(false,data,0);
         setUniqueId(data);
+    }
+    
+    
+    /**
+     * Create a shallow clone, only the data gets recreated
+     * @return ClusterData
+     */
+    public Object clone() {
+    	ChannelData clone = new ChannelData(false);
+        clone.options = this.options;
+        clone.message = new XByteBuffer(this.message.getBytesDirect(),false);
+        clone.timestamp = this.timestamp;
+        clone.uniqueId = this.uniqueId;
+        clone.address = this.address;
+        return clone;
+    }
+    
+    /**
+     * Complete clone
+     */
+    public Object deepclone() {
+        byte[] d = this.getDataPackage();
+        return ChannelData.getDataFromPackage(d);
     }
     
     

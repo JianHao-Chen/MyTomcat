@@ -2,6 +2,7 @@ package My.catalina.tribes.group;
 
 import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelException;
+import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.ChannelReceiver;
 import My.catalina.tribes.ChannelSender;
 import My.catalina.tribes.Member;
@@ -32,6 +33,25 @@ public class ChannelCoordinator
 		// TODO Auto-generated method stub
 		
 	}
+	
+	
+	
+	 /**
+     * Send a message to one or more members in the cluster
+     * @param destination Member[] - the destinations, null or zero length means all
+     * @param msg ClusterMessage - the message to send
+     * @param options int - sender options, see class documentation
+     * @return ClusterMessage[] - the replies from the members, if any.
+     */
+	public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) throws ChannelException {
+		if ( destination == null ) 
+			destination = membershipService.getMembers();
+		
+		clusterSender.sendMessage(msg,destination);
+	}
+	
+	
+	
 	
 	
 	/**

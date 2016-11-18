@@ -2,6 +2,8 @@ package My.catalina.tribes;
 
 import java.io.Serializable;
 
+import My.catalina.tribes.io.XByteBuffer;
+
 /**
  * Message that is passed through the interceptor stack after the 
  * data serialized in the Channel object and then passed down to the 
@@ -34,4 +36,30 @@ public interface ChannelMessage extends Serializable{
      * @see #getOptions()
      */
     public void setOptions(int options);
+    
+    
+    /**
+     * The byte buffer that contains the actual message payload
+     * @param buf XByteBuffer
+     */
+    public void setMessage(XByteBuffer buf);
+    
+    /**
+     * returns the byte buffer that contains the actual message payload
+     * @return XByteBuffer
+     */
+    public XByteBuffer getMessage();
+    
+    
+    /**
+     * Shallow clone, what gets cloned depends on the implementation
+     * @return ChannelMessage
+     */
+    public Object clone();
+
+    /**
+     * Deep clone, all fields MUST get cloned
+     * @return ChannelMessage
+     */
+    public Object deepclone();
 }

@@ -178,6 +178,7 @@ public class GroupChannel
 			getFirstInterceptor().
 				sendMessage(destination, data, payload);
 			
+			return new UniqueId(data.getUniqueId());
 			
 		}
 		catch ( Exception x ) {

@@ -14,4 +14,12 @@ public interface MembershipListener {
      */
     public void memberAdded(Member member);
     
+    /**
+     * A member was removed from the group<br>
+     * If the member left voluntarily, the Member.getCommand will contain the Member.SHUTDOWN_PAYLOAD data
+     * @param member Member
+     * @see Member#SHUTDOWN_PAYLOAD
+     */
+    public void memberDisappeared(Member member);
+    
 }

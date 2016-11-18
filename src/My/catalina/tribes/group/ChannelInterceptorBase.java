@@ -61,6 +61,11 @@ public abstract class ChannelInterceptorBase
     		getPrevious().memberAdded(member);
     }
     
+    public void memberDisappeared(Member member) {
+        //notify upwards
+        if (getPrevious() != null) getPrevious().memberDisappeared(member);
+    }
+    
     
     /**
      * has members

@@ -9,8 +9,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 import My.catalina.tribes.Channel;
+import My.catalina.tribes.ChannelException;
+import My.catalina.tribes.ChannelException.FaultyMember;
+import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.Member;
+import My.catalina.tribes.RemoteProcessException;
 import My.catalina.tribes.group.ChannelInterceptorBase;
+import My.catalina.tribes.group.InterceptorPayload;
 import My.catalina.tribes.io.ChannelData;
 import My.catalina.tribes.io.XByteBuffer;
 import My.catalina.tribes.membership.MemberImpl;
@@ -84,6 +89,48 @@ public class TcpFailureDetector extends ChannelInterceptorBase{
 	     }
 	     if ( notify ) 
 	    	 super.memberAdded(member);
+	 }
+	 
+	 
+	 public void memberDisappeared(Member member) {
+		 if ( membership == null ) 
+			 setupMembership();
+		 
+		 boolean notify = false;
+		 
+		 boolean shutdown = Arrays.equals(member.getCommand(),Member.SHUTDOWN_PAYLOAD);
+	     if ( !shutdown ) 
+	     	if(log.isInfoEnabled())
+	        	log.info("Received memberDisappeared["+member+"] message. Will verify.");
+	        
+	     synchronized (membership) {
+	    	 if (!membership.contains(member)) {
+	    		 if(log.isInfoEnabled())
+	                    log.info("Verification complete. Member already disappeared["+member+"]");
+	                return;
+	    	 }
+	    	 
+	    	//check to see if the member really is gone
+	        //if the payload is not a shutdown message
+	        if (shutdown || !memberAlive(member)) {
+	            	//...
+	        }
+	        else {
+                //add the member as suspect
+                removeSuspects.put(member, new Long(System.currentTimeMillis()));
+            }
+
+	     }
+	     
+	     if ( notify ) {
+	    	 if(log.isInfoEnabled())
+	                log.info("Verification complete. Member disappeared["+member+"]");
+	         super.memberDisappeared(member);
+	     }
+	     else {
+	            if(log.isInfoEnabled())
+	                log.info("Verification complete. Member still alive["+member+"]");
+	        }
 	 }
 	 
 	 
@@ -182,7 +229,21 @@ public class TcpFailureDetector extends ChannelInterceptorBase{
 	 
 	 
 	 
-	 
+	public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) throws ChannelException {
+		try {
+			super.sendMessage(destination, msg, payload);
+		}
+		catch ( ChannelException cx ) {
+			FaultyMember[] mbrs = cx.getFaultyMembers();
+			for ( int i=0; i<mbrs.length; i++ ) {
+                if ( mbrs[i].getCause()!=null &&  
+                     (!(mbrs[i].getCause() instanceof RemoteProcessException)) ) {//RemoteProcessException's are ok
+                    this.memberDisappeared(mbrs[i].getMember());
+                }//end if
+            }//for
+            throw cx;
+		}
+	}
 	 
 	 
 }

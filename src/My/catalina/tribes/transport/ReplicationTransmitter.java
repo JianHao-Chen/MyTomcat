@@ -1,6 +1,9 @@
 package My.catalina.tribes.transport;
 
+import My.catalina.tribes.ChannelException;
+import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.ChannelSender;
+import My.catalina.tribes.Member;
 import My.catalina.tribes.transport.nio.PooledParallelSender;
 
 public class ReplicationTransmitter implements ChannelSender{
@@ -23,6 +26,16 @@ public class ReplicationTransmitter implements ChannelSender{
 	
 	// ----------------------- public ------------------------------
 	
+    /**
+     * Send data to one member
+     */
+    public void sendMessage(ChannelMessage message, Member[] destination) throws ChannelException {
+    	MultiPointSender sender = getTransport();
+    	sender.sendMessage(destination,message);
+    }
+    
+    
+    
 	/**
      * start the sender and register transmitter mbean
      */

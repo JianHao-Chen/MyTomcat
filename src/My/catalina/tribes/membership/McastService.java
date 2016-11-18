@@ -148,9 +148,11 @@ public class McastService implements MembershipService,MembershipListener{
         if ( listener!=null ) 
         	listener.memberAdded(member);
     }
-    
-    
-    
+
+	public void memberDisappeared(Member member) {
+		if ( listener!=null ) 
+			listener.memberDisappeared(member);
+	}
     
     
     
@@ -260,6 +262,21 @@ public class McastService implements MembershipService,MembershipListener{
                 this);
         
         impl.start(level);
+    }
+
+
+
+
+
+
+
+	/**
+     * Return all the members
+     */
+    protected static final Member[]EMPTY_MEMBERS = new Member[0];
+    public Member[] getMembers() {
+        if ( impl == null || impl.membership == null ) return EMPTY_MEMBERS;
+        return impl.membership.getMembers();
     }
     
     

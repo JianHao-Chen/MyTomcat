@@ -7,6 +7,7 @@ import My.catalina.tribes.Member;
 import My.catalina.tribes.group.ChannelInterceptorBase;
 import My.catalina.tribes.group.InterceptorPayload;
 import My.catalina.tribes.transport.bio.util.FastQueue;
+import My.catalina.tribes.transport.bio.util.LinkObject;
 
 /**
 *
@@ -28,6 +29,7 @@ public class MessageDispatchInterceptor
 	protected boolean run = false;
     protected Thread msgDispatchThread = null;
     protected long currentSize = 0;
+    protected boolean useDeepClone = true;
     
     
     public MessageDispatchInterceptor() {
@@ -37,12 +39,32 @@ public class MessageDispatchInterceptor
     
     public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) 
     	throws ChannelException {
+    	
     	boolean async = (msg.getOptions() & Channel.SEND_OPTIONS_ASYNCHRONOUS) == Channel.SEND_OPTIONS_ASYNCHRONOUS;
     	
     	if ( async && run ) {
+    		if ( (getCurrentSize()+msg.getMessage().getLength()) > maxQueueSize ) {
+    			// implements later.
+    		}
     		
+    		//add to queue
+    		if ( useDeepClone )
+    			msg = (ChannelMessage)msg.deepclone();
+    		
+    		if (!addToQueue(msg, destination, payload) ) {
+    			throw new ChannelException("Unable to add the message to the async queue, queue bug?");
+    		}
+    		addAndGetCurrentSize(msg.getMessage().getLength());
     	}
+    	else {
+            super.sendMessage(destination, msg, payload);
+        }
     	
+    }
+    
+    public boolean addToQueue(ChannelMessage msg, Member[] destination, InterceptorPayload payload) {
+    //	return queue.add(msg,destination,payload);
+    	return false;
     }
     
     
@@ -61,6 +83,19 @@ public class MessageDispatchInterceptor
     }
     
     
+    public long getCurrentSize() {
+    	return currentSize;
+    }
+    
+    public synchronized long addAndGetCurrentSize(long inc) {
+        currentSize += inc;
+        return currentSize;
+    }
+    
+    public synchronized long setAndGetCurrentSize(long value) {
+        currentSize = value;
+        return value;
+    }
     
     
     public void start(int svc) throws ChannelException {
@@ -81,6 +116,42 @@ public class MessageDispatchInterceptor
     
     public void run() {
     	
+    }
+    
+    
+    
+    protected LinkObject sendAsyncData(LinkObject link) {
+    	
+    	ChannelMessage msg = link.data();
+    	Member[] destination = link.getDestination();
+    	
+    	try {
+    		super.sendMessage(destination,msg,null);
+    		//....
+    		
+    	}
+    	catch ( Exception x ) {
+    		ChannelException cx = null;
+    		if ( x instanceof ChannelException ) 
+    			cx = (ChannelException)x;
+    		else 
+    			cx = new ChannelException(x);
+    		
+    		try {
+    			if (link.getHandler() != null) 
+    				;//	link.getHandler().handleError(cx, new UniqueId(msg.getUniqueId()));	
+    		}
+    		catch ( Exception ex ) {
+                log.error("Unable to report back error message.",ex);
+            }
+    		
+    	}
+    	finally {
+    		addAndGetCurrentSize(-msg.getMessage().getLength());
+    		link = link.next();
+    	}
+    	
+    	return link;
     }
     
     
