@@ -46,6 +46,25 @@ public interface SessionMessage extends ClusterMessage ,java.io.Serializable{
      */
     public static final int EVT_GET_ALL_SESSIONS = 4;
     
+    /**
+     * Event type used when an attribute has been added to a session,
+     * the attribute will be sent to all the other nodes in the cluster
+     */
+    public static final int EVT_SESSION_DELTA  = 13;
+
+    /**
+     * When a session state is transferred, this is the event.
+     */
+    public static final int EVT_ALL_SESSION_DATA = 12;
     
+    /**
+     * When a session state is complete transferred, this is the event.
+     */
+    public static final int EVT_ALL_SESSION_TRANSFERCOMPLETE = 14;
+
+    /**
+     * Event type used when a sessionID has been changed.
+     */
+    public static final int EVT_CHANGE_SESSION_ID = 15;
     
 }

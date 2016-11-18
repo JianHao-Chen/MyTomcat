@@ -1,5 +1,11 @@
 package My.catalina.tribes.io;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+
 /**
  * The XByteBuffer provides a dual functionality.
  * One, it stores message bytes and automatically extends the byte buffer if needed.<BR>
@@ -91,6 +97,10 @@ public class XByteBuffer {
         return this.buf;
     }
     
+    public void reset() {
+        bufSize = 0;
+    }
+    
     
     /**
      * Returns the bytes in the buffer, in its exact length
@@ -109,6 +119,123 @@ public class XByteBuffer {
     }
     
     
+    public int getCapacity() {
+        return buf.length;
+    }
+    
+    
+    /**
+     * Appends the data to the buffer. If the data is incorrectly formatted, ie, the data should always start with the
+     * header, false will be returned and the data will be discarded.
+     * @param b - bytes to be appended
+     * @param off - the offset to extract data from
+     * @param len - the number of bytes to append.
+     * @return true if the data was appended correctly. Returns false if the package is incorrect, ie missing header or something, or the length of data is 0
+     */
+    public boolean append(ByteBuffer b, int len) {
+        int newcount = bufSize + len;
+        if (newcount > buf.length) {
+            expand(newcount);
+        }
+        b.get(buf,bufSize,len);
+        
+        bufSize = newcount;
+        
+        if ( discard ) {
+            if (bufSize > START_DATA.length && (firstIndexOf(buf, 0, START_DATA) == -1)) {
+                bufSize = 0;
+                log.error("Discarded the package, invalid header");
+                return false;
+            }
+        }
+        return true;
+
+    }
+    
+    public boolean append(byte i) {
+        int newcount = bufSize + 1;
+        if (newcount > buf.length) {
+            expand(newcount);
+        }
+        buf[bufSize] = i;
+        bufSize = newcount;
+        return true;
+    }
+
+
+    public boolean append(boolean i) {
+        int newcount = bufSize + 1;
+        if (newcount > buf.length) {
+            expand(newcount);
+        }
+        XByteBuffer.toBytes(i,buf,bufSize);
+        bufSize = newcount;
+        return true;
+    }
+
+    public boolean append(long i) {
+        int newcount = bufSize + 8;
+        if (newcount > buf.length) {
+            expand(newcount);
+        }
+        XByteBuffer.toBytes(i,buf,bufSize);
+        bufSize = newcount;
+        return true;
+    }
+    
+    public boolean append(int i) {
+        int newcount = bufSize + 4;
+        if (newcount > buf.length) {
+            expand(newcount);
+        }
+        XByteBuffer.toBytes(i,buf,bufSize);
+        bufSize = newcount;
+        return true;
+    }
+
+    public boolean append(byte[] b, int off, int len) {
+        if ((off < 0) || (off > b.length) || (len < 0) ||
+            ((off + len) > b.length) || ((off + len) < 0))  {
+            throw new IndexOutOfBoundsException();
+        } else if (len == 0) {
+            return false;
+        }
+
+        int newcount = bufSize + len;
+        if (newcount > buf.length) {
+            expand(newcount);
+        }
+        System.arraycopy(b, off, buf, bufSize, len);
+        bufSize = newcount;
+
+        if ( discard ) {
+            if (bufSize > START_DATA.length && (firstIndexOf(buf, 0, START_DATA) == -1)) {
+                bufSize = 0;
+                log.error("Discarded the package, invalid header");
+                return false;
+            }
+        }
+        return true;
+    }
+
+    
+    
+    public void expand(int newcount) {
+        //don't change the allocation strategy
+        byte newbuf[] = new byte[Math.max(buf.length << 1, newcount)];
+        System.arraycopy(buf, 0, newbuf, 0, bufSize);
+        buf = newbuf;
+    }
+    
+    
+    
+    public void setDiscard(boolean discard) {
+        this.discard = discard;
+    }
+
+    public boolean getDiscard() {
+        return discard;
+    }
     
     
     /**
@@ -319,6 +446,25 @@ public class XByteBuffer {
         
         return result;
         
+    }
+    
+    
+    
+    
+    /**
+     * Serializes a message into cluster data
+     * @param msg ClusterMessage
+     * @param compress boolean
+     * @return 
+     * @throws IOException
+     */
+    public static byte[] serialize(Serializable msg) throws IOException {
+    	ByteArrayOutputStream outs = new ByteArrayOutputStream();
+    	ObjectOutputStream out = new ObjectOutputStream(outs);
+    	out.writeObject(msg);
+    	out.flush();
+    	byte[] data = outs.toByteArray();
+    	return data;
     }
     
 	

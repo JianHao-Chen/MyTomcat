@@ -6,6 +6,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import My.catalina.ha.ClusterMessage;
+
 import My.catalina.Container;
 import My.catalina.Context;
 import My.catalina.Engine;
@@ -119,6 +121,9 @@ public class SimpleTcpCluster
     
     
     private int channelStartOptions = Channel.DEFAULT;
+    
+    private int channelSendOptions = Channel.SEND_OPTIONS_ASYNCHRONOUS;
+    
     
 	// -------------------- Properties --------------------
     
@@ -468,7 +473,39 @@ public class SimpleTcpCluster
     	catch (Exception x) {
             log.error("Unable to connect to replication system.", x);
         }
-    	
+    }
+    
+    
+    
+    /**
+     * send message to all cluster members same cluster domain
+     * 
+     * @see org.apache.catalina.ha.CatalinaCluster#send(org.apache.catalina.ha.ClusterMessage)
+     */
+    public void sendClusterDomain(ClusterMessage msg) {
+        send(msg,null);
+    } 
+    
+    
+    /**
+     * send a cluster message to one member
+     */
+    public void send(ClusterMessage msg, Member dest) {
+    	try {
+    		msg.setAddress(getLocalMember());
+    		if (dest != null) {
+    			
+    		}
+    		else {
+    			if (channel.getMembers().length>0)
+    				channel.send(channel.getMembers(),msg,channelSendOptions);
+    			else if (log.isDebugEnabled()) 
+                    log.debug("No members in cluster, ignoring message:"+msg);
+    		}
+    	}
+    	catch (Exception x) {
+    		log.error("Unable to send message through cluster sender.", x);
+    	}
     }
     
     

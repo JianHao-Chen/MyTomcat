@@ -1,5 +1,6 @@
 package My.catalina.ha;
 
+import My.catalina.ha.ClusterMessage;
 import My.catalina.Cluster;
 import My.catalina.tribes.Member;
 
@@ -23,5 +24,20 @@ public interface CatalinaCluster extends Cluster{
      * @return Member[]
      */
     public Member[] getMembers();
+    
+    
+    
+    /**
+     * Sends a message to all the members in the cluster
+     * @param msg ClusterMessage
+     */
+    public void send(ClusterMessage msg);
+    
+    /**
+     * Sends a message to a all members at local cluster domain
+     *
+     * @param msg ClusterMessage
+     */
+    public void sendClusterDomain(ClusterMessage msg);
 	
 }

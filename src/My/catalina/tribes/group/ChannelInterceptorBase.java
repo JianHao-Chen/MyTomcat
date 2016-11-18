@@ -2,6 +2,7 @@ package My.catalina.tribes.group;
 
 import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelInterceptor;
+import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.Member;
 
 public abstract class ChannelInterceptorBase 
@@ -97,7 +98,8 @@ public abstract class ChannelInterceptorBase
     public Member getLocalMember(boolean incAlive) {
     	if ( getNext()!=null ) 
     		return getNext().getLocalMember(incAlive);
-        else return null;
+        else 
+        	return null;
     }
     
     
@@ -141,4 +143,14 @@ public abstract class ChannelInterceptorBase
     public void stop(int svc) throws ChannelException {
         if (getNext() != null) getNext().stop(svc);
     }
+    
+    
+    
+    public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) 
+    throws ChannelException {
+    	if (getNext() != null) 
+    		getNext().sendMessage(destination, msg, payload);
+    }
+    
+    
 }

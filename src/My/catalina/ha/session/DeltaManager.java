@@ -1,8 +1,7 @@
 package My.catalina.ha.session;
 
-import org.apache.catalina.ha.session.SessionMessage;
-import org.apache.catalina.ha.session.SessionMessageImpl;
-
+import My.catalina.ha.session.SessionMessage;
+import My.catalina.ha.session.SessionMessageImpl;
 import My.catalina.Cluster;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
@@ -55,6 +54,31 @@ public class DeltaManager extends ClusterManagerBase{
     private CatalinaCluster cluster = null;
     
     
+    
+    private boolean sendClusterDomainOnly = true ;
+    
+	// --------------------------- stats attributes ------------------------
+    int rejectedSessions = 0;
+    private long sessionReplaceCounter = 0 ;
+    long processingTime = 0;
+    private long counterReceive_EVT_GET_ALL_SESSIONS = 0 ;
+    private long counterReceive_EVT_ALL_SESSION_DATA = 0 ;
+    private long counterReceive_EVT_SESSION_CREATED = 0 ;
+    private long counterReceive_EVT_SESSION_EXPIRED = 0;
+    private long counterReceive_EVT_SESSION_ACCESSED = 0 ;
+    private long counterReceive_EVT_SESSION_DELTA = 0;
+    private int counterReceive_EVT_ALL_SESSION_TRANSFERCOMPLETE = 0 ;
+    private long counterReceive_EVT_CHANGE_SESSION_ID = 0 ;
+    private long counterSend_EVT_GET_ALL_SESSIONS = 0 ;
+    private long counterSend_EVT_ALL_SESSION_DATA = 0 ;
+    private long counterSend_EVT_SESSION_CREATED = 0;
+    private long counterSend_EVT_SESSION_DELTA = 0 ;
+    private long counterSend_EVT_SESSION_ACCESSED = 0;
+    private long counterSend_EVT_SESSION_EXPIRED = 0;
+    private int counterSend_EVT_ALL_SESSION_TRANSFERCOMPLETE = 0 ;
+    private long counterSend_EVT_CHANGE_SESSION_ID = 0;
+    
+    
 	// ----------------------- Constructor -----------------------------
     public DeltaManager() {
         super();
@@ -90,6 +114,21 @@ public class DeltaManager extends ClusterManagerBase{
     
     public boolean isDefaultMode() {
         return defaultMode;
+    }
+    
+    
+    /**
+     * @return Returns the sendClusterDomainOnly.
+     */
+    public boolean doDomainReplication() {
+        return sendClusterDomainOnly;
+    }
+    
+    /**
+     * @param sendClusterDomainOnly The sendClusterDomainOnly to set.
+     */
+    public void setDomainReplication(boolean sendClusterDomainOnly) {
+        this.sendClusterDomainOnly = sendClusterDomainOnly;
     }
     
     
@@ -147,10 +186,24 @@ public class DeltaManager extends ClusterManagerBase{
                                        sessionId,
                                        sessionId + "-" + System.currentTimeMillis());
     		
-    		
+    		msg.setTimestamp(session.getCreationTime());
+    		counterSend_EVT_SESSION_CREATED++;
+    		send(msg);
     	}
     }
-    	
+    
+    /**
+     * Send messages to other backup member (domain or all)
+     * @param msg Session message
+     */
+    protected void send(SessionMessage msg) {
+    	if(cluster != null) {
+    		if(doDomainReplication())
+    			cluster.sendClusterDomain(msg);
+    		else
+    			cluster.send(msg);
+    	}
+    }
     
 	
 	@Override

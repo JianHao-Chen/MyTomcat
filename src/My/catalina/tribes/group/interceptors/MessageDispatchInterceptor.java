@@ -2,7 +2,10 @@ package My.catalina.tribes.group.interceptors;
 
 import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelException;
+import My.catalina.tribes.ChannelMessage;
+import My.catalina.tribes.Member;
 import My.catalina.tribes.group.ChannelInterceptorBase;
+import My.catalina.tribes.group.InterceptorPayload;
 import My.catalina.tribes.transport.bio.util.FastQueue;
 
 /**
@@ -29,6 +32,17 @@ public class MessageDispatchInterceptor
     
     public MessageDispatchInterceptor() {
         setOptionFlag(Channel.SEND_OPTIONS_ASYNCHRONOUS);
+    }
+    
+    
+    public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) 
+    	throws ChannelException {
+    	boolean async = (msg.getOptions() & Channel.SEND_OPTIONS_ASYNCHRONOUS) == Channel.SEND_OPTIONS_ASYNCHRONOUS;
+    	
+    	if ( async && run ) {
+    		
+    	}
+    	
     }
     
     

@@ -108,6 +108,10 @@ public class TcpFailureDetector extends ChannelInterceptorBase{
 		 }
 	 }
 	 
+	 public Member getLocalMember(boolean incAlive) {
+		 return super.getLocalMember(incAlive);
+	 }
+	 
 	 
 	 protected boolean memberAlive(Member mbr) {
 	 	return memberAlive(

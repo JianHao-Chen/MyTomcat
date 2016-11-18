@@ -1,5 +1,7 @@
 package My.catalina.tribes;
 
+import My.catalina.tribes.group.InterceptorPayload;
+
 /**
  * A ChannelInterceptor is an interceptor that intercepts 
  * messages and membership messages in the channel stack.
@@ -116,4 +118,24 @@ public interface ChannelInterceptor
      * @see Channel
      */
     public void stop(int svc) throws ChannelException;
+    
+    
+    /**
+     * The <code>sendMessage</code> method is called when a message is being sent to one more destinations.
+     * The interceptor can modify any of the parameters and then pass on the message down the stack by
+     * invoking <code>getNext().sendMessage(destination,msg,payload)</code><br>
+     * Alternatively the interceptor can stop the message from being sent by not invoking 
+     * <code>getNext().sendMessage(destination,msg,payload)</code><br>
+     * If the message is to be sent asynchronous the application can be notified of completion and 
+     * errors by passing in an error handler attached to a payload object.<br>
+     * The ChannelMessage.getAddress contains Channel.getLocalMember, and can be overwritten 
+     * to simulate a message sent from another node.<br>
+     * @param destination Member[] - the destination for this message
+     * @param msg ChannelMessage - the message to be sent
+     * @param payload InterceptorPayload - the payload, carrying an error handler and future useful data, can be null
+     * @throws ChannelException
+     * @see ErrorHandler
+     * @see InterceptorPayload
+     */
+    public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) throws ChannelException;
 }

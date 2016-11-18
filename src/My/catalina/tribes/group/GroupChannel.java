@@ -1,14 +1,21 @@
 package My.catalina.tribes.group;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import My.catalina.tribes.ByteMessage;
 import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelInterceptor;
 import My.catalina.tribes.ChannelListener;
+import My.catalina.tribes.ErrorHandler;
 import My.catalina.tribes.ManagedChannel;
 import My.catalina.tribes.Member;
 import My.catalina.tribes.MembershipListener;
+import My.catalina.tribes.UniqueId;
+import My.catalina.tribes.io.BufferPool;
+import My.catalina.tribes.io.ChannelData;
+import My.catalina.tribes.io.XByteBuffer;
 
 /**
  * The default implementation of a Channel.<br>
@@ -109,6 +116,79 @@ public class GroupChannel
 	public void heartbeat() {
 		// TODO Auto-generated method stub
 		
+	}
+	
+	
+	/**
+     * Send a message to the destinations specified
+     * @param destination Member[] - destination.length > 1
+     * @param msg Serializable - the message to send
+     * @param options int - sender options, options can trigger guarantee levels and different interceptors to
+     * react to the message see class documentation for the <code>Channel</code> object.<br>
+     * @return UniqueId - the unique Id that was assigned to this message
+     * @throws ChannelException - if an error occurs processing the message
+     * @see org.apache.catalina.tribes.Channel
+     */
+	public UniqueId send(Member[] destination, Serializable msg, int options) throws ChannelException {
+		return send(destination,msg,options,null);
+	}
+	
+	/**
+    *
+    * @param destination Member[] - destination.length > 1
+    * @param msg Serializable - the message to send
+    * @param options int - sender options, options can trigger guarantee levels and different interceptors to
+    * react to the message see class documentation for the <code>Channel</code> object.<br>
+    * @param handler - callback object for error handling and completion notification, used when a message is
+    * sent asynchronously using the <code>Channel.SEND_OPTIONS_ASYNCHRONOUS</code> flag enabled.
+    * @return UniqueId - the unique Id that was assigned to this message
+    * @throws ChannelException - if an error occurs processing the message
+    * @see org.apache.catalina.tribes.Channel
+    */
+	public UniqueId send(Member[] destination, Serializable msg, int options, ErrorHandler handler) throws ChannelException {
+		if ( msg == null ) 
+			throw new ChannelException("Cant send a NULL message");
+		
+		XByteBuffer buffer = null;
+		try {
+			if ( destination == null || destination.length == 0) 
+				throw new ChannelException("No destination given");
+			
+			ChannelData data = new ChannelData(true);//generates a unique Id
+			data.setAddress(getLocalMember(false));
+			data.setTimestamp(System.currentTimeMillis());
+			byte[] b = null;
+			if ( msg instanceof ByteMessage ){
+				//...
+			}
+			else {
+				b = XByteBuffer.serialize(msg);
+				options = options & (~SEND_OPTIONS_BYTE_MESSAGE);
+			}
+			data.setOptions(options);
+			
+			buffer = BufferPool.getBufferPool().getBuffer(b.length+128, false);
+			buffer.append(b,0,b.length);
+			data.setMessage(buffer);
+			
+			InterceptorPayload payload = null;
+			if ( handler != null ) {
+				//..
+			}
+			getFirstInterceptor().
+				sendMessage(destination, data, payload);
+			
+			
+		}
+		catch ( Exception x ) {
+			if ( x instanceof ChannelException ) 
+				throw (ChannelException)x;
+            throw new ChannelException(x);
+		}
+		finally {
+			if ( buffer != null ) 
+				BufferPool.getBufferPool().returnBuffer(buffer);
+		}
 	}
 	
 	
