@@ -126,6 +126,9 @@ public class McastServiceImpl {
 		 this.member = member;
 	     this.address = mcastAddress;
 	     this.port = port;
+	     
+	     /*	-------for debug-------- */
+	     expireTime = 3000000;
 	     this.mcastSoTimeout = soTimeout;
 	     this.mcastTTL = ttl;
 	     this.mcastBindAddress = bind;
@@ -334,8 +337,16 @@ public class McastServiceImpl {
 					receive();
                     errorCounter=0;
 				}
+				catch ( ArrayIndexOutOfBoundsException ax ) {
+					//we can ignore this, as it means we have an invalid package
+                    //but we will log it to debug
+                    if ( log.isDebugEnabled() )
+                        log.debug("Invalid member mcast package.",ax);
+				}
 				catch ( Exception x ) {
-					
+					if (errorCounter==0) log.warn("Error receiving mcast package. Sleeping 500ms",x);
+                    else log.debug("Error receiving mcast package. Sleeping 500ms",x);
+                    try { Thread.sleep(500); } catch ( Exception ignore ){}
 				}
 			}
 		}

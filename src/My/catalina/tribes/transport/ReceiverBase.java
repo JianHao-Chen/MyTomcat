@@ -16,6 +16,8 @@ import My.catalina.tribes.io.ListenCallback;
 public abstract class ReceiverBase 
 	implements ChannelReceiver, ListenCallback, RxTaskPool.TaskCreator{
 
+	public static final int OPTION_DIRECT_BUFFER = 0x0004;
+	
 	protected static My.juli.logging.Log log = 
 		My.juli.logging.LogFactory.getLog(ReceiverBase.class);
 	
@@ -130,6 +132,13 @@ public abstract class ReceiverBase
     }
     
     
+    public ExecutorService getExecutor() {
+        return executor;
+    }
+    
+    public void setExecutor(ExecutorService executor) {
+        this.executor = executor;
+    }
     
     
     public int getMaxThreads() {
@@ -197,6 +206,110 @@ public abstract class ReceiverBase
         tcpSelectorTimeout = selTimeout;
     }
     
+    public boolean getTcpNoDelay() {
+        return tcpNoDelay;
+    }
+
+    public boolean getSoKeepAlive() {
+        return soKeepAlive;
+    }
+
+    public boolean getOoBInline() {
+        return ooBInline;
+    }
+
+
+    public boolean getSoLingerOn() {
+        return soLingerOn;
+    }
+
+    public int getSoLingerTime() {
+        return soLingerTime;
+    }
+
+    public boolean getSoReuseAddress() {
+        return soReuseAddress;
+    }
+
+    public int getSoTrafficClass() {
+        return soTrafficClass;
+    }
+
+    public int getTimeout() {
+        return timeout;
+    }
     
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
+    }
+
+    public void setSoKeepAlive(boolean soKeepAlive) {
+        this.soKeepAlive = soKeepAlive;
+    }
+
+    public void setOoBInline(boolean ooBInline) {
+        this.ooBInline = ooBInline;
+    }
+
+
+    public void setSoLingerOn(boolean soLingerOn) {
+        this.soLingerOn = soLingerOn;
+    }
+
+    public void setSoLingerTime(int soLingerTime) {
+        this.soLingerTime = soLingerTime;
+    }
+
+    public void setSoReuseAddress(boolean soReuseAddress) {
+        this.soReuseAddress = soReuseAddress;
+    }
+
+    public void setSoTrafficClass(int soTrafficClass) {
+        this.soTrafficClass = soTrafficClass;
+    }
+
+    public void setTimeout(int timeout) {
+        this.timeout = timeout;
+    }
+    
+    public int getRxBufSize() {
+        return rxBufSize;
+    }
+
+    public int getTxBufSize() {
+        return txBufSize;
+    }
+    
+    public void setRxBufSize(int rxBufSize) {
+        this.rxBufSize = rxBufSize;
+    }
+
+    public void setTxBufSize(int txBufSize) {
+        this.txBufSize = txBufSize;
+    }
+    
+    
+    public boolean getUseBufferPool() {
+        return useBufferPool;
+    }
+    
+    public void setUseBufferPool(boolean useBufferPool) {
+        this.useBufferPool = useBufferPool;
+    }
+    
+    
+    public int getWorkerThreadOptions() {
+        int options = 0;
+        if ( getDirect() ) options = options | OPTION_DIRECT_BUFFER;
+        return options;
+    }
+    
+    
+    public boolean getDirect() {
+        return direct;
+    }
+    public void setDirect(boolean direct) {
+        this.direct = direct;
+    }
     
 }

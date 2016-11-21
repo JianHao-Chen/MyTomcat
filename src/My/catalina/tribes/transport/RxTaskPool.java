@@ -35,6 +35,46 @@ public class RxTaskPool {
 	}
 	
 	
+	
+	/**
+     * Find an idle worker thread, if any.  Could return null.
+     */
+    public AbstractRxTask getRxTask(){
+    	
+    	AbstractRxTask worker = null;
+    	
+    	synchronized (mutex) {
+    		while ( worker == null && running ) {
+    			if (idle.size() > 0) {
+    				try {
+                        worker = (AbstractRxTask) idle.remove(0);
+                    } catch (java.util.NoSuchElementException x) {
+                        //this means that there are no available workers
+                        worker = null;
+                    }
+    			}
+    			else if ( used.size() < this.maxTasks && creator != null) {
+    				worker = creator.createRxTask();
+    				configureTask(worker);
+    			}
+    			else {
+    				//....
+    			}
+    		}
+    		if ( worker != null ) 
+    			used.add(worker);
+    	}
+    	return (worker);
+    }
+    
+    
+    protected void configureTask(AbstractRxTask task) {
+    	synchronized (task) {
+    		task.setTaskPool(this);
+    	}
+    }
+	
+	
 	public static interface TaskCreator  {
         public AbstractRxTask createRxTask();
     }

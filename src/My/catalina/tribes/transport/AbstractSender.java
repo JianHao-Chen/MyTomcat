@@ -16,7 +16,9 @@ public abstract class AbstractSender implements DataSender {
     private int requestCount = 0;
     private long connectTime;
     private long keepAliveTime = -1;
-    private long timeout = 3000;
+    
+    /*private long timeout = 3000;*/
+    private long timeout = 3000000;
     private Member destination;
     private InetAddress address;
     private int port;
