@@ -122,6 +122,15 @@ public abstract class AbstractSender implements DataSender {
     }
     
     
+    public int getMaxRetryAttempts() {
+        return maxRetryAttempts;
+    }
+    public void setMaxRetryAttempts(int maxRetryAttempts) {
+        this.maxRetryAttempts = maxRetryAttempts;
+    }
+    
+    
+    
     public int getRequestCount() {
         return requestCount;
     }
@@ -198,6 +207,60 @@ public abstract class AbstractSender implements DataSender {
     }
     public void setPort(int port) {
         this.port = port;
+    }
+    
+    
+    
+    public boolean getSoLingerOn() {
+        return soLingerOn;
+    }
+    public void setSoLingerOn(boolean soLingerOn) {
+        this.soLingerOn = soLingerOn;
+    }
+
+    public int getSoLingerTime() {
+        return soLingerTime;
+    }
+    public void setSoLingerTime(int soLingerTime) {
+        this.soLingerTime = soLingerTime;
+    }
+
+    public int getSoTrafficClass() {
+        return soTrafficClass;
+    }
+    public void setSoTrafficClass(int soTrafficClass) {
+        this.soTrafficClass = soTrafficClass;
+    }
+    
+    
+    public boolean getTcpNoDelay() {
+        return tcpNoDelay;
+    }
+    public void setTcpNoDelay(boolean tcpNoDelay) {
+        this.tcpNoDelay = tcpNoDelay;
+    }
+    
+    public boolean getSoKeepAlive() {
+        return soKeepAlive;
+    }
+    public void setSoKeepAlive(boolean soKeepAlive) {
+        this.soKeepAlive = soKeepAlive;
+    }
+    
+    
+    public boolean getSoReuseAddress() {
+        return soReuseAddress;
+    }
+    public void setSoReuseAddress(boolean soReuseAddress) {
+        this.soReuseAddress = soReuseAddress;
+    }
+    
+    
+    public boolean getOoBInline() {
+        return ooBInline;
+    }
+    public void setOoBInline(boolean ooBInline) {
+        this.ooBInline = ooBInline;
     }
     
     

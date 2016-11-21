@@ -34,7 +34,7 @@ public class PooledParallelSender
 		else {
 			try {
 				sender.sendMessage(destination, message);
-				/*sender.keepalive();*/
+				sender.keepalive();
 			}
 			catch (ChannelException x) {
 				sender.disconnect();
