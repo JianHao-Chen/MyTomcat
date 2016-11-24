@@ -1,5 +1,6 @@
 package My.catalina.tribes.io;
 
+import My.catalina.tribes.Channel;
 import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.Member;
 import My.catalina.tribes.membership.MemberImpl;
@@ -216,6 +217,39 @@ public class ChannelData implements ChannelMessage{
     }
     
     
+    /**
+     * Deserializes a ChannelData object from a byte array
+     */
+    public static ChannelData getDataFromPackage(XByteBuffer xbuf)  {
+    	
+    	ChannelData data = new ChannelData(false);
+    	int offset = 0;
+    	
+    	data.setOptions(XByteBuffer.toInt(xbuf.getBytesDirect(),offset));
+    	offset += 4; //options
+    	data.setTimestamp(XByteBuffer.toLong(xbuf.getBytesDirect(),offset));
+    	offset += 8; //timestamp
+    	data.uniqueId = new byte[XByteBuffer.toInt(xbuf.getBytesDirect(),offset)];
+    	offset += 4; //uniqueId length
+   
+    	System.arraycopy(xbuf.getBytesDirect(),offset,data.uniqueId,0,data.uniqueId.length);
+    	offset += data.uniqueId.length; //uniqueId data
+    	
+    	int addrlen = XByteBuffer.toInt(xbuf.getBytesDirect(),offset);
+        offset += 4; //addr length
+        data.setAddress(MemberImpl.getMember(xbuf.getBytesDirect(),offset,addrlen));
+        offset += addrlen; //addr data
+        
+        int xsize = XByteBuffer.toInt(xbuf.getBytesDirect(),offset);
+        offset += 4; //xsize length
+        System.arraycopy(xbuf.getBytesDirect(),offset,xbuf.getBytesDirect(),0,xsize);
+        xbuf.setLength(xsize);
+        
+        data.message = xbuf;
+        return data;
+    }
+    
+    
     
     /**
      * Generates a UUID and invokes setUniqueId
@@ -249,5 +283,23 @@ public class ChannelData implements ChannelMessage{
         return ChannelData.getDataFromPackage(d);
     }
     
+    
+    /**
+     * Utility method, returns true if the options flag indicates that an ack
+     * is to be sent after the message has been received and processed
+     */
+    public static boolean sendAckSync(int options) {
+    	return ( (Channel.SEND_OPTIONS_USE_ACK & options) == Channel.SEND_OPTIONS_USE_ACK) &&
+        ( (Channel.SEND_OPTIONS_SYNCHRONIZED_ACK & options) == Channel.SEND_OPTIONS_SYNCHRONIZED_ACK);
+    }
+    
+    /**
+     * Utility method, returns true if the options flag indicates that an ack
+     * is to be sent after the message has been received but not yet processed
+     */
+    public static boolean sendAckAsync(int options) {
+    	 return ( (Channel.SEND_OPTIONS_USE_ACK & options) == Channel.SEND_OPTIONS_USE_ACK) &&
+         ( (Channel.SEND_OPTIONS_SYNCHRONIZED_ACK & options) != Channel.SEND_OPTIONS_SYNCHRONIZED_ACK);
+    }
     
 }

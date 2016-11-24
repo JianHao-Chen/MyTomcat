@@ -172,5 +172,10 @@ public class ChannelCoordinator
     public MembershipService getMembershipService() {
         return membershipService;
     }
+    
+    
+    public void messageReceived(ChannelMessage msg) {
+    	super.messageReceived(msg);
+    }
 
 }

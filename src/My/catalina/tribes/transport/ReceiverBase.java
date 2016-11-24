@@ -9,6 +9,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.ChannelReceiver;
 import My.catalina.tribes.MessageListener;
 import My.catalina.tribes.io.ListenCallback;
@@ -30,7 +31,11 @@ public abstract class ReceiverBase
     private boolean listen = false;
     private RxTaskPool pool;
     private boolean direct = true;
-    private long tcpSelectorTimeout = 5000;
+    
+    
+    /*private long tcpSelectorTimeout = 5000;*/
+    private long tcpSelectorTimeout = 5000000;
+    
     
     //how many times to search for an available socket
     private int autoBind = 100;
@@ -130,6 +135,15 @@ public abstract class ReceiverBase
     	}
     	return retries;
     }
+    
+    
+    public void messageDataReceived(ChannelMessage data) {
+        if ( this.listener != null ) {
+            if ( listener.accept(data) ) 
+            	listener.messageReceived(data);
+        }
+    }
+    
     
     
     public ExecutorService getExecutor() {

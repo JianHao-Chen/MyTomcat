@@ -279,5 +279,18 @@ public class NioReceiver extends ReceiverBase implements Runnable, ChannelReceiv
 			log.error("Unable to run replication listener.", x);
 		}
 	}
+	
+	
+	
+	public void addEvent(Runnable event) {
+		if ( selector != null ) {
+			synchronized (events) {
+				events.add(event);
+			}
+			
+			if ( isListening() && selector!=null ) 
+				selector.wakeup();
+		}
+	}
 
 }

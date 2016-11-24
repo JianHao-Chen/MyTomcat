@@ -21,6 +21,11 @@ public abstract class ChannelInterceptorBase
     public ChannelInterceptorBase() {
     }
     
+    public boolean okToProcess(int messageFlags) { 
+        if (this.optionFlag == 0 ) return true;
+        return ((optionFlag&messageFlags) == optionFlag);
+    }
+    
     
     public void setOptionFlag(int optionFlag) {
         this.optionFlag = optionFlag;
@@ -155,6 +160,16 @@ public abstract class ChannelInterceptorBase
     throws ChannelException {
     	if (getNext() != null) 
     		getNext().sendMessage(destination, msg, payload);
+    }
+    
+    
+    public void messageReceived(ChannelMessage msg) {
+        if (getPrevious() != null) 
+        	getPrevious().messageReceived(msg);
+    }
+    
+    public boolean accept(ChannelMessage msg) {
+        return true;
     }
     
     

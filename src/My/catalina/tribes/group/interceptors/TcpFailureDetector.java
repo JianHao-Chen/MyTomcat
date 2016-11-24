@@ -244,6 +244,21 @@ public class TcpFailureDetector extends ChannelInterceptorBase{
             throw cx;
 		}
 	}
+	
+	
+	public void messageReceived(ChannelMessage msg) {
+		boolean process = true;
+		if ( okToProcess(msg.getOptions()) ) {
+			//check to see if it is a testMessage, if so, process = false
+			process = ( (msg.getMessage().getLength() != TCP_FAIL_DETECT.length) ||
+                    (!Arrays.equals(TCP_FAIL_DETECT,msg.getMessage().getBytes()) ) );
+		}
+		//ignore the message, it doesnt have the flag set
+        if ( process ) 
+        	super.messageReceived(msg);
+        else if ( log.isDebugEnabled() ) 
+        	log.debug("Received a failure detector packet:"+msg);
+	}
 	 
 	 
 }

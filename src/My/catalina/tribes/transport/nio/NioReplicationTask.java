@@ -2,10 +2,14 @@ package My.catalina.tribes.transport.nio;
 
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.SocketChannel;
 
+import My.catalina.tribes.ChannelMessage;
+import My.catalina.tribes.io.ChannelData;
 import My.catalina.tribes.io.ListenCallback;
 import My.catalina.tribes.io.ObjectReader;
 import My.catalina.tribes.transport.AbstractRxTask;
+import My.catalina.tribes.transport.Constants;
 
 
 public class NioReplicationTask extends AbstractRxTask{
@@ -101,7 +105,78 @@ public class NioReplicationTask extends AbstractRxTask{
      * so the selector will resume watching this channel.
      */
     protected void drainChannel (final SelectionKey key, ObjectReader reader) throws Exception {
+    	reader.setLastAccess(System.currentTimeMillis());
+    	reader.access();
     	
+    	SocketChannel channel = (SocketChannel) key.channel();
+    	int count;
+        buffer.clear();			// make buffer empty
+        
+        // loop while data available, channel is non-blocking
+        while ((count = channel.read (buffer)) > 0) {
+        	buffer.flip();		// make buffer readable
+        	reader.append(buffer,count,false);
+        	buffer.clear();		// make buffer empty
+        	
+        	//do we have at least one package?
+            if ( reader.hasPackage() )
+            	break;
+        }
+        
+        int pkgcnt = reader.count();
+        
+        if (count < 0 && pkgcnt == 0 ) {
+        	//end of stream, and no more packages to process
+        	//...
+        }
+        
+        ChannelMessage[] msgs = pkgcnt == 0? ChannelData.EMPTY_DATA_ARRAY : reader.execute();
+    	
+        //register to read new data, before we send it off to avoid dead locks
+        registerForRead(key,reader);
+        
+        for ( int i=0; i<msgs.length; i++ ) {
+        	/**
+             * Use send ack here if you want to ack the request to the remote 
+             * server before completing the request
+             * This is considered an asynchronized request
+             */
+        	if (ChannelData.sendAckAsync(msgs[i].getOptions())) 
+        		sendAck(key,channel,Constants.ACK_COMMAND);
+        	
+        	try {
+        		
+        		//process the message
+                getCallback().messageDataReceived(msgs[i]);
+        	}
+        }
+        
+    }
+    
+    
+    /**
+     * send a reply-acknowledgement
+     */
+    protected void sendAck(SelectionKey key, SocketChannel channel, byte[] command) {
+    	//...
+    }
+    
+    
+    protected void registerForRead(final SelectionKey key, ObjectReader reader) {
+    	reader.finish();
+    	
+    	//register our OP_READ interest
+        Runnable r = new Runnable() {
+        	public void run() {
+        		try {
+        			if (key.isValid()) {
+        				
+        			}
+        		}
+        	}
+        };
+    	
+        receiver.addEvent(r);
     }
     
     

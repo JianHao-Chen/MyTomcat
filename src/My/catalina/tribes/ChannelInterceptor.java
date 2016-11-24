@@ -138,4 +138,23 @@ public interface ChannelInterceptor
      * @see InterceptorPayload
      */
     public void sendMessage(Member[] destination, ChannelMessage msg, InterceptorPayload payload) throws ChannelException;
+    
+    
+    /**
+     * the <code>messageReceived</code> is invoked when a message is received.
+     * <code>ChannelMessage.getAddress()</code> is the sender, or the reply-to address
+     * if it has been overwritten.
+     * @param data ChannelMessage
+     */
+    public void messageReceived(ChannelMessage data);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }

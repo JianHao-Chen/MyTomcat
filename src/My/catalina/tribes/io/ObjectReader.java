@@ -2,7 +2,10 @@ package My.catalina.tribes.io;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+
+import My.catalina.tribes.ChannelMessage;
 
 /**
  * The object reader object is an object used in conjunction with
@@ -46,6 +49,15 @@ public class ObjectReader {
     }
     
     
+    public synchronized void access() {
+        this.accessed = true;
+        this.lastAccess = System.currentTimeMillis();
+    }
+    
+    public synchronized void finish() {
+        this.accessed = false;
+        this.lastAccess = System.currentTimeMillis();
+    }
     
     
     public int bufferSize() {
@@ -73,4 +85,47 @@ public class ObjectReader {
     }
     
     
+    
+    /**
+     * Append new bytes to buffer. 
+     */
+    public int append(ByteBuffer data, int len, boolean count) throws java.io.IOException {
+    	buffer.append(data,len);
+    	int pkgCnt = -1;
+        if ( count ) 
+        	pkgCnt = buffer.countPackages();
+        return pkgCnt;
+    }
+    
+    /**
+     * Send buffer to cluster listener (callback).
+     * Is message complete receiver send message to callback?
+     *
+     * @see org.apache.catalina.tribes.transport.ClusterReceiverBase#messageDataReceived(ChannelMessage)
+     * @see XByteBuffer#doesPackageExist()
+     * @see XByteBuffer#extractPackage(boolean)
+     *
+     * @return number of received packages/messages
+     * @throws java.io.IOException
+     */
+    public ChannelMessage[] execute() throws java.io.IOException {
+    	int pkgCnt = buffer.countPackages();
+    	ChannelMessage[] result = new ChannelMessage[pkgCnt];
+    	for (int i=0; i<pkgCnt; i++)  {
+    		ChannelMessage data = buffer.extractPackage(true);
+    		result[i] = data;
+    	}
+    	return result;
+    }
+    
+    
+    
+    
+    public boolean hasPackage() {
+        return buffer.countPackages(true)>0;
+    }
+    
+    public int count() {
+        return buffer.countPackages();
+    }
 }

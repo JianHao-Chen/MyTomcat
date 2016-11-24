@@ -1,7 +1,10 @@
 package My.catalina.tribes.io;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -122,6 +125,88 @@ public class XByteBuffer {
     public int getCapacity() {
         return buf.length;
     }
+    
+    
+    /**
+     * Internal mechanism to make a check if a complete package exists
+     * within the buffer
+     * @return - true if a complete package (header,compress,size,data,footer) exists within the buffer
+     */
+    public int countPackages() {
+        return countPackages(false);
+    }
+    
+    public int countPackages(boolean first)
+    {
+        int cnt = 0;
+        int pos = START_DATA.length;
+        int start = 0;
+
+        while ( start < bufSize ) {
+            //first check start header
+            int index = XByteBuffer.firstIndexOf(buf,start,START_DATA);
+            //if the header (START_DATA) isn't the first thing or
+            //the buffer isn't even 14 bytes
+            if ( index != start || ((bufSize-start)<14) ) break;
+            //next 4 bytes are compress flag not needed for count packages
+            //then get the size 4 bytes
+            int size = toInt(buf, pos);
+            //now the total buffer has to be long enough to hold
+            //START_DATA.length+4+size+END_DATA.length
+            pos = start + START_DATA.length + 4 + size;
+            if ( (pos + END_DATA.length) > bufSize) break;
+            //and finally check the footer of the package END_DATA
+            int newpos = firstIndexOf(buf, pos, END_DATA);
+            //mismatch, there is no package
+            if (newpos != pos) break;
+            //increase the packet count
+            cnt++;
+            //reset the values
+            start = pos + END_DATA.length;
+            pos = start + START_DATA.length;
+            //we only want to verify that we have at least one package
+            if ( first ) break;
+        }
+        return cnt;
+    }
+    
+    
+    public ChannelData extractPackage(boolean clearFromBuffer) throws java.io.IOException {
+        XByteBuffer xbuf = extractDataPackage(clearFromBuffer);
+        ChannelData cdata = ChannelData.getDataFromPackage(xbuf);
+        return cdata;
+    }
+    
+    /**
+     * Extracts the message bytes from a package.
+     * If no package exists, a IllegalStateException will be thrown.
+     * @param clearFromBuffer - if true, the package will be removed from the byte buffer
+     * @return - returns the actual message bytes (header, compress,size and footer not included).
+     */
+    public XByteBuffer extractDataPackage(boolean clearFromBuffer) {
+    	int psize = countPackages(true);
+    	if (psize == 0) {
+            throw new java.lang.IllegalStateException("No package exists in XByteBuffer");
+        }
+    	
+    	int size = toInt(buf, START_DATA.length);
+    	
+    	XByteBuffer xbuf = BufferPool.getBufferPool().getBuffer(size,false);
+    	xbuf.setLength(size);
+    	
+    	System.arraycopy(buf, START_DATA.length + 4, xbuf.getBytesDirect(), 0, size);
+    	
+    	if (clearFromBuffer) {
+            int totalsize = START_DATA.length + 4 + size + END_DATA.length;
+            bufSize = bufSize - totalsize;
+            System.arraycopy(buf, totalsize, buf, 0, bufSize);
+        }
+    	
+    	return xbuf;
+    }
+    
+    
+    
     
     
     /**
@@ -277,10 +362,23 @@ public class XByteBuffer {
     
     
     
+    public static byte[] createDataPackage(byte[] data) {
+        int length = getDataPackageLength(data.length);
+        byte[] result = new byte[length];
+        return createDataPackage(data,0,data.length,result,0);
+    }
     
     
-    
-    
+    public static byte[] createDataPackage(byte[] data, int doff, int dlength, byte[] buffer, int bufoff) {
+        if ( (buffer.length-bufoff) > getDataPackageLength(dlength) ) {
+            throw new ArrayIndexOutOfBoundsException("Unable to create data package, buffer is too small.");
+        }
+        System.arraycopy(START_DATA, 0, buffer, bufoff, START_DATA.length);
+        toBytes(data.length,buffer, bufoff+START_DATA.length);
+        System.arraycopy(data, doff, buffer, bufoff+START_DATA.length + 4, dlength);
+        System.arraycopy(END_DATA, 0, buffer, bufoff+START_DATA.length + 4 + data.length, END_DATA.length);
+        return buffer;
+    }
 	
 	
 	/**
@@ -450,6 +548,46 @@ public class XByteBuffer {
     
     
     
+    public static Serializable deserialize(byte[] data) 
+    throws IOException, ClassNotFoundException, ClassCastException {
+    return deserialize(data,0,data.length);
+}
+
+public static Serializable deserialize(byte[] data, int offset, int length)  
+    throws IOException, ClassNotFoundException, ClassCastException {
+    return deserialize(data,offset,length,null);     
+}
+public static int invokecount = 0;
+public static Serializable deserialize(byte[] data, int offset, int length, ClassLoader[] cls) 
+    throws IOException, ClassNotFoundException, ClassCastException {
+	
+	synchronized (XByteBuffer.class) { invokecount++;}
+	Object message = null;
+	if ( cls == null ) 
+		cls = new ClassLoader[0];
+	
+	
+	if (data != null) {
+		InputStream  instream = 
+			new ByteArrayInputStream(data,offset,length);
+		
+		ObjectInputStream stream = null;
+		stream = new ObjectInputStream(instream);
+		message = stream.readObject();
+		instream.close();
+        stream.close();
+	}
+	
+	if ( message == null ) {
+        return null;
+    } else if (message instanceof Serializable)
+        return (Serializable) message;
+    else {
+        throw new ClassCastException("Message has the wrong class. It should implement Serializable, instead it is:"+message.getClass().getName());
+    }
+}
+    
+    
     
     /**
      * Serializes a message into cluster data
@@ -466,6 +604,9 @@ public class XByteBuffer {
     	byte[] data = outs.toByteArray();
     	return data;
     }
+    
+    
+    
     
 	
 }

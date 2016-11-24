@@ -8,6 +8,7 @@ import My.catalina.tribes.ByteMessage;
 import My.catalina.tribes.ChannelException;
 import My.catalina.tribes.ChannelInterceptor;
 import My.catalina.tribes.ChannelListener;
+import My.catalina.tribes.ChannelMessage;
 import My.catalina.tribes.ErrorHandler;
 import My.catalina.tribes.ManagedChannel;
 import My.catalina.tribes.Member;
@@ -191,6 +192,38 @@ public class GroupChannel
 				BufferPool.getBufferPool().returnBuffer(buffer);
 		}
 	}
+	
+	
+	/**
+     * Callback from the interceptor stack. <br>
+     * When a message is received from a remote node, this method will be invoked by
+     * the previous interceptor.<br>
+     * This method can also be used to send a message to other components within the same application,
+     * but its an extreme case, and you're probably better off doing that logic between the applications itself.
+     * @param msg ChannelMessage
+     */
+    public void messageReceived(ChannelMessage msg) {
+    	if ( msg == null ) return;
+    	
+    	try {
+    		
+    		try{
+    			Serializable fwd = null;
+        		fwd = XByteBuffer.deserialize(msg.getMessage().getBytesDirect(), 0, msg.getMessage().getLength());
+    		}
+    		catch (Exception sx) {
+    			log.error("Unable to deserialize message:"+msg,sx);
+                return;
+        	}
+    		
+    		
+    		//get the actual member with the correct alive time
+    		
+    	}
+    	
+    	
+    }
+	
 	
 	
 	 /**

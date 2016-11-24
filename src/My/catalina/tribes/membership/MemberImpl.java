@@ -477,6 +477,11 @@ public class MemberImpl implements Member, java.io.Externalizable{
     }
     
     
+    public static MemberImpl getMember(byte[] data, int offset, int length) {
+        return getMember(data,offset,length,new MemberImpl());
+    }
+    
+    
     
     
     
