@@ -146,7 +146,7 @@ public class NioReplicationTask extends AbstractRxTask{
         	
         	try {
         		
-        		//process the message
+        		//process the message.
                 getCallback().messageDataReceived(msgs[i]);
         	}
         }
