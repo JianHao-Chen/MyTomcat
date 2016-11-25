@@ -67,4 +67,14 @@ public interface SessionMessage extends ClusterMessage ,java.io.Serializable{
      */
     public static final int EVT_CHANGE_SESSION_ID = 15;
     
+    
+    public String getContextName();
+    
+    public String getEventTypeString();
+    
+    /**
+     * returns the event type
+     * @return one of the event types EVT_XXXX
+     */
+    public int getEventType(); 
 }

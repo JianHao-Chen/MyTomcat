@@ -1,5 +1,6 @@
 package My.catalina.ha.tcp;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -209,6 +210,15 @@ public class SimpleTcpCluster
      */
     public Container getContainer() {
         return (this.container);
+    }
+    
+    
+    
+    /**
+     * @return Returns the managers.
+     */
+    public Map getManagers() {
+        return managers;
     }
     
     
@@ -534,9 +544,47 @@ public class SimpleTcpCluster
             log.error("Unable remove cluster node from replication system.", x);
         }
 	}
-
-
 	
+	
+	
+	/**
+     * notify all listeners from receiving a new message is not ClusterMessage
+     * emitt Failure Event to LifecylceListener
+     * 
+     * @param message
+     *            receveived Message
+     */
+    public boolean accept(Serializable msg, Member sender) {
+        return (msg instanceof ClusterMessage);
+    }
+
+
+    public void messageReceived(Serializable message, Member sender) {
+    	ClusterMessage fwd = (ClusterMessage)message;
+        fwd.setAddress(sender);
+        messageReceived(fwd);
+    }
+    
+    public void messageReceived(ClusterMessage message) {
+    	long start = 0;
+
+    	//invoke all the listeners
+        boolean accepted = false;
+        
+        if (message != null) {
+        	for (Iterator iter = clusterListeners.iterator(); iter.hasNext();) {
+        		ClusterListener listener = (ClusterListener) iter.next();
+        		if (listener.accept(message)) {
+        			accepted = true;
+                    listener.messageReceived(message);
+        		}
+        	}
+        }
+        
+    }
+    
+    
+    
     
     
 }

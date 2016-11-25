@@ -1,5 +1,7 @@
 package My.catalina.ha;
 
+import java.util.Map;
+
 import My.catalina.ha.ClusterMessage;
 import My.catalina.Cluster;
 import My.catalina.tribes.Member;
@@ -39,5 +41,11 @@ public interface CatalinaCluster extends Cluster{
      * @param msg ClusterMessage
      */
     public void sendClusterDomain(ClusterMessage msg);
+    
+    
+    /**
+     * @return The map of managers
+     */
+    public Map getManagers();
 	
 }

@@ -17,4 +17,14 @@ public interface ClusterManager extends Manager{
 	public boolean isDefaultMode();
 	
 	public ClusterManager cloneFromTemplate();
+	
+	
+	
+	/**
+	* A message was received from another node, this
+	* is the callback method to implement if you are interested in
+	* receiving replication messages.
+	* @param msg - the message received.
+	*/
+	public void messageDataReceived(ClusterMessage msg);
 }

@@ -1,5 +1,7 @@
 package My.catalina.ha.session;
 
+import java.util.ArrayList;
+
 import My.catalina.ha.session.SessionMessage;
 import My.catalina.ha.session.SessionMessageImpl;
 import My.catalina.Cluster;
@@ -8,6 +10,8 @@ import My.catalina.LifecycleListener;
 import My.catalina.Session;
 import My.catalina.ha.CatalinaCluster;
 import My.catalina.ha.ClusterManager;
+import My.catalina.ha.ClusterMessage;
+import My.catalina.tribes.Member;
 import My.catalina.util.LifecycleSupport;
 
 /**
@@ -56,6 +60,13 @@ public class DeltaManager extends ClusterManagerBase{
     
     
     private boolean sendClusterDomainOnly = true ;
+    
+    
+    private ArrayList receivedMessageQueue = new ArrayList();
+    private boolean receiverQueue = false ;
+    
+    
+    
     
 	// --------------------------- stats attributes ------------------------
     int rejectedSessions = 0;
@@ -287,5 +298,46 @@ public class DeltaManager extends ClusterManagerBase{
 		result.name = "Clone-from-"+name;
         return result;
 	}
+	
+	
+	
+	// ------------------- Replication Methods -----------------
+	
+	/**
+     * A message was received from another node, this is the callback method to
+     * implement if you are interested in receiving replication messages.
+     * 
+     * @param cmsg -
+     *            the message received.
+     */
+    public void messageDataReceived(ClusterMessage cmsg) {
+    	if (cmsg != null && cmsg instanceof SessionMessage) {
+    		SessionMessage msg = (SessionMessage) cmsg;
+    		switch (msg.getEventType()) {
+	            case SessionMessage.EVT_GET_ALL_SESSIONS:
+	            case SessionMessage.EVT_SESSION_CREATED: 
+	            case SessionMessage.EVT_SESSION_EXPIRED: 
+	            case SessionMessage.EVT_SESSION_ACCESSED:
+	            case SessionMessage.EVT_SESSION_DELTA:
+	            case SessionMessage.EVT_CHANGE_SESSION_ID: {
+	            	synchronized(receivedMessageQueue) {
+	                    if(receiverQueue) {
+	                        receivedMessageQueue.add(msg);
+	                        return ;
+	                    }
+	                }
+	            	break;
+	            }
+	            default: {
+	                //we didn't queue, do nothing
+	                break;
+	            }
+    		}
+    		
+    		messageReceived(msg, 
+    				msg.getAddress() != null ? (Member) msg.getAddress() : null);
+    	}
+
+    }
 
 }

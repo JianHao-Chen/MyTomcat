@@ -12,6 +12,23 @@ import My.catalina.tribes.io.XByteBuffer;
 
 public interface ChannelMessage extends Serializable{
 
+	/**
+     * Get the address that this message originated from.  
+     * Almost always <code>Channel.getLocalMember(boolean)</code><br>
+     * This would be set to a different address 
+     * if the message was being relayed from a host other than the one
+     * that originally sent it.
+     * @return the source or reply-to address of this message
+     */
+    public Member getAddress();
+
+    /**
+     * Sets the source or reply-to address of this message
+     * @param member Member
+     */
+    public void setAddress(Member member);
+	
+	
 	
 	/**
      * Each message must have a globally unique Id.

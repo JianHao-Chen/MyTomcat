@@ -135,4 +135,11 @@ public class SessionMessageImpl
     }
     
     
+    public String getContextName() {
+        return mContextName;
+     }
+    
+    
+    
+    
 }

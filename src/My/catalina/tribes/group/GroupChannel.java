@@ -206,9 +206,10 @@ public class GroupChannel
     	if ( msg == null ) return;
     	
     	try {
+    		Serializable fwd = null;
     		
     		try{
-    			Serializable fwd = null;
+    			
         		fwd = XByteBuffer.deserialize(msg.getMessage().getBytesDirect(), 0, msg.getMessage().getLength());
     		}
     		catch (Exception sx) {
@@ -218,7 +219,22 @@ public class GroupChannel
     		
     		
     		//get the actual member with the correct alive time
-    		
+    		Member source = msg.getAddress();
+    		boolean rx = false;
+            boolean delivered = false; 
+            
+            for ( int i=0; i<channelListeners.size(); i++ ) {
+            	ChannelListener channelListener = 
+            		(ChannelListener)channelListeners.get(i);
+            	
+            	if (channelListener != null && channelListener.accept(fwd, source)) {
+            		channelListener.messageReceived(fwd, source);
+            	}
+            	
+            	
+            }
+            
+            
     	}
     	
     	

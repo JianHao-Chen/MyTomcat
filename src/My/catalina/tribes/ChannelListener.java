@@ -1,5 +1,7 @@
 package My.catalina.tribes;
 
+import java.io.Serializable;
+
 /**
  * 
  * <p>Title: ChannelListener</p> 
@@ -15,4 +17,19 @@ package My.catalina.tribes;
 
 public interface ChannelListener {
 
+	 /**
+     * Receive a message from the channel
+     * @param msg Serializable
+     * @param sender - the source of the message
+     */
+    public void messageReceived(Serializable msg, Member sender);
+
+    /**
+     * Invoked by the channel to determine if the listener will process this message or not.
+     * @param msg Serializable
+     * @param sender Member
+     * @return boolean
+     */
+    public boolean accept(Serializable msg, Member sender);
+    
 }
