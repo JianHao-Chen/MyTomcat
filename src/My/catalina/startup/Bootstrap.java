@@ -19,7 +19,7 @@ public final class Bootstrap {
     // ------------------------------------------------------- Static Variables
     
     /**
-     * Daemon object used by main.
+     * Daemon object used by main
      */
     private static Bootstrap daemon = null;
     
