@@ -371,7 +371,28 @@ public final class StandardServer
 			awaitSocket =
                 new ServerSocket(port, 1,
                                  InetAddress.getByName("localhost"));
+			
+			
+			
+			
 		}catch (IOException e) {
+			
+			
+			/**
+			 * just for debug : because i need different tomcat instances
+			 */
+			try{
+				
+				if(awaitSocket==null){
+					awaitSocket =
+			                new ServerSocket(port+1, 1,
+			                                 InetAddress.getByName("localhost"));
+				}
+			}
+			catch (IOException ex) {
+				
+			}
+			
 			
 		}
 		

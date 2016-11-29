@@ -131,21 +131,7 @@ public class NioReceiver extends ReceiverBase implements Runnable, ChannelReceiv
         lastCheck = System.currentTimeMillis();
         
     }
-	
-	
-	@Override
-	public void heartbeat() {
-		// TODO Auto-generated method stub
-		
-	}
 
-
-	@Override
-	public void messageDataReceived(ChannelMessage data) {
-		// TODO Auto-generated method stub
-		
-	}
-	
 	
 	/**
      * get data from channel and store in byte array

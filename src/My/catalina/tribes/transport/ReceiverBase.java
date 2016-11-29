@@ -326,4 +326,9 @@ public abstract class ReceiverBase
         this.direct = direct;
     }
     
+    
+    public void heartbeat() {
+        //empty operation
+    }
+    
 }
