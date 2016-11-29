@@ -50,6 +50,13 @@ public class DeltaRequest implements Externalizable{
             new Exception("Session Id is null for setSessionId").fillInStackTrace().printStackTrace();
         }
     }
+    
+    public void reset() {
+    	while ( actions.size() > 0 ) {
+    		//...
+    	}
+    	actions.clear();
+    }
 
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {

@@ -580,6 +580,7 @@ public class SimpleTcpCluster
         		}
         	}
         }
+        return;
         
     }
     

@@ -57,14 +57,7 @@ public class ManagerBase implements Manager{
     protected volatile int maxActive = 0;
     private final Object maxActiveUpdateLock = new Object();
     
-    
-    
-    /**
-     * The default maximum inactive interval for Sessions created by
-     * this Manager.
-     */
-    protected int maxInactiveInterval = 60;
-    
+  
     
     
     protected static final int TIMING_STATS_CACHE_SIZE = 100;
@@ -100,6 +93,25 @@ public class ManagerBase implements Manager{
 
         Container oldContainer = this.container;
         this.container = container;
+    }
+    
+    
+    
+    /**
+     * The default maximum inactive interval for Sessions created by
+     * this Manager.
+     */
+    protected int maxInactiveInterval = 60;
+    
+    
+    /**
+     * Return the default maximum inactive interval (in seconds)
+     * for Sessions created by this Manager.
+     */
+    public int getMaxInactiveInterval() {
+
+        return (this.maxInactiveInterval);
+
     }
     
     /**

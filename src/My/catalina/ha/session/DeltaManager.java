@@ -2,8 +2,10 @@ package My.catalina.ha.session;
 
 import java.util.ArrayList;
 
+import My.catalina.core.StandardContext;
 import My.catalina.ha.session.SessionMessage;
 import My.catalina.ha.session.SessionMessageImpl;
+import My.catalina.ha.tcp.ReplicationValve;
 import My.catalina.Cluster;
 import My.catalina.LifecycleException;
 import My.catalina.LifecycleListener;
@@ -39,6 +41,12 @@ public class DeltaManager extends ClusterManagerBase{
      */
     private boolean started = false;
     
+    
+    /**
+     * cached replication valve cluster container!
+     */
+    private ReplicationValve replicationValve = null ;
+    
     /**
      * The lifecycle event support for this component.
      */
@@ -58,7 +66,7 @@ public class DeltaManager extends ClusterManagerBase{
     private CatalinaCluster cluster = null;
     
     
-    
+    private boolean notifySessionListenersOnReplication = true;
     private boolean sendClusterDomainOnly = true ;
     
     
@@ -292,6 +300,23 @@ public class DeltaManager extends ClusterManagerBase{
 	
 	
 	
+	/**
+     * Register cross context session at replication valve thread local
+     * @param session cross context session
+     */
+    protected void registerSessionAtReplicationValve(DeltaSession session) {
+    	if(replicationValve == null) {
+    		 if(container instanceof StandardContext && ((StandardContext)container).getCrossContext()) {
+    			 //... default is not go into here.
+    		 }
+    		 if(replicationValve != null) {
+    			 //...
+    		 }
+    	}
+    }
+	
+	
+	
 	public ClusterManager cloneFromTemplate() {
 		
 		DeltaManager result = new DeltaManager();
@@ -338,6 +363,81 @@ public class DeltaManager extends ClusterManagerBase{
     				msg.getAddress() != null ? (Member) msg.getAddress() : null);
     	}
 
+    }
+    
+    
+    // ---------------------- message receive ----------------------
+
+    
+    /**
+     * This method is called by the received thread when a SessionMessage has
+     * been received from one of the other nodes in the cluster.
+     * 
+     * @param msg -
+     *            the message received
+     * @param sender -
+     *            the sender of the message, this is used if we receive a
+     *            EVT_GET_ALL_SESSION message, so that we only reply to the
+     *            requesting node
+     */
+    protected void messageReceived(SessionMessage msg, Member sender) {
+    	
+    	ClassLoader contextLoader = Thread.currentThread().getContextClassLoader();
+    	
+    	try {
+    		ClassLoader[] loaders = getClassLoaders();
+    		if ( loaders != null && loaders.length > 0) 
+    			Thread.currentThread().setContextClassLoader(loaders[0]);
+    		
+    		switch (msg.getEventType()) {
+    			case SessionMessage.EVT_SESSION_CREATED: {
+    				handleSESSION_CREATED(msg,sender);
+    				break;
+    			}
+    			case SessionMessage.EVT_SESSION_EXPIRED: {
+    				//...
+                    break;
+                }
+    			
+    			default: {
+                    //we didn't recognize the message type, do nothing
+                    break;
+                }
+    		}
+    	}
+    	catch (Exception x) {
+    		
+    	}
+    	finally {
+            Thread.currentThread().setContextClassLoader(contextLoader);
+        }
+    	
+    	
+    }
+    
+    
+	// ----------------------- message receiver handler -----------------------
+    
+    /**
+     * handle receive new session is created at other node (create backup - primary false)
+     * @param msg
+     * @param sender
+     */
+    protected void handleSESSION_CREATED(SessionMessage msg,Member sender) {
+    	counterReceive_EVT_SESSION_CREATED++;
+    	
+    	DeltaSession session = (DeltaSession) createEmptySession();
+    	session.setManager(this);
+        session.setValid(true);
+        session.setPrimarySession(false);
+        session.setCreationTime(msg.getTimestamp());
+        
+        session.setMaxInactiveInterval(getMaxInactiveInterval(), false);
+        session.access();
+        session.setId(msg.getSessionID(), notifySessionListenersOnReplication);
+        session.resetDeltaRequest();
+        session.endAccess();
+    	
     }
 
 }

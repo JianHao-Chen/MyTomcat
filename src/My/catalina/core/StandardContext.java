@@ -1163,6 +1163,33 @@ public class StandardContext
     
     
     /**
+     * Should we allow the <code>ServletContext.getContext()</code> method
+     * to access the context of other web applications in this server?
+     */
+    private boolean crossContext = false;
+    
+    /**
+     * Return the "allow crossing servlet contexts" flag.
+     */
+    public boolean getCrossContext() {
+
+        return (this.crossContext);
+    }
+
+    /**
+     * Set the "allow crossing servlet contexts" flag.
+     *
+     * @param crossContext The new cross contexts flag
+     */
+    public void setCrossContext(boolean crossContext) {
+
+        boolean oldCrossContext = this.crossContext;
+        this.crossContext = crossContext;
+    }
+    
+    
+    
+    /**
      * Encoded path.
      */
     private String encodedPath = null;

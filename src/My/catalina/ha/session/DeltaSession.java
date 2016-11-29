@@ -80,6 +80,21 @@ public class DeltaSession
     public void unlock() {
         diffLock.unlock();
     }
+    
+    
+    public void setMaxInactiveInterval(int interval) {
+        this.setMaxInactiveInterval(interval,true);
+    }
+    public void setMaxInactiveInterval(int interval, boolean addDeltaRequest) {
+    	super.maxInactiveInterval = interval;
+        if (isValid && interval == 0) {
+            expire();
+        } else {
+        	if (addDeltaRequest && (deltaRequest != null)) {
+        		//...
+        	}
+        }
+    }
 	
 	
 	
@@ -115,11 +130,21 @@ public class DeltaSession
 	}
 	
 	
+	public void setId(String id, boolean notify) {
+        super.setId(id, notify);
+        resetDeltaRequest();
+    }
+	
+	
 	public void resetDeltaRequest() {
 		try {
 			lock();
 			if (deltaRequest == null) {
 				deltaRequest = new DeltaRequest(getIdInternal(), false);
+			}
+			else {
+				deltaRequest.reset();
+				deltaRequest.setSessionId(getIdInternal());
 			}
 		}
 		finally{
@@ -132,6 +157,16 @@ public class DeltaSession
 			resetDeltaRequest();
 		return deltaRequest;
 	}
+	
+	/**
+     * End the access and register to ReplicationValve (crossContext support)
+     */
+    public void endAccess() {
+    	super.endAccess() ;
+    	if(manager instanceof DeltaManager) {
+    		((DeltaManager)manager).registerSessionAtReplicationValve(this);   
+    	}
+    }
 	
 	
 }

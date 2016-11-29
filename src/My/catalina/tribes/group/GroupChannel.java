@@ -229,14 +229,18 @@ public class GroupChannel
             	
             	if (channelListener != null && channelListener.accept(fwd, source)) {
             		channelListener.messageReceived(fwd, source);
-            	}
-            	
-            	
+            		delivered = true;
+            	}     	
             }
             
             
     	}
-    	
+    	catch ( Exception x ) {
+    		//this could be the channel listener throwing an exception, we should log it 
+            //as a warning.
+            if ( log.isWarnEnabled() ) 
+            	log.warn("Error receiving message:",x);
+    	}
     	
     }
 	

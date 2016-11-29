@@ -1,10 +1,12 @@
 package My.catalina.tribes.transport.nio;
 
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 import My.catalina.tribes.ChannelMessage;
+import My.catalina.tribes.io.BufferPool;
 import My.catalina.tribes.io.ChannelData;
 import My.catalina.tribes.io.ListenCallback;
 import My.catalina.tribes.io.ObjectReader;
@@ -148,8 +150,25 @@ public class NioReplicationTask extends AbstractRxTask{
         		
         		//process the message.
                 getCallback().messageDataReceived(msgs[i]);
+                
+                /**
+                 * Use send ack here if you want the request to complete on this 
+                 * server before sending the ack to the remote server
+                 * This is considered a synchronized request
+                 */
+                if (ChannelData.sendAckSync(msgs[i].getOptions())) 
+                	sendAck(key,channel,Constants.ACK_COMMAND);
+        	}
+        	catch ( Exception e ) {
+        		log.error("Processing of cluster message failed.",e);
+        		if (ChannelData.sendAckSync(msgs[i].getOptions())) sendAck(key,channel,Constants.FAIL_ACK_COMMAND);
+        	}
+        	if ( getUseBufferPool() ) {
+        		BufferPool.getBufferPool().returnBuffer(msgs[i].getMessage());
+                msgs[i].setMessage(null);
         	}
         }
+        
         
     }
     
@@ -170,9 +189,19 @@ public class NioReplicationTask extends AbstractRxTask{
         	public void run() {
         		try {
         			if (key.isValid()) {
-        				
+        				// cycle the selector so this key is active again
+                        key.selector().wakeup();
+                        // resume interest in OP_READ, OP_WRITE
+                        int resumeOps = key.interestOps() | SelectionKey.OP_READ;
+                        key.interestOps(resumeOps);
         			}
         		}
+        		catch (CancelledKeyException ckx ) {
+        			
+        		}
+        		catch (Exception x) {
+                    log.error("Error registering key for read:"+key,x);
+                }
         	}
         };
     	
