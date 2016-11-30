@@ -3,6 +3,7 @@ package My.catalina.ha.session;
 import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.util.concurrent.locks.Lock;
@@ -114,19 +115,12 @@ public class DeltaSession
 
 
 
-
-	@Override
 	public boolean isPrimarySession() {
-		// TODO Auto-generated method stub
-		return false;
+		return isPrimarySession;
 	}
-
-
-
-
-	@Override
 	public void setPrimarySession(boolean primarySession) {
-		// TODO Auto-generated method stub
+		
+		this.isPrimarySession = primarySession;
 		
 	}
 	
@@ -230,6 +224,43 @@ public class DeltaSession
         stream.writeObject(id);
         
         // handle attribute latter..
+    }
+    
+    
+    
+    /**
+     * Read a serialized version of the contents of this session object from the
+     * specified object input stream, without requiring that the StandardSession
+     * itself have been serialized.
+     *
+     * @param stream
+     *            The object input stream to read from
+     *
+     * @exception ClassNotFoundException
+     *                if an unknown class is specified
+     * @exception IOException
+     *                if an input/output error occurs
+     */
+    @Override
+    public void readObjectData(ObjectInputStream stream) throws ClassNotFoundException, IOException {
+        readObject((ObjectInput)stream);
+    }
+    
+    private void readObject(ObjectInput stream) throws ClassNotFoundException, IOException {
+    	
+    	creationTime = ( (Long) stream.readObject()).longValue();
+        lastAccessedTime = ( (Long) stream.readObject()).longValue();
+        maxInactiveInterval = ( (Integer) stream.readObject()).intValue();
+        isNew = ( (Boolean) stream.readObject()).booleanValue();
+        isValid = ( (Boolean) stream.readObject()).booleanValue();
+        thisAccessedTime = ( (Long) stream.readObject()).longValue();
+        version = ( (Long) stream.readObject()).longValue();
+        
+        id = (String) stream.readObject();
+        
+        // handle attribute latter..
+        
+        activate();
     }
 	
 	

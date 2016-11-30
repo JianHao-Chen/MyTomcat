@@ -78,5 +78,11 @@ public interface SessionMessage extends ClusterMessage ,java.io.Serializable{
      */
     public int getEventType(); 
     
+    
+    /**
+     * @return the serialized data for the session
+     */
+    public byte[] getSession();
+    
     public String getSessionID();
 }

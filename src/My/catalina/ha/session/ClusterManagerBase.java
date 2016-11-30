@@ -1,10 +1,14 @@
 package My.catalina.ha.session;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+
 import My.catalina.Container;
 import My.catalina.Lifecycle;
 import My.catalina.Loader;
 import My.catalina.ha.ClusterManager;
 import My.catalina.session.ManagerBase;
+import My.catalina.tribes.io.ReplicationStream;
 
 public abstract class ClusterManagerBase 
 	extends ManagerBase 
@@ -32,4 +36,18 @@ public abstract class ClusterManagerBase
 	public ClassLoader[] getClassLoaders() {
         return getClassLoaders(container);
     }
+	
+	
+	/**
+     * Open Stream and use correct ClassLoader (Container) Switch
+     * ThreadClassLoader
+     */
+	public ReplicationStream getReplicationStream(byte[] data) throws IOException {
+		return getReplicationStream(data,0,data.length);
+	}
+	
+	public ReplicationStream getReplicationStream(byte[] data, int offset, int length) throws IOException {
+		ByteArrayInputStream fis = new ByteArrayInputStream(data, offset, length);
+		return new ReplicationStream(fis, getClassLoaders());
+	}
 }

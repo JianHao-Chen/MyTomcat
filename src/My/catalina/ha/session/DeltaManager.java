@@ -3,6 +3,7 @@ package My.catalina.ha.session;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -524,6 +525,66 @@ public class DeltaManager extends ClusterManagerBase{
         // send object data as byte[]
         return fos.toByteArray();
     }
+    
+    
+    /**
+     * Load sessions from other cluster node.
+     * FIXME replace currently sessions with same id without notifcation.
+     * FIXME SSO handling is not really correct with the session replacement!
+     * @exception ClassNotFoundException
+     *                if a serialized class cannot be found during the reload
+     * @exception IOException
+     *                if an input/output error occurs
+     */
+    protected void deserializeSessions(byte[] data) throws ClassNotFoundException,IOException {
+    	
+    	ClassLoader originalLoader = Thread.currentThread().getContextClassLoader();
+    	
+    	ObjectInputStream ois = null;
+    	// Load the previously unloaded active sessions
+    	try {
+    		ois = getReplicationStream(data);
+    		Integer count = (Integer) ois.readObject();
+    		
+    		int n = count.intValue();
+    		for (int i = 0; i < n; i++) {
+    			DeltaSession session = (DeltaSession) createEmptySession();
+    			session.readObjectData(ois);
+    			session.setManager(this);
+    			session.setValid(true);
+    			session.setPrimarySession(false);
+    			
+    			session.access();
+    			
+    			if (findSession(session.getIdInternal()) == null ) {
+    				sessionCounter++;
+    			}
+    			else {
+    				//...
+    			}
+    			add(session);
+    		}
+    	}
+    	catch (ClassNotFoundException e) {
+    		log.error("deltaManager.loading.cnfe");
+            throw e;
+    	}
+    	catch (IOException e) {
+    		log.error("deltaManager.loading.ioe");
+            throw e;
+    	}
+    	finally {
+    		// Close the input stream
+            try {
+                if (ois != null) ois.close();
+            } catch (IOException f) {
+                // ignored
+            }
+            ois = null;
+            if (originalLoader != null) 
+            	Thread.currentThread().setContextClassLoader(originalLoader);
+    	}
+    }
 	
 	
 	
@@ -614,6 +675,11 @@ public class DeltaManager extends ClusterManagerBase{
                     break;
                 }
     			
+    			case SessionMessage.EVT_ALL_SESSION_DATA: {
+                    handleALL_SESSION_DATA(msg,sender);
+                    break;
+                }
+    			
     			default: {
                     //we didn't recognize the message type, do nothing
                     break;
@@ -676,6 +742,21 @@ public class DeltaManager extends ClusterManagerBase{
     	if (isSendAllSessions()) {
     		sendSessions(sender, currentSessions, findSessionTimestamp);
     	}
+    	
+    }
+    
+    
+    /**
+     * handle receive sessions from other not ( restart )
+     * @param msg
+     * @param sender
+     * @throws ClassNotFoundException
+     * @throws IOException
+     */
+    protected void handleALL_SESSION_DATA(SessionMessage msg,Member sender) throws ClassNotFoundException, IOException {
+    	counterReceive_EVT_ALL_SESSION_DATA++;
+    	byte[] data = msg.getSession();
+    	deserializeSessions(data);
     	
     }
 
