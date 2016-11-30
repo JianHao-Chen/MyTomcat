@@ -1,6 +1,7 @@
 package My.catalina.ha.session;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 
 import My.catalina.core.StandardContext;
 import My.catalina.ha.session.SessionMessage;
@@ -67,12 +68,14 @@ public class DeltaManager extends ClusterManagerBase{
     
     
     private boolean notifySessionListenersOnReplication = true;
+    private volatile boolean stateTransfered = false ;
+    private int stateTransferTimeout = 60;
     private boolean sendClusterDomainOnly = true ;
     
     
     private ArrayList receivedMessageQueue = new ArrayList();
     private boolean receiverQueue = false ;
-    
+    private long stateTransferCreateSendTime; 
     
     
     
@@ -96,7 +99,7 @@ public class DeltaManager extends ClusterManagerBase{
     private long counterSend_EVT_SESSION_EXPIRED = 0;
     private int counterSend_EVT_ALL_SESSION_TRANSFERCOMPLETE = 0 ;
     private long counterSend_EVT_CHANGE_SESSION_ID = 0;
-    
+    private int counterNoStateTransfered = 0 ;
     
 	// ----------------------- Constructor -----------------------------
     public DeltaManager() {
@@ -148,6 +151,36 @@ public class DeltaManager extends ClusterManagerBase{
      */
     public void setDomainReplication(boolean sendClusterDomainOnly) {
         this.sendClusterDomainOnly = sendClusterDomainOnly;
+    }
+    
+    
+    /**
+     * @return Returns the stateTransferTimeout.
+     */
+    public int getStateTransferTimeout() {
+        return stateTransferTimeout;
+    }
+    /**
+     * @param timeoutAllSession The timeout
+     */
+    public void setStateTransferTimeout(int timeoutAllSession) {
+        this.stateTransferTimeout = timeoutAllSession;
+    }
+    
+    /**
+     * is session state transfered complete?
+     * 
+     */
+    public boolean getStateTransfered() {
+        return stateTransfered;
+    }
+
+    /**
+     * set that state ist complete transfered  
+     * @param stateTransfered
+     */
+    public void setStateTransfered(boolean stateTransfered) {
+        this.stateTransfered = stateTransfered;
     }
     
     
@@ -285,7 +318,44 @@ public class DeltaManager extends ClusterManagerBase{
      */
     public synchronized void getAllClusterSessions() {
     	if (cluster != null && cluster.getMembers().length > 0) {
+    		long beforeSendTime = System.currentTimeMillis();
+    		Member mbr = findSessionMasterMember();
+    		if(mbr == null) { // No domain member found
+                return;
+           }
     		
+    		
+    		SessionMessage msg = 
+    			new SessionMessageImpl(this.getName(),SessionMessage.EVT_GET_ALL_SESSIONS, null, "GET-ALL","GET-ALL-" + getName());
+    		
+    		// set reference time
+            stateTransferCreateSendTime = beforeSendTime ;
+            // request session state
+            counterSend_EVT_GET_ALL_SESSIONS++;
+            stateTransfered = false ;
+            
+            
+            try {
+            	synchronized(receivedMessageQueue) {
+            		receiverQueue = true ;
+            	}
+            	cluster.send(msg, mbr);
+            	
+            	if (log.isWarnEnabled()) 
+            		log.warn("deltaManager.waitForSessionState");
+            	
+            	waitForSendAllSessions(beforeSendTime);
+            }
+            finally {
+            	synchronized(receivedMessageQueue) {
+            		for (Iterator iter = receivedMessageQueue.iterator(); iter.hasNext();) {
+            			//...
+            		}
+            		receivedMessageQueue.clear();
+                    receiverQueue = false ;
+            	}
+            	
+            }
     	}
     	else
     		if (log.isInfoEnabled()) 
@@ -313,6 +383,65 @@ public class DeltaManager extends ClusterManagerBase{
     			 //...
     		 }
     	}
+    }
+    
+    /**
+     * Find the master of the session state
+     * @return master member of sessions 
+     */
+    protected Member findSessionMasterMember() {
+    	Member mbr = null;
+        Member mbrs[] = cluster.getMembers();
+        if(mbrs.length != 0 ) 
+        	mbr = mbrs[0];
+        return mbr;
+    }
+    
+    
+    /**
+     * Wait that cluster session state is transfer or timeout after 60 Sec
+     * With stateTransferTimeout == -1 wait that backup is transfered (forever mode)
+     */
+    protected void waitForSendAllSessions(long beforeSendTime) {
+    	long reqStart = System.currentTimeMillis();
+    	long reqNow = reqStart ;
+    	
+    	boolean isTimeout = false;
+    	if(getStateTransferTimeout() > 0) {
+    		// wait that state is transfered with timeout check
+    		do {
+    			try {
+    				Thread.sleep(100);
+    			}
+    			catch (Exception sleep) {
+                    //
+                }
+    			
+    			reqNow = System.currentTimeMillis();
+    			isTimeout = ((reqNow - reqStart) > (1000 * getStateTransferTimeout()));
+    		}while ((!getStateTransfered()) && (!isTimeout));
+    	}
+    	else{
+    		if(getStateTransferTimeout() == -1) {
+    			// wait that state is transfered
+    			do {
+                    try {
+                        Thread.sleep(100);
+                    } catch (Exception sleep) {
+                    }
+                } while ((!getStateTransfered()));
+    			reqNow = System.currentTimeMillis();
+    		}
+    	}
+    	
+    	if (isTimeout || (!getStateTransfered())) {
+    		counterNoStateTransfered++ ;
+    		log.error("deltaManager.noSessionState");
+    	}
+    	else {
+            if (log.isInfoEnabled())
+                log.info("deltaManager.sessionReceived");
+        }
     }
 	
 	

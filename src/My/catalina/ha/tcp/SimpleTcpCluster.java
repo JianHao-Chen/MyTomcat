@@ -511,7 +511,11 @@ public class SimpleTcpCluster
     	try {
     		msg.setAddress(getLocalMember());
     		if (dest != null) {
-    			//...
+    			if (!getLocalMember().equals(dest)) {
+    				channel.send(new Member[] {dest}, msg,channelSendOptions);
+    			}
+    			else
+                    log.error("Unable to send message to local member " + msg);
     		}
     		else {
     			if (channel.getMembers().length>0)
