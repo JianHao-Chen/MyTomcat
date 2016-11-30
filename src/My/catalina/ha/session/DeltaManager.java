@@ -1,5 +1,9 @@
 package My.catalina.ha.session;
 
+import java.io.BufferedOutputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -71,6 +75,7 @@ public class DeltaManager extends ClusterManagerBase{
     private volatile boolean stateTransfered = false ;
     private int stateTransferTimeout = 60;
     private boolean sendClusterDomainOnly = true ;
+    private boolean sendAllSessions = true;
     
     
     private ArrayList receivedMessageQueue = new ArrayList();
@@ -181,6 +186,22 @@ public class DeltaManager extends ClusterManagerBase{
      */
     public void setStateTransfered(boolean stateTransfered) {
         this.stateTransfered = stateTransfered;
+    }
+    
+    
+    /**
+     * 
+     * @return Returns the sendAllSessions.
+     */
+    public boolean isSendAllSessions() {
+        return sendAllSessions;
+    }
+    
+    /**
+     * @param sendAllSessions The sendAllSessions to set.
+     */
+    public void setSendAllSessions(boolean sendAllSessions) {
+        this.sendAllSessions = sendAllSessions;
     }
     
     
@@ -443,6 +464,66 @@ public class DeltaManager extends ClusterManagerBase{
                 log.info("deltaManager.sessionReceived");
         }
     }
+    
+    
+    
+    /**
+     * send a block of session to sender
+     * @param sender
+     * @param currentSessions
+     * @param sendTimestamp
+     * @throws IOException
+     */
+    protected void sendSessions(Member sender, Session[] currentSessions,long sendTimestamp) throws IOException {
+    	byte[] data = serializeSessions(currentSessions);
+    	SessionMessage newmsg = new SessionMessageImpl(name,SessionMessage.EVT_ALL_SESSION_DATA, data,"SESSION-STATE", "SESSION-STATE-" + getName());
+    	newmsg.setTimestamp(sendTimestamp);
+    	counterSend_EVT_ALL_SESSION_DATA++;
+    	cluster.send(newmsg, sender);
+    }
+    
+    
+    /**
+     * Save any currently active sessions in the appropriate persistence
+     * mechanism, if any. If persistence is not supported, this method returns
+     * without doing anything.
+     * 
+     * @exception IOException
+     *                if an input/output error occurs
+     */
+    protected byte[] serializeSessions(Session[] currentSessions) throws IOException {
+    	// Open an output stream to the specified pathname, if any
+        ByteArrayOutputStream fos = null;
+        ObjectOutputStream oos = null;
+        
+        try {
+        	fos = new ByteArrayOutputStream();
+        	oos = new ObjectOutputStream(new BufferedOutputStream(fos));
+        	oos.writeObject(new Integer(currentSessions.length));
+        	for(int i=0 ; i < currentSessions.length;i++) {
+                ((DeltaSession)currentSessions[i]).writeObjectData(oos);                
+            }
+        	// Flush and close the output stream
+            oos.flush();
+        }
+        catch (IOException e) {
+        	log.error("deltaManager.unloading.ioe");
+            throw e;
+        }
+        finally {
+        	if (oos != null) {
+                try {
+                    oos.close();
+                } catch (IOException f) {
+                    ;
+                }
+                oos = null;
+            }
+        }
+        
+        // send object data as byte[]
+        return fos.toByteArray();
+    }
 	
 	
 	
@@ -528,6 +609,11 @@ public class DeltaManager extends ClusterManagerBase{
                     break;
                 }
     			
+    			case SessionMessage.EVT_GET_ALL_SESSIONS: {
+                    handleGET_ALL_SESSIONS(msg,sender);
+                    break;
+                }
+    			
     			default: {
                     //we didn't recognize the message type, do nothing
                     break;
@@ -566,6 +652,30 @@ public class DeltaManager extends ClusterManagerBase{
         session.setId(msg.getSessionID(), notifySessionListenersOnReplication);
         session.resetDeltaRequest();
         session.endAccess();
+    	
+    }
+    
+    
+    /**
+     * handle receive that other node want all sessions ( restart )
+     * a) send all sessions with one message
+     * b) send session at blocks
+     * After sending send state is complete transfered
+     * @param msg
+     * @param sender
+     * @throws IOException
+     */
+    protected void handleGET_ALL_SESSIONS(SessionMessage msg, Member sender) throws IOException {
+    	counterReceive_EVT_GET_ALL_SESSIONS++;
+    	
+    	// Write the number of active sessions, followed by the details
+    	// get all sessions and serialize without sync
+    	Session[] currentSessions = findSessions();
+    	long findSessionTimestamp = System.currentTimeMillis() ;
+    	
+    	if (isSendAllSessions()) {
+    		sendSessions(sender, currentSessions, findSessionTimestamp);
+    	}
     	
     }
 

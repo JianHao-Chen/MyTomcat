@@ -4,6 +4,7 @@ import java.io.Externalizable;
 import java.io.IOException;
 import java.io.ObjectInput;
 import java.io.ObjectOutput;
+import java.io.ObjectOutputStream;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -166,6 +167,69 @@ public class DeltaSession
     	if(manager instanceof DeltaManager) {
     		((DeltaManager)manager).registerSessionAtReplicationValve(this);   
     	}
+    }
+    
+    
+    
+    /**
+     * Write a serialized version of the contents of this session object to the
+     * specified object output stream, without requiring that the
+     * StandardSession itself have been serialized.
+     *
+     * @param stream
+     *            The object output stream to write to
+     *
+     * @exception IOException
+     *                if an input/output error occurs
+     */
+    @Override
+    public void writeObjectData(ObjectOutputStream stream) throws IOException {
+        writeObjectData((ObjectOutput)stream);
+    }
+    
+    public void writeObjectData(ObjectOutput stream) throws IOException {
+        writeObject(stream);
+    }
+    
+    
+    /**
+     * Write a serialized version of this session object to the specified object
+     * output stream.
+     * <p>
+     * <b>IMPLEMENTATION NOTE </b>: The owning Manager will not be stored in the
+     * serialized representation of this Session. After calling
+     * <code>readObject()</code>, you must set the associated Manager
+     * explicitly.
+     * <p>
+     * <b>IMPLEMENTATION NOTE </b>: Any attribute that is not Serializable will
+     * be unbound from the session, with appropriate actions if it implements
+     * HttpSessionBindingListener. If you do not want any such attributes, be
+     * sure the <code>distributable</code> property of the associated Manager
+     * is set to <code>true</code>.
+     *
+     * @param stream
+     *            The output stream to write to
+     *
+     * @exception IOException
+     *                if an input/output error occurs
+     */
+    protected void writeObject(ObjectOutputStream stream) throws IOException {
+        writeObject((ObjectOutput)stream);
+    }
+    
+    private void writeObject(ObjectOutput stream) throws IOException {
+    	
+    	stream.writeObject(new Long(creationTime));
+        stream.writeObject(new Long(lastAccessedTime));
+        stream.writeObject(new Integer(maxInactiveInterval));
+        stream.writeObject(new Boolean(isNew));
+        stream.writeObject(new Boolean(isValid));
+        stream.writeObject(new Long(thisAccessedTime));
+        stream.writeObject(new Long(version));
+        
+        stream.writeObject(id);
+        
+        // handle attribute latter..
     }
 	
 	
