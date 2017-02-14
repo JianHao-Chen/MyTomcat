@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -201,6 +203,27 @@ public class ApplicationContext implements ServletContext{
           */
     }
     
+    
+    
+    /**
+     * Clear all application-created attributes.
+     */
+    protected void clearAttributes() {
+    	 // Create list of attributes to be removed
+        ArrayList list = new ArrayList();
+        Iterator iter = attributes.keySet().iterator();
+        while (iter.hasNext()) {
+            list.add(iter.next());
+        }
+
+        // Remove application originated attributes
+        // (read only attributes will be left in place)
+        Iterator keys = list.iterator();
+        while (keys.hasNext()) {
+            String key = (String) keys.next();
+            removeAttribute(key);
+        }
+    }
     
     
     /**

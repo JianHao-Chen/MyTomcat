@@ -22,6 +22,7 @@ import My.catalina.LifecycleListener;
 import My.catalina.Loader;
 import My.catalina.core.StandardContext;
 import My.catalina.util.LifecycleSupport;
+import My.naming.resources.DirContextURLStreamHandler;
 import My.naming.resources.Resource;
 
 /**
@@ -187,7 +188,7 @@ public class WebappLoader implements Lifecycle, Loader{
     	this.reloadable = reloadable;
     }
     
-    
+    	
     /**
      * Return the Java class loader to be used by this Container.
      */
@@ -224,6 +225,40 @@ public class WebappLoader implements Lifecycle, Loader{
         
         
         
+    }
+    
+    
+    /**
+     * Execute a periodic task, such as reloading, etc. This method will be
+     * invoked inside the classloading context of this container. Unexpected
+     * throwables will be caught and logged.
+     */
+    public void backgroundProcess() {
+    	if (reloadable && modified()) {
+    		try{
+    			Thread.currentThread().setContextClassLoader
+    				(WebappLoader.class.getClassLoader());
+    			
+    			if (container instanceof StandardContext) {
+    				((StandardContext) container).reload();
+    			}
+    		}
+    		finally {
+    			if (container.getLoader() != null) {
+    				Thread.currentThread().setContextClassLoader
+                    	(container.getLoader().getClassLoader());
+    			}
+    		}
+    	}
+    }
+    
+    
+    /**
+     * Has the internal repository associated with this Loader been modified,
+     * such that the loaded classes should be reloaded?
+     */
+    public boolean modified() {
+    	return (classLoader.modified());
     }
 
 
@@ -321,10 +356,35 @@ public class WebappLoader implements Lifecycle, Loader{
 	}
 
 
-	@Override
+	 /**
+     * Stop this component, finalizing our associated class loader.
+     */
 	public void stop() throws LifecycleException {
-		// TODO Auto-generated method stub
-		
+		// Validate and update our current component state
+        if (!started)
+            throw new LifecycleException("webappLoader.notStarted");
+        
+        lifecycle.fireLifecycleEvent(STOP_EVENT, null);
+        started = false;
+        
+        // Remove context attributes as appropriate
+        if (container instanceof Context) {
+        	ServletContext servletContext =
+                ((Context) container).getServletContext();
+        	
+        	servletContext.removeAttribute(Globals.CLASS_PATH_ATTR);
+        }
+        
+        // Throw away our current class loader
+        if (classLoader instanceof Lifecycle)
+        	((Lifecycle) classLoader).stop();
+        
+        //DirContextURLStreamHandler.unbind((ClassLoader) classLoader);
+	
+        
+        classLoader = null;
+        
+        initialized = false;
 	}
     
     

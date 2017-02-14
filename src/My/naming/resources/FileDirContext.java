@@ -141,6 +141,14 @@ public class FileDirContext extends BaseDirContext{
     public boolean getAllowLinking() {
         return allowLinking;
     }
+    
+    
+    /**
+     * Release any resources allocated for this directory context.
+     */
+    public void release() {
+        super.release();
+    }
 	
 
 	@Override

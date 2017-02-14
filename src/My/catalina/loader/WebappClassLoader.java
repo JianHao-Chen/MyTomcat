@@ -7,6 +7,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.security.CodeSource;
+import java.security.Permission;
 import java.util.HashMap;
 import java.util.jar.JarFile;
 
@@ -208,6 +209,11 @@ public class WebappClassLoader
      */
     protected long[] lastModifiedDates = new long[0];
     
+    
+    /**
+     * All permission.
+     */
+    protected Permission allPermission = new java.security.AllPermission();
     
     
     /**
@@ -923,6 +929,29 @@ public class WebappClassLoader
         			 }catch (IOException e) {
                          return null;
                      }
+        			 
+        			 // Register the full path for modification checking
+        			 // Note: Only syncing on a 'constant' object is needed
+        			 synchronized (allPermission) {
+        				 int j;
+
+                         long[] result2 = 
+                             new long[lastModifiedDates.length + 1];
+                         
+                         for (j = 0; j < lastModifiedDates.length; j++) {
+                             result2[j] = lastModifiedDates[j];
+                         }
+                         
+                         result2[lastModifiedDates.length] = entry.lastModified;
+                         lastModifiedDates = result2;
+                         
+                         String[] result = new String[paths.length + 1];
+                         for (j = 0; j < paths.length; j++) {
+                             result[j] = paths[j];
+                         }
+                         result[paths.length] = fullPath;
+                         paths = result;
+        			 }
         		 }
         		 
         	 }catch (NamingException e) {
@@ -1068,6 +1097,58 @@ public class WebappClassLoader
         String encoding = null;
 
 	}
+	
+	
+	/**
+     * Have one or more classes or resources been modified so that a reload
+     * is appropriate?
+     */
+	public boolean modified() {
+		if (log.isDebugEnabled())
+            log.debug("modified()");
+		
+		// Checking for modified loaded resources
+        int length = paths.length;
+        
+        // A rare race condition can occur in the updates of the two arrays
+        // It's totally ok if the latest class added is not checked (it will
+        // be checked the next time
+        int length2 = lastModifiedDates.length;
+        if (length > length2)
+            length = length2;
+        
+        for (int i = 0; i < length; i++) {
+        	try {
+        		long lastModified =
+        			((ResourceAttributes) resources.getAttributes(paths[i]))
+                    .getLastModified();
+        		if (lastModified != lastModifiedDates[i]) {
+        			if (log.isDebugEnabled())
+        				log.debug("  Resource '" + paths[i]
+        				    + "' was modified; Date is now: "
+        				    + new java.util.Date(lastModified) + " Was: "
+        				    + new java.util.Date(lastModifiedDates[i]));
+        			
+        			return (true);
+        		}
+        	}
+        	catch (NamingException e) {
+                log.error("    Resource '" + paths[i] + "' is missing");
+                return (true);
+            }
+        }
+        
+        
+        length = jarNames.length;
+
+        // Check if JARs have been added or removed
+        // TODO
+        
+        
+		
+        // No classes have been modified
+        return (false);
+	}
     
     
     
@@ -1092,11 +1173,71 @@ public class WebappClassLoader
 
 	
 
-	@Override
+	/**
+     * Stop the class loader.
+     */
 	public void stop() throws LifecycleException {
-		// TODO Auto-generated method stub
-		
+		// Clearing references should be done before setting started to
+        // false, due to possible side effects
+        clearReferences();
+        
+        started = false;
+        
+        int length = files.length;
+        for (int i = 0; i < length; i++) {
+            files[i] = null;
+        }
+        
+        notFoundResources.clear();
+        resourceEntries.clear();
+        resources = null;
+        repositories = null;
+        files = null;
+        jarPath = null;
+        jarNames = null;
+        lastModifiedDates = null;
+        paths = null;
+        hasExternalRepositories = false;
+        parent = null;  
+        
+        if (loaderDir != null) {
+            deleteDir(loaderDir);
+        }
 	}
+	
+	
+	 /**
+     * Delete the specified directory, including all of its contents and
+     * subdirectories recursively.
+     *
+     * @param dir File object representing the directory to be deleted
+     */
+    protected static void deleteDir(File dir) {
+    	String files[] = dir.list();
+        if (files == null) {
+            files = new String[0];
+        }
+        for (int i = 0; i < files.length; i++) {
+            File file = new File(dir, files[i]);
+            if (file.isDirectory()) {
+                deleteDir(file);
+            } else {
+                file.delete();
+            }
+        }
+        dir.delete();
+    }
+
+    	
+	
+	/**
+     * Clear references.
+     */
+    protected void clearReferences() {
+    	// implement latter.
+    	
+    }
+	
 
 	@Override
 	public String[] findRepositories() {
@@ -1104,11 +1245,7 @@ public class WebappClassLoader
 		return null;
 	}
 
-	@Override
-	public boolean modified() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+	
     
     
     

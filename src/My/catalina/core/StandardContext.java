@@ -1650,7 +1650,56 @@ public class StandardContext
     }
     
     
+    /**
+     * Reload this web application, if reloading is supported.
+     * <p>
+     * <b>IMPLEMENTATION NOTE</b>:  This method is designed to deal with
+     * reloads required by changes to classes in the underlying repositories
+     * of our class loader.  It does not handle changes to the web application
+     * deployment descriptor.  If that has occurred, you should stop this
+     * Context and create (and start) a new Context instance instead.
+     *
+     * @exception IllegalStateException if the <code>reloadable</code>
+     *  property is set to <code>false</code>.
+     */
+    public synchronized void reload() {
+    	
+    	// Validate our current component state
+    	if (!started)
+    		throw new IllegalStateException("containerBase.notStarted");
+    	
+    	// Make sure reloading is enabled
+    	if(log.isInfoEnabled())
+            log.info("standardContext.reloadingStarted");
+    	
+    	// Stop accepting requests temporarily
+        setPaused(true);
+        
+        try {
+        	stop();
+        }catch (LifecycleException e) {
+            log.error("standardContext.stoppingContext");
+        }
+        
+        try {
+            start();
+        } catch (LifecycleException e) {
+            log.error("standardContext.startingContext");
+        }
+    	
+        setPaused(false);
+    }
     
+    /**
+     * Set the request processing paused flag for this Context.
+     *
+     * @param paused The new request processing paused flag
+     */
+    private void setPaused(boolean paused) {
+
+        this.paused = paused;
+
+    }
     
     /**
      * Allocate resources, including proxy.
@@ -1988,6 +2037,149 @@ public class StandardContext
   
     }
     
+    
+    /**
+     * Stop this Context component.
+     *
+     * @exception LifecycleException if a shutdown error occurs
+     */
+    public synchronized void stop() throws LifecycleException {
+    	// Validate and update our current component state
+        if (!started) {
+            if(log.isInfoEnabled())
+                log.info("containerBase.notStarted");
+            return;
+        }
+        
+        // Notify our interested LifecycleListeners
+        lifecycle.fireLifecycleEvent(BEFORE_STOP_EVENT, null);
+        
+        // Mark this application as unavailable while we shut down
+        setAvailable(false);
+        
+        // Binding thread
+        //ClassLoader oldCCL = bindThread();
+        
+        try {
+        	// Stop our child containers, if any
+            Container[] children = findChildren();
+            for (int i = 0; i < children.length; i++) {
+                if (children[i] instanceof Lifecycle)
+                    ((Lifecycle) children[i]).stop();
+            }
+            
+            // Stop our filters
+            //filterStop();
+
+            // Stop ContainerBackgroundProcessor thread
+            super.threadStop();
+            
+            if ((manager != null) && (manager instanceof Lifecycle)) {
+                ((Lifecycle) manager).stop();
+            }
+            
+            // Stop our application listeners
+            listenerStop();
+            
+            // Finalize our character set mapper
+            //setCharsetMapper(null);
+            
+            lifecycle.fireLifecycleEvent(STOP_EVENT, null);
+            started = false;
+            
+            // Stop the Valves in our pipeline (including the basic), if any
+            if (pipeline instanceof Lifecycle) {
+                ((Lifecycle) pipeline).stop();
+            }
+            
+            // Clear all application-originated servlet context attributes
+            if (context != null)
+                context.clearAttributes();
+            
+            // Stop resources
+            resourcesStop();
+            
+            if ((cluster != null) && (cluster instanceof Lifecycle)) {
+                ((Lifecycle) cluster).stop();
+            }
+            
+            if ((loader != null) && (loader instanceof Lifecycle)) {
+                ((Lifecycle) loader).stop();
+            }
+        }
+        finally {
+        	
+        }
+        
+        
+        // Reset application context
+        context = null;
+
+        // This object will no longer be visible or used. 
+        try {
+            resetContext();
+        } catch( Exception ex ) {
+            log.error( "Error reseting context " + this + " " + ex, ex );
+        }
+    }
+    
+    private void resetContext(){
+    	children=new HashMap();
+
+        // Bugzilla 32867
+        distributable = false;
+
+        applicationListeners = new String[0];
+        applicationEventListenersObjects = new Object[0];
+        applicationLifecycleListenersObjects = new Object[0];
+
+        if(log.isDebugEnabled())
+            log.debug("resetContext " + oname);
+    }
+    
+    
+    
+    /**
+     * Deallocate resources and destroy proxy.
+     */
+    public boolean resourcesStop() {
+    	 boolean ok = true;
+    	 
+    	 try {
+    		 if (resources != null) {
+    			 if (resources instanceof Lifecycle) {
+                     ((Lifecycle) resources).stop();
+                 }
+    			 if (webappResources instanceof BaseDirContext) {
+                     ((BaseDirContext) webappResources).release();
+                 }
+    			 
+    			 // Unregister the cache in JMX
+    			 if (isCachingAllowed()) {
+                     ObjectName resourcesName = 
+                         new ObjectName(this.getDomain()
+                                        + ":type=Cache,host=" 
+                                        + getHostname() + ",path=" 
+                                        + (("".equals(getPath()))?"/"
+                                           :getPath()));
+                     Registry.getRegistry(null, null)
+                         .unregisterComponent(resourcesName);
+    			 }
+    		 }
+    	 }
+    	 catch (Throwable t) {
+    		 log.error("standardContext.resourcesStop");
+             ok = false;
+    	 }
+    	 
+    	 this.resources = null;
+
+         return (ok);
+    }
+    
+    
+    
+    
     private void registerJMX() {
         try {
             if (log.isDebugEnabled()) {
@@ -2085,6 +2277,15 @@ public class StandardContext
     	
     	return true;
         
+    }
+    
+    /**
+     * Send an application stop event to all interested listeners.
+     * Return <code>true</code> if all events were sent successfully,
+     * or <code>false</code> otherwise.
+     */
+    public boolean listenerStop() {
+    	return true;
     }
     
     

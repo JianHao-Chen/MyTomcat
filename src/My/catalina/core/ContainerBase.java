@@ -1083,11 +1083,11 @@ public abstract class ContainerBase
              return;
     	 
     	 if (loader != null) {
-    		 /*try {
+    		 try {
                  loader.backgroundProcess();
              } catch (Exception e) {
-                 log.warn("containerBase.backgroundProcess.loader", loader);                
-             }*/
+                 log.warn("containerBase.backgroundProcess.loader", e);                
+             }
     	 }
     	 
     	 if (manager != null) {

@@ -227,4 +227,23 @@ public interface ServletContext {
    
    public URL getResource(String path) throws MalformedURLException;
    
+   
+   /**
+    * Removes the attribute with the given name from 
+    * the servlet context. After removal, subsequent calls to
+    * {@link #getAttribute} to retrieve the attribute's value
+    * will return <code>null</code>.
+
+    * <p>If listeners are configured on the <code>ServletContext</code> the 
+    * container notifies them accordingly.
+
+    *
+    *
+    * @param name	a <code>String</code> specifying the name 
+    * 			of the attribute to be removed
+    *
+    */
+
+   public void removeAttribute(String name);
+   
 }
