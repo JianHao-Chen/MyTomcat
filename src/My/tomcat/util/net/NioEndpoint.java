@@ -853,14 +853,13 @@ public class NioEndpoint {
         			int keyCount = 0;
         			
         			try {
-        				 if (wakeupCounter.get()>0) {
+        				 if (wakeupCounter.getAndSet(-1)>0) {
         					//if we are here, means we have other stuff to do
                              //do a non blocking select
                              keyCount = selector.selectNow();
         				 }else {
         					 // set to -1 is for when an event is added,
         					 // then the wakeUp will be invoke
-        					 wakeupCounter.set( -1);
                              keyCount = selector.select(selectorTimeout);
         				 }
         				 wakeupCounter.set(0);
