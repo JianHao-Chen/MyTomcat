@@ -30,6 +30,11 @@ public final class Mapper {
      */
     protected Context context = new Context();
     
+    
+    public Mapper(){
+        System.out.println("");
+    }
+    
 	// --------------------- Public Methods ---------------------
     
     /**
@@ -935,7 +940,7 @@ public final class Mapper {
             Wrapper newWrapper = new Wrapper();
             newWrapper.object = wrapper;
             newWrapper.jspWildCard = jspWildCard;
-            if (path.endsWith("/*")) {
+            if (path.endsWith("/*")) {  //如果path的map是通配符类型的 
                 // Wildcard wrapper
                 newWrapper.name = path.substring(0, path.length() - 2);
                 Wrapper[] oldWrappers = context.wildcardWrappers;
@@ -948,7 +953,7 @@ public final class Mapper {
                         context.nesting = slashCount;
                     }
                 }
-            } else if (path.startsWith("*.")) {
+            } else if (path.startsWith("*.")) { //表示是扩展名的mapper
                 // Extension wrapper
                 newWrapper.name = path.substring(2);
                 Wrapper[] oldWrappers = context.extensionWrappers;
@@ -957,11 +962,11 @@ public final class Mapper {
                 if (insertMap(oldWrappers, newWrappers, newWrapper)) {
                     context.extensionWrappers = newWrappers;
                 }
-            } else if (path.equals("/")) {
+            } else if (path.equals("/")) {     // 表示是默认的wrapper
                 // Default wrapper
                 newWrapper.name = "";
                 context.defaultWrapper = newWrapper;
-            } else {
+            } else {                        //最后就是精确的map了 
                 // Exact wrapper
                 newWrapper.name = path;
                 Wrapper[] oldWrappers = context.exactWrappers;

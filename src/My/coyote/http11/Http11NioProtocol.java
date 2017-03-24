@@ -219,11 +219,18 @@ public class Http11NioProtocol implements ProtocolHandler{
 					
 					// In the middle of processing a request/response. Keep the
                     // socket associated with the processor.
+				    /*
+				     * 表示处理request或者response之间，例如数据还没有接收或者发送完，
+				     * 那么据需保持processor，并继续在poller上面注册 
+				     */
 					connections.put(socket, processor);
 					socket.getPoller().add(socket);
 				}
 				else if (state == SocketState.OPEN) {
-					
+					/*
+					 * 表示request已经搞定，但是还是keepalive的，那么回收processor对象，
+					 * 然后再将channel注册到poller上面去poller继续等待
+					 */
 				}
 				else {
 					// Connection closed. OK to recycle the processor.
