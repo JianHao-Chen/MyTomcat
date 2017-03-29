@@ -929,6 +929,36 @@ public class NioEndpoint {
         public void access() { access(System.currentTimeMillis()); }
         public void access(long access) { lastAccess = access; }
         
+        protected CountDownLatch readLatch = null;
+        protected CountDownLatch writeLatch = null;
+        public CountDownLatch getReadLatch() { return readLatch; }
+        public CountDownLatch getWriteLatch() { return writeLatch; }
+        protected CountDownLatch resetLatch(CountDownLatch latch) {
+            if ( latch==null || latch.getCount() == 0 ) return null;
+            else throw new IllegalStateException("Latch must be at count 0");
+        }
+        public void resetReadLatch() { readLatch = resetLatch(readLatch); }
+        public void resetWriteLatch() { writeLatch = resetLatch(writeLatch); }
+        
+        protected CountDownLatch startLatch(CountDownLatch latch, int cnt) {
+            if ( latch == null || latch.getCount() == 0 ) {
+                return new CountDownLatch(cnt);
+            }
+            else throw new IllegalStateException("Latch must be at count 0 or null.");
+        }
+        public void startReadLatch(int cnt) { readLatch = startLatch(readLatch,cnt);}
+        public void startWriteLatch(int cnt) { writeLatch = startLatch(writeLatch,cnt);}
+        
+        
+        protected void awaitLatch(CountDownLatch latch, long timeout, TimeUnit unit) throws InterruptedException {
+            if ( latch == null ) 
+                throw new IllegalStateException("Latch cannot be null");
+            latch.await(timeout,unit);
+        }
+        public void awaitReadLatch(long timeout, TimeUnit unit) throws InterruptedException { awaitLatch(readLatch,timeout,unit);}
+        public void awaitWriteLatch(long timeout, TimeUnit unit) throws InterruptedException { awaitLatch(writeLatch,timeout,unit);}
+        
+        
         
         public void reset() {
             reset(null,null,-1);

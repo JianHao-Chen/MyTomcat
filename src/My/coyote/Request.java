@@ -325,6 +325,8 @@ public final class Request {
         
         serverPort=-1;
         parameters.recycle();
+        
+        cookies.recycle();
 
         unparsedURIMB.recycle();
         uriMB.recycle(); 

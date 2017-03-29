@@ -1959,9 +1959,10 @@ public class StandardContext
                 				
                 			}
                 		}
+                		else
+                            contextManager = new StandardManager();
                 	}
-                	else
-                		contextManager = new StandardManager();
+                	
                 }
                 
                 // Configure default manager if none was specified

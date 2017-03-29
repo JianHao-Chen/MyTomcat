@@ -68,6 +68,7 @@ public class ServerCookie implements Serializable{
             Boolean.valueOf(System.getProperty("org.apache.tomcat.util.http.ServerCookie.ALWAYS_ADD_EXPIRES", "true")).booleanValue();
     	
     public ServerCookie() {
+        System.out.println("");
     }
 
     public void recycle() {

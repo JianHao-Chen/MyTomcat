@@ -25,6 +25,7 @@ import My.tomcat.util.buf.MessageBytes;
 import My.tomcat.util.http.Cookies;
 import My.tomcat.util.http.FastHttpDateFormat;
 import My.tomcat.util.http.Parameters;
+import My.tomcat.util.http.ServerCookie;
 import My.tomcat.util.http.mapper.MappingData;
 
 /**
@@ -1031,8 +1032,28 @@ public class Request implements HttpServletRequest{
         if (count <= 0)
             return;
         
+        cookies = new Cookie[count];
         
+        int idx=0;
+        for (int i = 0; i < count; i++) {
+            ServerCookie scookie = serverCookies.getCookie(i);
+            try {
+                Cookie cookie = new Cookie(scookie.getName().toString(),null);
+                int version = scookie.getVersion();
+                cookie.setVersion(version);
+                cookie.setValue(scookie.getValue().toString());
+                cookies[idx++] = cookie;
+            }
+            catch(IllegalArgumentException e) {
+             // Ignore bad cookie
+            }
+        }
         
+        if( idx < count ) {
+            Cookie [] ncookies = new Cookie[idx];
+            System.arraycopy(cookies, 0, ncookies, 0, idx);
+            cookies = ncookies;
+        }
     }
     
     
