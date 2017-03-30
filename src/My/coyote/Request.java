@@ -28,6 +28,7 @@ public final class Request {
 	private MessageBytes uriMB = MessageBytes.newInstance();
 	private MessageBytes decodedUriMB = MessageBytes.newInstance();
 	private MessageBytes protoMB = MessageBytes.newInstance();
+	private MessageBytes queryMB = MessageBytes.newInstance();
 	
 	private MimeHeaders headers = new MimeHeaders();
 	
@@ -241,6 +242,14 @@ public final class Request {
         return headers.getHeader(name);
     }
     
+    public MessageBytes query() {
+        return queryMB;
+    }
+
+    public MessageBytes queryString() {
+        return queryMB;
+    }
+    
     
     
     /**
@@ -333,6 +342,7 @@ public final class Request {
         decodedUriMB.recycle();
         methodMB.recycle();
         protoMB.recycle();
+        queryMB.recycle();
         
     }
 	

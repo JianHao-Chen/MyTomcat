@@ -519,7 +519,8 @@ public class InternalNioInputBuffer implements InputBuffer{
                 }
                 else if ((buf[pos] == Constants.QUESTION) 
                         && (parsingRequestLineQPos == -1)) {
-                	;
+                    // 处理   http://.../SessionExample;jsessionid=111?dataname=&datavalue=
+                    parsingRequestLineQPos = pos;
                 }
                 
                 pos++;
@@ -527,7 +528,17 @@ public class InternalNioInputBuffer implements InputBuffer{
             
             request.unparsedURI().setBytes(buf, parsingRequestLineStart,  end - parsingRequestLineStart);
             
-            request.requestURI().setBytes(buf, parsingRequestLineStart, end - parsingRequestLineStart);
+            if (parsingRequestLineQPos >= 0) {
+                
+                request.queryString().setBytes(buf, parsingRequestLineQPos + 1, 
+                        end - parsingRequestLineQPos - 1);
+                
+                request.requestURI().setBytes(buf, parsingRequestLineStart, parsingRequestLineQPos - parsingRequestLineStart);
+            }
+            else{
+                request.requestURI().setBytes(buf, parsingRequestLineStart, end - parsingRequestLineStart);
+            }
+            
     		
             parsingRequestLinePhase = 5;
     	}

@@ -635,6 +635,40 @@ public abstract class PersistentManagerBase
     	if (!isStarted() || getMaxActiveSessions() < 0)
             return;
     	
+    	Session sessions[] = findSessions();
+    	
+    	if (getMaxActiveSessions() >= sessions.length)
+            return;
+    	
+    	// Use LRU 
+    	
+    	int toswap = sessions.length - getMaxActiveSessions();
+    	long timeNow = System.currentTimeMillis();
+    	
+    	for (int i = 0; i < sessions.length && toswap > 0; i++) {
+    	    StandardSession session =  (StandardSession) sessions[i];
+    	    synchronized (session) {
+    	        int timeIdle = // Truncate, do not round up
+                    (int) ((timeNow - session.getLastAccessedTime()) / 1000L);
+    	        
+    	        if (timeIdle > minIdleSwap) {
+    	            if (session.accessCount != null &&
+                            session.accessCount.get() > 0) {
+                            // Session is currently being accessed - skip it
+                            continue;
+                    }
+    	            
+    	            try {
+    	                swapOut(session);
+    	            }
+    	            catch (IOException e) {
+                        ;   // This is logged in writeSession()
+                    }
+    	            toswap--;
+    	        }
+    	    }
+    	}
+    	
     	
     }
 
