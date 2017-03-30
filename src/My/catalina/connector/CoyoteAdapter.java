@@ -1,6 +1,7 @@
 package My.catalina.connector;
 
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 
 import My.catalina.Context;
 import My.catalina.Globals;
@@ -177,7 +178,40 @@ public class CoyoteAdapter implements Adapter{
         	// Parse path param, and extract it from 
         	// the decoded request URI
         	
-        	// implements latter.
+            int start = uriBC.getStart();
+            int end = uriBC.getEnd();
+            
+            int pathParamStart = semicolon + 1;
+            int pathParamEnd = ByteChunk.findBytes(uriBC.getBuffer(),
+                    start + pathParamStart, end,
+                    new byte[] {';', '/'});
+            
+            String pv = null;
+            
+            if (pathParamEnd >= 0) {
+                //多个 path parameter
+            }
+            else{
+                try{
+                    pv = (new String(uriBC.getBuffer(), start + pathParamStart, 
+                            (end - start) - pathParamStart, enc));
+                }
+                catch (UnsupportedEncodingException e) {
+                    // error when parse PathParam
+                }
+                uriBC.setEnd(start + semicolon);
+            }
+            
+            
+            if (pv != null) {
+                int equals = pv.indexOf('=');
+                if (equals > -1) {
+                    String name = pv.substring(0, equals);
+                    String value = pv.substring(equals + 1); 
+                    request.addPathParameter(name, value);
+                }
+            }
+            semicolon = uriBC.indexOf(';', semicolon);
         }
         
 	}
