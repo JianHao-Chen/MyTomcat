@@ -113,7 +113,10 @@ public class TcpFailureDetector extends ChannelInterceptorBase{
 	    	//check to see if the member really is gone
 	        //if the payload is not a shutdown message
 	        if (shutdown || !memberAlive(member)) {
-	            	//...
+	            //not correct, we need to maintain the map
+                membership.removeMember( (MemberImpl) member);
+                removeSuspects.remove(member);
+                notify = true;
 	        }
 	        else {
                 //add the member as suspect

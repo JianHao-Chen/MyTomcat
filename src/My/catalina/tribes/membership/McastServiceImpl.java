@@ -294,7 +294,20 @@ public class McastServiceImpl {
     protected void checkExpired() {
     	synchronized (expiredMutex) {
     		MemberImpl[] expired = membership.expire(timeToExpiration);
-    		
+    		for (int i = 0; i < expired.length; i++) {
+    		    final MemberImpl member = expired[i];
+    		    try {
+    		        Thread t = new Thread() {
+                        public void run() {
+                            service.memberDisappeared(member);
+                        }
+                    };
+                    t.start();
+    		    }
+    		    catch (Exception x) {
+                    log.error("Unable to process member disappeared message.", x);
+                }
+    		}
     	}
     }
     

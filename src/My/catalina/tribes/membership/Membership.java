@@ -1,8 +1,10 @@
 package My.catalina.tribes.membership;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import My.catalina.tribes.Member;
 
@@ -174,7 +176,27 @@ public class Membership {
     	if(!hasMembers() )
     		return EMPTY_MEMBERS;
     	
-    	return null;
+    	ArrayList list = null;
+        Iterator i = map.values().iterator();
+        while(i.hasNext()) {
+            MbrEntry entry = (MbrEntry)i.next();
+            if( entry.hasExpired(maxtime) ) {
+                if(list == null) // only need a list when members are expired (smaller gc)
+                    list = new java.util.ArrayList();
+                list.add(entry.getMember());
+            }
+        }
+        
+        if(list != null) {
+            MemberImpl[] result = new MemberImpl[list.size()];
+            list.toArray(result);
+            for( int j=0; j<result.length; j++) {
+                removeMember(result[j]);
+            }
+            return result;
+        } else {
+            return EMPTY_MEMBERS ;
+        }
     }
     
     
