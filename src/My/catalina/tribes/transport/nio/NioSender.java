@@ -186,7 +186,8 @@ public class NioSender extends AbstractSender implements DataSender{
     	socketChannel.configureBlocking(false);
     	
     	if ( socketChannel.connect(addr) ) {
-    		//...
+    	    completeConnect();
+            socketChannel.register(getSelector(), SelectionKey.OP_WRITE, this);
     	}
     	else{
     		socketChannel.register(getSelector(), SelectionKey.OP_CONNECT, this);
