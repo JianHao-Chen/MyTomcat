@@ -252,13 +252,76 @@ public class ProxyDirContext implements DirContext {
             cacheLoad(cacheEntry);
     	}
     	else {
-    		
+    		// 判断cacheEntry是否有效
+    	    if (!validate(cacheEntry)) {
+    	        if (!revalidate(cacheEntry)) {
+    	            cacheUnload(cacheEntry.name);
+    	            return (null);
+    	        }
+    	        else
+    	            cacheEntry.timestamp = System.currentTimeMillis() + cacheTTL;
+    	    }
     	}
     	return (cacheEntry);
     }
     
     
+    /**
+     * Validate entry.
+     */
+    protected boolean validate(CacheEntry entry) {
+        if (((!entry.exists)
+                || (entry.context != null)
+                || ((entry.resource != null)
+                   && (entry.resource.getContent() != null)))
+                && (System.currentTimeMillis() < entry.timestamp)) {
+            return true;
+        }
+        return false;
+    }
     
+    /**
+     * Revalidate entry.
+     */
+    protected boolean revalidate(CacheEntry entry) {
+        // Get the attributes at the given path, and check the last 
+        // modification date and file length
+        if (!entry.exists)
+            return false;
+        if (entry.attributes == null)
+            return false;
+        
+        long lastModified = entry.attributes.getLastModified();
+        long contentLength = entry.attributes.getContentLength();
+        if (lastModified <= 0)
+            return false;
+        
+        try {
+            Attributes tempAttributes = dirContext.getAttributes(entry.name);
+            ResourceAttributes attributes = null;
+            attributes = (ResourceAttributes) tempAttributes;
+            long lastModified2 = attributes.getLastModified();
+            long contentLength2 = attributes.getContentLength();
+            return (lastModified == lastModified2) 
+                && (contentLength == contentLength2);
+        }
+        catch (NamingException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Remove entry from cache.
+     */
+    protected boolean cacheUnload(String name) {
+        if (cache == null)
+            return false;
+        
+        synchronized (cache) {
+            boolean result = cache.unload(name);
+            return result;
+        }
+    }
     
     /**
      * Retrieves the named object as a cache entry, without any exception.

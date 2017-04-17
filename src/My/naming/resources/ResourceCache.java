@@ -203,4 +203,28 @@ public class ResourceCache {
     	 return true;
     }
     
+    
+    public boolean unload(String name) {
+        CacheEntry removedEntry = removeCache(name);
+        if (removedEntry != null) {
+            cacheSize -= removedEntry.size;
+            return true;
+        }
+        return false;
+    }
+    
+    private final CacheEntry removeCache(String name) {
+        CacheEntry[] oldCache = cache;
+        int pos = find(oldCache, name);
+        if ((pos != -1) && (name.equals(oldCache[pos].name))) {
+            CacheEntry[] newCache = new CacheEntry[cache.length - 1];
+            System.arraycopy(oldCache, 0, newCache, 0, pos);
+            System.arraycopy(oldCache, pos + 1, newCache, pos, 
+                             oldCache.length - pos - 1);
+            cache = newCache;
+            return oldCache[pos];
+        }
+        return null;
+    }
+    
 }
